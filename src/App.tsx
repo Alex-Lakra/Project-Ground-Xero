@@ -18,6 +18,7 @@ export default function App() {
   // Transition animation triggers
   const [isGlitching, setIsGlitching] = useState(false);
   const [activeScreen, setActiveScreen] = useState<PillChoice>('none');
+  const [transitionChoice, setTransitionChoice] = useState<PillChoice>('none');
 
   // Toggle Overlays
   const [showTerminal, setShowTerminal] = useState(false);
@@ -33,6 +34,7 @@ export default function App() {
 
   // Handle transition animations when pill choice is made
   const handleChoosePill = (selected: PillChoice) => {
+    setTransitionChoice(selected);
     setIsGlitching(true);
     
     // Simulate dramatic reality transition shift blip
@@ -44,6 +46,7 @@ export default function App() {
   };
 
   const handleResetToChoice = () => {
+    setTransitionChoice('none');
     setIsGlitching(true);
     setTimeout(() => {
       setChoice('none');
@@ -114,10 +117,22 @@ export default function App() {
 
       {/* Screen Glitch Reality Transition Overlay */}
       {isGlitching && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-mono text-matrix-green crt-screen">
-          <div className="absolute top-0 left-0 w-full h-full bg-linear-to-b from-transparent via-matrix-green/10 to-transparent animate-pulse" />
+        <div className={`fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-mono crt-screen ${
+          transitionChoice === 'red' ? 'text-matrix-red' : 
+          transitionChoice === 'blue' ? 'text-matrix-blue' : 
+          'text-on-surface-variant'
+        }`}>
+          <div className={`absolute top-0 left-0 w-full h-full bg-linear-to-b from-transparent to-transparent animate-pulse ${
+            transitionChoice === 'red' ? 'via-matrix-red/10' : 
+            transitionChoice === 'blue' ? 'via-matrix-blue/10' : 
+            'via-on-surface-variant/10'
+          }`} />
           <div className="text-center space-y-4 relative z-10">
-            <RefreshCw className="w-10 h-10 animate-spin mx-auto text-primary" />
+            <RefreshCw className={`w-10 h-10 animate-spin mx-auto ${
+              transitionChoice === 'red' ? 'text-matrix-red' : 
+              transitionChoice === 'blue' ? 'text-matrix-blue' : 
+              'text-primary'
+            }`} />
             <div className="text-xl font-bold tracking-widest uppercase animate-pulse">
               [SHIFTING REALITY COGNITIVE CHANNELS]
             </div>

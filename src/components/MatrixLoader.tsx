@@ -69,13 +69,13 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
 
   return (
     <div
-      className={`fixed inset-0 bg-[#020303] z-[9999] flex flex-col items-center justify-center font-mono text-matrix-green select-none transition-opacity duration-500 ease-in-out ${
+      className={`fixed inset-0 bg-[#020303] z-[9999] flex flex-col items-center justify-center font-mono text-on-surface-variant select-none transition-opacity duration-500 ease-in-out ${
         isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
       {/* Immersive Background Rain */}
       <div className="absolute inset-0 z-0">
-        <DigitalRain color="#00ff41" density={1.2} />
+        <DigitalRain color="#e9bcb9" density={1.2} />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
       </div>
 
@@ -83,22 +83,22 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
       <div className="absolute inset-0 scanline-overlay opacity-30 z-10 pointer-events-none" />
 
       {/* Main Terminal Box Container */}
-      <div className="relative z-20 w-[90%] max-w-2xl bg-black/90 border-2 border-matrix-green p-6 md:p-8 glow-green crt-screen overflow-hidden">
+      <div className="relative z-20 w-[90%] max-w-2xl bg-black/90 border-2 border-on-surface-variant p-6 md:p-8 glow-peach crt-screen overflow-hidden">
         {/* Futuristic Tech Borders */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-matrix-green" />
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-matrix-green" />
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-matrix-green" />
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-matrix-green" />
+        <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-on-surface-variant" />
+        <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-on-surface-variant" />
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-on-surface-variant" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-on-surface-variant" />
 
         {/* Terminal Header */}
-        <div className="flex justify-between items-center border-b border-matrix-green/50 pb-4 mb-6">
+        <div className="flex justify-between items-center border-b border-on-surface-variant/50 pb-4 mb-6">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-matrix-green animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-on-surface-variant animate-pulse" />
             <span className="text-xs uppercase tracking-widest font-bold">
               SYSTEM_BOOT_LINK // PORT_9911
             </span>
           </div>
-          <span className="text-[10px] text-matrix-green/60">SYS_REV.3.11</span>
+          <span className="text-[10px] text-on-surface-variant/60">SYS_REV.3.11</span>
         </div>
 
         {/* Dynamic Typing Logs */}
@@ -109,7 +109,7 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
               <div
                 key={index}
                 className={`flex items-start ${
-                  isLast ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-matrix-green'
+                  isLast ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-on-surface-variant'
                 }`}
               >
                 <span className="mr-2.5 select-none">{isLast && progress < 100 ? '►' : '✔'}</span>
@@ -121,17 +121,17 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
             <div className="flex items-center space-x-1 text-white animate-pulse">
               <span className="mr-2">►</span>
               <span>SYNAPSE INJECTION SEQUENCE ACTIVE</span>
-              <span className="w-1.5 h-4 bg-matrix-green inline-block animate-[blink_0.8s_infinite]" />
+              <span className="w-1.5 h-4 bg-on-surface-variant inline-block animate-[blink_0.8s_infinite]" />
             </div>
           )}
         </div>
 
         {/* Loading Progress Bar Container */}
-        <div className="mt-8 pt-4 border-t border-matrix-green/30">
-          <div className="text-[10px] text-matrix-green/60 uppercase tracking-widest text-left mb-1.5 font-bold">
+        <div className="mt-8 pt-4 border-t border-on-surface-variant/30">
+          <div className="text-[10px] text-on-surface-variant/60 uppercase tracking-widest text-left mb-1.5 font-bold">
             Cognitive Decoupler Decryption Progress
           </div>
-          <div className="font-mono text-sm md:text-base leading-none text-left tracking-wide whitespace-pre overflow-x-auto select-none py-1 text-matrix-green">
+          <div className="font-mono text-sm md:text-base leading-none text-left tracking-wide whitespace-pre overflow-x-auto select-none py-1 text-on-surface-variant">
             {progressBar}
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
           <h1 className="text-xl md:text-2xl font-anton tracking-[0.25em] text-white uppercase text-center animate-pulse drop-shadow-[0_0_12px_#ffffff]">
             Entering the Matrix
           </h1>
-          <p className="text-[9px] text-matrix-green/50 uppercase tracking-widest mt-1">
+          <p className="text-[9px] text-on-surface-variant/50 uppercase tracking-widest mt-1">
             Do not disconnect neural node connection
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
       {/* Neon themed Bypass Option */}
       <button
         onClick={handleSkip}
-        className="absolute bottom-8 right-8 z-30 font-mono text-[10px] text-matrix-green/60 hover:text-white border border-matrix-green/30 hover:border-white px-3 py-1 cursor-pointer bg-black/60 transition-all uppercase tracking-widest"
+        className="absolute bottom-8 right-8 z-30 font-mono text-[10px] text-on-surface-variant/60 hover:text-white border border-on-surface-variant/30 hover:border-white px-3 py-1 cursor-pointer bg-black/60 transition-all uppercase tracking-widest"
       >
         [ Skip Handshake ]
       </button>
