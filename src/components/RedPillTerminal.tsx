@@ -33,6 +33,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [hackProgress, setHackProgress] = useState(0);
   const [hackLogs, setHackLogs] = useState<string[]>([]);
   const [rainDensity, setRainDensity] = useState(1.2);
+  const [cmatrixConfig, setCmatrixConfig] = useState<{ active: boolean, color: string }>({ active: false, color: '#00ff00' });
 
   // References for UI focus & scroll alignment
   const cliInputRef = useRef<HTMLInputElement | null>(null);
@@ -97,6 +98,20 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     return () => document.removeEventListener('click', handleGlobalClick);
   }, [currentTab]);
 
+  useEffect(() => {
+    const handleCmatrixExit = (e: KeyboardEvent) => {
+      if (!cmatrixConfig.active) return;
+      if (e.key === 'q' || e.key === 'Q' || (e.key.toLowerCase() === 'c' && e.ctrlKey)) {
+        e.preventDefault();
+        setCmatrixConfig(prev => ({ ...prev, active: false }));
+      }
+    };
+    if (cmatrixConfig.active) {
+      document.addEventListener('keydown', handleCmatrixExit);
+    }
+    return () => document.removeEventListener('keydown', handleCmatrixExit);
+  }, [cmatrixConfig.active]);
+
   // ==========================================
   // SSH Session Utilities
   // ==========================================
@@ -116,18 +131,18 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
     const cleanStr = base32Str.toUpperCase().replace(/[\s-]/g, '');
     const bytes = new Uint8Array(Math.floor((cleanStr.length * 5) / 8));
-    
+
     let buffer = 0;
     let bitsLeft = 0;
     let index = 0;
-    
+
     for (let i = 0; i < cleanStr.length; i++) {
       const idx = alphabet.indexOf(cleanStr[i]);
       if (idx === -1) continue;
-      
+
       buffer = (buffer << 5) | idx;
       bitsLeft += 5;
-      
+
       if (bitsLeft >= 8) {
         bytes[index++] = (buffer >> (bitsLeft - 8)) & 0xff;
         bitsLeft -= 8;
@@ -141,7 +156,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const verifyTOTP = async (secret: string, inputOtp: string): Promise<boolean> => {
     // Standard developer bypass code
     if (inputOtp === '123456') return true;
-    
+
     // Tiny SHA-1 hashing algorithm in pure JS
     const sha1 = (buffer: Uint8Array): Uint8Array => {
       const blocks = new Uint32Array(((buffer.length + 8) >> 6) + 1 << 4);
@@ -244,9 +259,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     try {
       const cleanSecret = secret.toUpperCase().replace(/[\s-]/g, '');
       const keyBytes = decodeBase32(cleanSecret);
-      
+
       const currentTimeStep = Math.floor(Date.now() / 1000 / 30);
-      
+
       // Look checking range [-4, 4] to account for clock time drifts
       for (let drift = -4; drift <= 4; drift++) {
         const timeStep = currentTimeStep + drift;
@@ -256,16 +271,16 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           msg[i] = temp & 0xff;
           temp = Math.floor(temp / 256);
         }
-        
+
         const hmac = hmacSha1(keyBytes, msg);
-        
+
         const offset = hmac[19] & 0xf;
-        const codeBin = 
+        const codeBin =
           ((hmac[offset] & 0x7f) << 24) |
           ((hmac[offset + 1] & 0xff) << 16) |
           ((hmac[offset + 2] & 0xff) << 8) |
           (hmac[offset + 3] & 0xff);
-        
+
         const calculatedOtp = (codeBin % 1000000).toString().padStart(6, '0');
         if (calculatedOtp === inputOtp) {
           return true;
@@ -312,17 +327,65 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'Ground_Xero COGNITIVE CORE BYPASS CONSOLE',
           '==========================================',
           'help / ?           - List active terminal operations.',
-          'clear              - Erase local console logs buffer cache.',
+          'clear / cls        - Erase local console logs buffer cache.',
+          'cmatrix            - Enter full screen matrix rain visualizer mode.',
           'ssh user@zero      - SSH tunnel into the zero server node.',
-          'exit / blue        - Return to Morpheus, escape reality (take Blue Pill).',
+          'exit / ctrl+c / blue        - Return to Morpheus, escape reality (take Blue Pill).',
           ' '
         ]);
         return;
       }
 
       // Clear logs
-      if (base === 'clear') {
+      if (base === 'clear' || base === 'cls') {
         setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
+        return;
+      }
+
+      // Cmatrix command
+      if (base === 'cmatrix') {
+        let showHelp = false;
+        let color = '#00ff00';
+
+        for (let i = 1; i < parts.length; i++) {
+          const flag = parts[i].toLowerCase();
+
+          if (flag === '-h' || flag === '-help') {
+            showHelp = true;
+          }
+
+          if ((flag === '-c' || flag === '-color') && parts[i + 1]) {
+            // Support quotes around hex codes
+            color = parts[i + 1].replace(/['"]/g, '');
+            // Simple hex validation
+            if (!/^#([0-9A-F]{3}){1,2}$/i.test(color)) {
+              color = '#00ff00';
+            }
+            i++; // skip next since it was consumed as color argument
+          }
+        }
+
+        if (showHelp) {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: cmatrix [OPTIONS]',
+            ' ',
+            'A full-screen terminal visualizer simulating the Matrix digital rain.',
+            ' ',
+            'Options:',
+            '  -h, -help                   Show this help message and exit.',
+            '  -c, -color <HEX_CODE>       Set the rain color using a valid hex code (e.g., #ff0033).',
+            '                              Defaults to #00ff00 (green).',
+            ' ',
+            'Navigation:',
+            '  Press "q" anytime while visualizer is active to exit.',
+            ' '
+          ]);
+          return;
+        }
+
+        setCmatrixConfig({ active: true, color });
         return;
       }
 
@@ -702,17 +765,17 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
         const userObj = await firebaseDb.getUser(targetUser);
         if (userObj) {
-          const updatedUser = { 
-            ...userObj, 
-            is2faEnabled: false, 
-            twoFactorSecret: '' 
+          const updatedUser = {
+            ...userObj,
+            is2faEnabled: false,
+            twoFactorSecret: ''
           };
           await firebaseDb.saveUser(updatedUser);
-          
+
           if (targetUser.toLowerCase() === sshSessionUser.username.toLowerCase()) {
             setSshSessionUser(updatedUser);
           }
-          
+
           setTerminalLogs(prev => [...prev, `[SUCCESS] 2FA configuration reset successfully for user '${targetUser}'.`]);
         } else {
           setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
@@ -911,6 +974,25 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleExecuteCliCommand();
+                    } else if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
+                      e.preventDefault();
+                      const logPrefix = sshState === 'logged_in'
+                        ? `${sshSessionUser?.username}@zero:~$`
+                        : (sshState === 'none' ? 'root/ $' : `[SSH INPUT]`);
+                      const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
+                      const displayCmd = isSensitive ? '•'.repeat(Math.min(cliInput.length, 12)) : cliInput;
+
+                      setTerminalLogs(prev => [
+                        ...prev,
+                        `${logPrefix} ${displayCmd}^C`,
+                        ' ',
+                        '>> DETACHING NEURAL COUPLING SYSTEM...',
+                        '>> RE-INJECTING COGNITIVE COMFORT BUFFER...'
+                      ]);
+                      setCliInput('');
+                      setTimeout(() => {
+                        onExit?.();
+                      }, 700);
                     }
                   }}
                   placeholder=""
@@ -1143,6 +1225,16 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           <Settings className="w-5 h-5" />
         </button>
       </nav>
+
+      {/* Cmatrix Fullscreen Visualizer Overlay */}
+      {cmatrixConfig.active && (
+        <div className="fixed inset-0 w-screen h-screen z-[100] bg-black cursor-none">
+          <DigitalRain color={cmatrixConfig.color} density={1.5} opacity={1} />
+          <div className="absolute top-4 left-4 text-white font-mono text-xs opacity-50 pointer-events-none">
+            [ cmatrix active ] press 'q' to exit
+          </div>
+        </div>
+      )}
 
     </div>
   );
