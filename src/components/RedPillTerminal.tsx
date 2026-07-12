@@ -293,7 +293,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     <div className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative">
 
       {/* Background Matrix Rain Cascade */}
-      <DigitalRain color="#00ff41" density={rainDensity} />
+      <DigitalRain color="#ff0033" density={rainDensity} />
 
       {/* TopAppBar (Desktop Navigation) */}
       <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 bg-black border-b border-[#5f3e3d] flat no shadows md:flex hidden">
@@ -339,7 +339,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         {currentTab === 'terminal' && (
           <div className="flex-1 flex flex-col justify-between h-full">
             {/* Scrollable logs */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text text-[#00e639] leading-relaxed max-h-[calc(100vh-220px)] mt-4">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text text-[#ff0033] leading-relaxed max-h-[calc(100vh-220px)] mt-4">
               {terminalLogs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap font-mono font-medium tracking-wide">
                   {log}
@@ -351,7 +351,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             {/* Input prompt at the very bottom */}
             <div className="flex items-center font-mono text-sm mt-auto border-t border-[#5f3e3d]/40 pt-4 mb-2 md:mb-0">
               <span className="text-[#e2e2e2] mr-2">root/</span>
-              <span className="text-[#00e639] animate-pulse mr-2">$</span>
+              <span className="text-[#ff0033] animate-pulse mr-2">$</span>
               <input
                 ref={cliInputRef}
                 aria-label="Terminal Input"
@@ -365,7 +365,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   }
                 }}
                 placeholder="Type 'help' for options..."
-                className="bg-transparent border-none outline-none text-[#00e639] font-mono text-sm w-full focus:ring-0 p-0 m-0 caret-current placeholder-[#00e639]/30"
+                className="bg-transparent border-none outline-none text-[#ff0033] font-mono text-sm w-full focus:ring-0 p-0 m-0 caret-current placeholder-[#ff0033]/30"
               />
             </div>
           </div>
@@ -381,7 +381,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
               {/* Diagnostic table */}
               <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
                 <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-[#00e639]" />
+                  <Activity className="w-4 h-4 text-[#ff0033]" />
                   MAINFRAME LIVE DIAGNOSTICS
                 </h3>
                 <div className="space-y-4 font-mono text-xs">
@@ -390,7 +390,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                       <span className="text-[#e9bcb9] uppercase">{diag.name}</span>
                       <div className="text-right">
                         <span className="text-white font-bold block">{diag.value}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active' ? 'text-[#00e639]' : diag.status === 'warning' ? 'text-yellow-500' : 'text-red-500'
+                        <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active' ? 'text-[#ff0033]' : diag.status === 'warning' ? 'text-yellow-500' : 'text-red-500'
                           }`}>
                           {diag.status}
                         </span>
@@ -408,8 +408,8 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('firewall')}
                   className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'firewall'
-                      ? 'border-[#00e639] bg-[#00e639]/10 text-[#00e639]'
-                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#00e639] hover:text-[#00e639]'
+                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
                     }`}
                 >
                   <span>OVERRIDE AGENT FIREWALL</span>
@@ -420,8 +420,8 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('memory')}
                   className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'memory'
-                      ? 'border-[#00e639] bg-[#00e639]/10 text-[#00e639]'
-                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#00e639] hover:text-[#00e639]'
+                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
                     }`}
                 >
                   <span>PURGE SUBSYSTEM BUFFER</span>
@@ -430,12 +430,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
                 {activeHack !== 'none' && (
                   <div className="space-y-2 border border-[#5f3e3d] p-3 bg-black/60 font-mono text-xs">
-                    <div className="flex justify-between text-[#00e639] font-bold">
+                    <div className="flex justify-between text-[#ff0033] font-bold">
                       <span>RUNNING SYSTEM GLITCH: {activeHack.toUpperCase()}</span>
                       <span>{hackProgress}%</span>
                     </div>
                     <div className="w-full bg-neutral-900 h-2 border border-[#5f3e3d]">
-                      <div className="bg-[#00e639] h-full transition-all duration-150" style={{ width: `${hackProgress}%` }} />
+                      <div className="bg-[#ff0033] h-full transition-all duration-150" style={{ width: `${hackProgress}%` }} />
                     </div>
                     <div className="text-[10px] text-[#e9bcb9] h-20 overflow-y-auto space-y-0.5 pt-1 mt-1 border-t border-[#5f3e3d]/20">
                       {hackLogs.map((log, index) => <div key={index}>{log}</div>)}
@@ -450,7 +450,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             <div className="lg:col-span-7">
               <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
                 <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
-                  <TermIcon className="w-4 h-4 text-[#00e639]" />
+                  <TermIcon className="w-4 h-4 text-[#ff0033]" />
                   TEXT PACKET DECRYPTOR
                 </h3>
 
@@ -460,11 +460,11 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                     value={decryptInput}
                     onChange={(e) => setDecryptInput(e.target.value)}
                     placeholder="Enter Matrix text to scramble decrypt..."
-                    className="flex-1 bg-black border border-[#5f3e3d] text-white font-mono text-xs p-3 focus:border-[#00e639] outline-none"
+                    className="flex-1 bg-black border border-[#5f3e3d] text-white font-mono text-xs p-3 focus:border-[#ff0033] outline-none"
                   />
                   <button
                     type="submit"
-                    className="bg-black hover:bg-[#00e639]/10 border border-[#00e639] text-[#00e639] font-sans text-xs uppercase tracking-wider font-bold px-5 cursor-pointer flex items-center gap-1"
+                    className="bg-black hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-wider font-bold px-5 cursor-pointer flex items-center gap-1"
                   >
                     <Shield className="w-4 h-4" />
                     <span>DECRYPT</span>
@@ -487,7 +487,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         <div className="text-right">
                           <span className="text-[10px] text-[#e9bcb9] block">{log.timestamp}</span>
                           {log.status === 'completed' ? (
-                            <span className="text-[#00e639] font-bold text-[10px] uppercase flex items-center gap-1 justify-end mt-1">
+                            <span className="text-[#ff0033] font-bold text-[10px] uppercase flex items-center gap-1 justify-end mt-1">
                               <Check className="w-3.5 h-3.5" />
                               <span>SECURE</span>
                             </span>
@@ -512,7 +512,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         {currentTab === 'rain' && (
           <div className="flex-1 flex flex-col items-center justify-center text-center mt-4 h-[calc(100vh-220px)] relative">
             <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-              <DigitalRain color="#00ff41" density={rainDensity * 1.5} />
+              <DigitalRain color="#ff0033" density={rainDensity * 1.5} />
             </div>
 
             <div className="bg-black/90 border border-[#5f3e3d] p-6 max-w-md w-full relative z-10 space-y-4">
@@ -521,7 +521,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
               </h3>
               <p className="font-mono text-xs text-[#e9bcb9] leading-relaxed">
                 You are witnessing the sub-code of the simulation flowing in real-time.
-                Adjust stream density parameters to alter transmission clarity.
+                Adjust stream transmission density parameters to alter transmission clarity.
               </p>
 
               <div className="space-y-2 pt-2 text-left">
@@ -535,13 +535,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   step="0.2"
                   value={rainDensity}
                   onChange={(e) => setRainDensity(parseFloat(e.target.value))}
-                  className="w-full accent-[#00e639] bg-neutral-900 border border-[#5f3e3d]"
+                  className="w-full accent-[#ff0033] bg-neutral-900 border border-[#5f3e3d]"
                 />
               </div>
 
               <button
                 onClick={() => setRainDensity(1.2)}
-                className="w-full bg-neutral-900 hover:bg-[#00e639]/10 border border-[#00e639] text-[#00e639] font-sans text-xs uppercase tracking-widest font-bold py-2.5 transition-all cursor-pointer"
+                className="w-full bg-neutral-900 hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-widest font-bold py-2.5 transition-all cursor-pointer"
               >
                 RE-ALIGN SECTOR RESOLUTION
               </button>
