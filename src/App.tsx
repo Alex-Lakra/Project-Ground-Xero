@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Terminal as TermIcon, Settings, RefreshCw, Layers } from 'lucide-react';
 import { PillChoice, SystemSettings } from './types';
 import MorpheusChoice from './components/MorpheusChoice';
@@ -9,22 +9,26 @@ import SettingsPanel from './components/SettingsPanel';
 import MatrixLoader from './components/MatrixLoader';
 
 export default function App() {
+  // ==========================================
+  // State Definitions
+  // ==========================================
+  
   // App initialization load screen state
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pill choice state ('none' for Choice, 'red' for Red Pill terminal, 'blue' for Blue Pill construct)
+  // Active pill choice ('none' for Morpheus Choice, 'red' for Red Pill terminal, 'blue' for Blue Pill construct)
   const [choice, setChoice] = useState<PillChoice>('none');
   
-  // Transition animation triggers
+  // Glitch transition state management
   const [isGlitching, setIsGlitching] = useState(false);
   const [activeScreen, setActiveScreen] = useState<PillChoice>('none');
   const [transitionChoice, setTransitionChoice] = useState<PillChoice>('none');
 
-  // Toggle Overlays
+  // Toggle state for floating overlay drawers
   const [showTerminal, setShowTerminal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // System Config Settings
+  // Main mainframe configuration settings
   const [settings, setSettings] = useState<SystemSettings>({
     scanlineOpacity: 0.15,
     terminalSpeed: 'normal',
@@ -32,12 +36,16 @@ export default function App() {
     retroFont: false,
   });
 
-  // Handle transition animations when pill choice is made
+  // ==========================================
+  // Transition Handlers
+  // ==========================================
+
+  // Triggers dynamic glitch transition and updates active screen
   const handleChoosePill = (selected: PillChoice) => {
     setTransitionChoice(selected);
     setIsGlitching(true);
     
-    // Simulate dramatic reality transition shift blip
+    // Simulate dramatic temporal shift delay (800ms)
     setTimeout(() => {
       setChoice(selected);
       setActiveScreen(selected);
@@ -45,9 +53,12 @@ export default function App() {
     }, 800);
   };
 
+  // Re-routes back to the Morpheus Choice screen with a glitch transition
   const handleResetToChoice = () => {
     setTransitionChoice('none');
     setIsGlitching(true);
+    
+    // Simulate cognitive buffer reset blip delay (600ms)
     setTimeout(() => {
       setChoice('none');
       setActiveScreen('none');
@@ -56,11 +67,15 @@ export default function App() {
     }, 600);
   };
 
-  // Commands execution map for developer terminal
+  // ==========================================
+  // Console Command Map
+  // ==========================================
+  
   const handleExecuteCommand = (cmd: string): string => {
     const parts = cmd.trim().split(' ');
     const base = parts[0].toLowerCase();
 
+    // Command: /help
     if (base === '/help') {
       return `Available mainframe operations:
   /help - Display this command map.
@@ -70,11 +85,13 @@ export default function App() {
   /diagnose - Perform diagnostics scan on active node state.`;
     }
 
+    // Command: /choice
     if (base === '/choice') {
       handleResetToChoice();
       return '[SUCCESS] Cognitive state terminated. Re-initializing choice...';
     }
 
+    // Command: /pill
     if (base === '/pill') {
       const p = parts[1]?.toLowerCase();
       if (p === 'red' || p === 'blue') {
@@ -84,12 +101,14 @@ export default function App() {
       return '[ERROR] Invalid argument. Syntax: /pill <red|blue>';
     }
 
+    // Command: /decrypt
     if (base === '/decrypt') {
       const text = parts.slice(1).join(' ');
       if (!text) return '[ERROR] Please provide text to decrypt. Syntax: /decrypt <message>';
       return `[SUCCESS] Decryption translation complete: "${text.toUpperCase()}"`;
     }
 
+    // Command: /diagnose
     if (base === '/diagnose') {
       return `[DIAGNOSTICS READOUT]
   ZION MAIN TRANSMITTER: ${choice !== 'none' ? 'CONNECTED' : 'DISCONNECTED'}
@@ -101,13 +120,16 @@ export default function App() {
     return `[ERROR] Unknown command: "${cmd}". Type /help to see available operations.`;
   };
 
+  // ==========================================
+  // Main App Render
+  // ==========================================
   return (
     <div 
       className={`min-h-screen bg-[#121414] text-[#e2e2e2] transition-all relative overflow-x-hidden ${
         settings.retroFont ? 'font-mono' : 'font-sans'
       }`}
     >
-      {/* CRT Scanline Simulation Layer */}
+      {/* CRT Scanline simulation layer overlay */}
       {settings.scanlineOpacity > 0 && (
         <div 
           className="scanline-overlay" 
@@ -143,12 +165,12 @@ export default function App() {
         </div>
       )}
 
-      {/* Header element conforming precisely to layout style */}
+      {/* Main Top Header Navigation (Hidden in red fullscreen CLI tab view) */}
       {activeScreen !== 'red' && (
         <header className="border-b border-outline-variant bg-[#0c0f0f] relative z-30">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             
-            {/* Logo Title - Heavy brutalist type */}
+            {/* Main title logo trigger */}
             <div 
               onClick={handleResetToChoice}
               className="font-anton text-3xl md:text-4xl text-on-surface-variant cursor-pointer select-none tracking-wider uppercase hover:text-white transition-colors"
@@ -156,10 +178,10 @@ export default function App() {
               Ground_Xero
             </div>
 
-            {/* Core system state chips and action controls */}
+            {/* Config & quick-state options */}
             <div className="flex items-center space-x-4">
               
-              {/* Reality quick-indicators */}
+              {/* Pill status chip quick link */}
               {activeScreen !== 'none' && (
                 <button
                   onClick={handleResetToChoice}
@@ -174,7 +196,7 @@ export default function App() {
                 </button>
               )}
 
-              {/* Quick Developer Console toggle */}
+              {/* Developer terminal bypass overlay drawer toggle */}
               <button
                 onClick={() => setShowTerminal(!showTerminal)}
                 className={`p-2.5 border cursor-pointer transition-all ${
@@ -187,7 +209,7 @@ export default function App() {
                 <TermIcon className="w-5 h-5" />
               </button>
 
-              {/* Config System Settings */}
+              {/* System configuration console toggler drawer */}
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className={`p-2.5 border cursor-pointer transition-all ${
@@ -205,7 +227,7 @@ export default function App() {
         </header>
       )}
 
-      {/* Main active screen component section */}
+      {/* Main Container Router pages switch */}
       <main className={`${activeScreen === 'red' ? '' : 'relative min-h-[calc(100vh-80px)]'} crt-screen`}>
         {activeScreen === 'none' && (
           <MorpheusChoice onChoose={handleChoosePill} />
@@ -221,7 +243,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Interactive Floating Overlays */}
+      {/* Floating Overlay Drawers */}
       {showTerminal && (
         <TerminalOverlay
           onClose={() => setShowTerminal(false)}
@@ -238,6 +260,7 @@ export default function App() {
         />
       )}
 
+      {/* Initial bootloader screen overlay */}
       {isLoading && (
         <MatrixLoader onFinished={() => setIsLoading(false)} />
       )}

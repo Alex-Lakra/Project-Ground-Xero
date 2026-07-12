@@ -15,7 +15,7 @@ export default function DigitalRain({ color = '#00ff41', density = 1 }: DigitalR
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas dimensions with ResizeObserver to correctly handle container size changes
+    // Set canvas dimensions dynamically using a ResizeObserver to observe parent node changes
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         canvas.width = entry.contentRect.width || window.innerWidth;
@@ -31,24 +31,25 @@ export default function DigitalRain({ color = '#00ff41', density = 1 }: DigitalR
       canvas.height = window.innerHeight;
     }
 
-    // Characters list (Katakana + standard numbers/letters)
+    // Character set of Matrix code: Katakana symbols + standard numbers & capital alphabet characters
     const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const alphabet = katakana.split('');
 
     const fontSize = 14;
     let columns = Math.floor(canvas.width / fontSize);
 
-    // Rain drop states
+    // Track the vertical position of falling rain columns
     let rainDrops: number[] = [];
     
     const initRain = () => {
       columns = Math.floor(canvas.width / fontSize);
-      rainDrops = Array(columns).fill(1).map(() => Math.floor(Math.random() * -100)); // stagger start positions
+      // Stagger start positions vertically (random negative starting index)
+      rainDrops = Array(columns).fill(1).map(() => Math.floor(Math.random() * -100)); 
     };
 
     initRain();
 
-    // Redraw on resize
+    // Fallback event listener for general window resizing (if parent observer is delayed)
     const handleWindowResize = () => {
       if (!parent) {
         canvas.width = window.innerWidth;
@@ -58,22 +59,23 @@ export default function DigitalRain({ color = '#00ff41', density = 1 }: DigitalR
     };
     window.addEventListener('resize', handleWindowResize);
 
+    // Main Draw loop executed on interval ticks
     const draw = () => {
-      // Create a fading trail
+      // 1. Create a transparent black overlay to fade out past characters gradually
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // 2. Set code font styles
       ctx.fillStyle = color;
       ctx.font = `bold ${fontSize}px monospace`;
 
+      // 3. Draw characters in each column drop
       for (let i = 0; i < rainDrops.length; i++) {
-        // Pick a random character
         const text = alphabet[Math.floor(Math.random() * alphabet.length)];
         const x = i * fontSize;
         const y = rainDrops[i] * fontSize;
 
-        // Draw character
-        // Highlight head of rain drop with pure white
+        // Highlight the lead character with pure white for realistic glowing trails
         if (rainDrops[i] > 0 && Math.random() > 0.95) {
           ctx.fillStyle = '#ffffff';
         } else {
@@ -82,18 +84,20 @@ export default function DigitalRain({ color = '#00ff41', density = 1 }: DigitalR
 
         ctx.fillText(text, x, y);
 
-        // Reset drop to top if it reaches bottom
+        // Reset drop position to top with a slight delay once it rolls past the viewport bottom
         if (y > canvas.height && Math.random() > 0.975) {
           rainDrops[i] = 0;
         }
 
-        // Increment drop position
+        // Advance character index downwards by the specified speed density
         rainDrops[i] += density;
       }
     };
 
+    // Run draw ticks at ~30 FPS (33ms interval)
     const intervalId = setInterval(draw, 33);
 
+    // Cleanup resources
     return () => {
       clearInterval(intervalId);
       window.removeEventListener('resize', handleWindowResize);

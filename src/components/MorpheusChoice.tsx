@@ -7,11 +7,20 @@ interface MorpheusChoiceProps {
 }
 
 export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
+  // ==========================================
+  // State Definitions
+  // ==========================================
+  
+  // Tracks which pill is currently hovered ('none', 'red', or 'blue') for overlays
   const [hoveredPill, setHoveredPill] = useState<'none' | 'red' | 'blue'>('none');
 
+  // ==========================================
+  // Layout Rendering
+  // ==========================================
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8 md:py-12 select-none relative z-10">
-      {/* Narrative Intro */}
+      
+      {/* 1. Narrative Intro */}
       <div className="max-w-2xl text-center mb-8 space-y-3">
         <p className="font-sans text-xs tracking-[0.2em] text-outline uppercase font-semibold">
           SYSTEM CONSTRUCT: STANDBY_MODE
@@ -25,16 +34,16 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
         </p>
       </div>
 
-      {/* Main Morpheus Choice Card */}
+      {/* 2. Main Morpheus Choice Image Card */}
       <div className="relative max-w-3xl w-full bg-[#0c0f0f] border border-outline-variant p-2 md:p-4 mb-8 group overflow-hidden">
-        {/* Neon decorative scanlines & edges inside card */}
+        {/* Neon decorative card edge lines */}
         <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-primary" />
         <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-primary" />
         <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-primary" />
         <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-primary" />
 
         <div className="relative aspect-square w-full overflow-hidden bg-black">
-          {/* Main Hotlink Image of Morpheus */}
+          {/* Morpheus Artwork */}
           <img
             src={morpheusSvg}
             alt="Morpheus Red Pill Blue Pill"
@@ -54,7 +63,10 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
             aria-label="Choose Red Pill"
           >
             {/* Pulsing indicator */}
-            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-red/20 animate-ping duration-1000 ${hoveredPill === 'red' ? 'opacity-100' : 'opacity-40'}`} />
+            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-red/20 animate-ping duration-1000 ${
+              hoveredPill === 'red' ? 'opacity-100' : 'opacity-40'
+            }`} />
+            
             {/* Pill capsule representation */}
             <div 
               className={`w-7 h-3.5 bg-matrix-red rounded-full -rotate-[25deg] transition-all duration-300 shadow-[0_0_15px_#ff0033] ${
@@ -73,7 +85,10 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
             aria-label="Choose Blue Pill"
           >
             {/* Pulsing indicator */}
-            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-blue/20 animate-ping duration-1000 ${hoveredPill === 'blue' ? 'opacity-100' : 'opacity-40'}`} />
+            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-blue/20 animate-ping duration-1000 ${
+              hoveredPill === 'blue' ? 'opacity-100' : 'opacity-40'
+            }`} />
+            
             {/* Pill capsule representation */}
             <div 
               className={`w-7 h-3.5 bg-matrix-blue rounded-full rotate-[45deg] transition-all duration-300 shadow-[0_0_15px_#0070ff] ${
@@ -99,7 +114,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
         </div>
       </div>
 
-      {/* Brutalist Button Selection Interface */}
+      {/* 3. Brutalist Button Selection Interface (Alternative to click hotspots) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl w-full mt-2">
         {/* Red Pill Button */}
         <button
@@ -143,6 +158,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
           </span>
         </button>
       </div>
+
     </div>
   );
 }

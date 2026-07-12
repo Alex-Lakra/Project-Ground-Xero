@@ -15,33 +15,48 @@ export default function SettingsPanel({
   onClose,
   onResetToChoice,
 }: SettingsPanelProps) {
+  
+  // ==========================================
+  // Logic Event Handlers
+  // ==========================================
+  
+  // Enforces/Disables JetBrains Mono font overlay across the DOM
   const handleToggleRetroFont = () => {
     onChangeSettings({ ...settings, retroFont: !settings.retroFont });
   };
 
+  // Updates overlay opacity of the CRT scanline emulation overlay
   const handleChangeScanline = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChangeSettings({ ...settings, scanlineOpacity: parseFloat(e.target.value) });
   };
 
+  // Adjusts rendering frequency of digital rain fall streams
   const handleChangeDensity = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChangeSettings({ ...settings, digitalRainDensity: parseFloat(e.target.value) });
   };
 
+  // Alters the general typing animation speed of the system boot outputs
   const handleChangeSpeed = (speed: 'fast' | 'normal' | 'slow') => {
     onChangeSettings({ ...settings, terminalSpeed: speed });
   };
 
+  // ==========================================
+  // Layout Rendering
+  // ==========================================
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex justify-end">
-      {/* Drawer Container */}
+      
+      {/* Drawer Container Panel */}
       <div className="w-full max-w-md bg-[#0a0c0c] border-l border-outline-variant h-full p-6 flex flex-col justify-between relative shadow-[0_0_30px_rgba(0,0,0,0.8)]">
         
-        {/* Top corner accents */}
+        {/* Neon corner brackets */}
         <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-primary" />
         <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-primary" />
 
-        {/* Header */}
+        {/* Panel Content Scroll Container */}
         <div className="space-y-4">
+          
+          {/* Header section with closing control */}
           <div className="flex items-center justify-between border-b border-outline-variant pb-4">
             <div className="flex items-center space-x-2">
               <Cpu className="w-5 h-5 text-primary" />
@@ -49,16 +64,16 @@ export default function SettingsPanel({
             </div>
             <button
               onClick={onClose}
-              className="p-1 hover:text-white border border-transparent hover:border-outline-variant text-on-surface-variant cursor-pointer"
+              className="p-1 hover:text-white border border-transparent hover:border-outline-variant text-on-surface-variant cursor-pointer rounded-xs"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Controls List */}
+          {/* Controls list */}
           <div className="space-y-6 pt-4">
             
-            {/* Retro Monospace Font Toggle */}
+            {/* Control 1: Retro Font Toggle Switch */}
             <div className="flex items-center justify-between">
               <div>
                 <label className="block font-sans text-xs tracking-wider uppercase text-white font-bold">
@@ -68,6 +83,7 @@ export default function SettingsPanel({
                   Overrides all interface typography to JetBrains Mono.
                 </span>
               </div>
+              
               <button
                 onClick={handleToggleRetroFont}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer transition-colors duration-200 ease-in-out border border-outline-variant ${
@@ -82,7 +98,7 @@ export default function SettingsPanel({
               </button>
             </div>
 
-            {/* Scanline Opacity Slider */}
+            {/* Control 2: CRT Scanline Opacity Slider */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="font-sans text-xs tracking-wider uppercase text-white font-bold">
@@ -106,7 +122,7 @@ export default function SettingsPanel({
               </span>
             </div>
 
-            {/* Code Rain Density */}
+            {/* Control 3: Code Rain Density Slider */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="font-sans text-xs tracking-wider uppercase text-white font-bold">
@@ -130,7 +146,7 @@ export default function SettingsPanel({
               </span>
             </div>
 
-            {/* Terminal Speed */}
+            {/* Control 4: Terminal Boot text print Speed grid */}
             <div className="space-y-3">
               <label className="block font-sans text-xs tracking-wider uppercase text-white font-bold">
                 DIAGNOSTIC TRANSMISSION SPEED
@@ -140,7 +156,7 @@ export default function SettingsPanel({
                   <button
                     key={speed}
                     onClick={() => handleChangeSpeed(speed)}
-                    className={`font-mono text-xs py-2 border uppercase cursor-pointer ${
+                    className={`font-mono text-xs py-2 border uppercase cursor-pointer transition-colors duration-150 ${
                       settings.terminalSpeed === speed
                         ? 'border-primary bg-primary/15 text-white font-bold'
                         : 'border-outline-variant text-on-surface-variant hover:text-white'
@@ -152,7 +168,7 @@ export default function SettingsPanel({
               </div>
             </div>
 
-            {/* System Reset Option */}
+            {/* Control 5: Re-initialize / Reset mainframe button */}
             <div className="pt-4 border-t border-outline-variant space-y-3">
               <div className="flex items-center space-x-2 text-white">
                 <Layers className="w-4 h-4 text-primary" />
@@ -173,7 +189,7 @@ export default function SettingsPanel({
           </div>
         </div>
 
-        {/* Footer info block */}
+        {/* Footer Security Sign-off Info Block */}
         <div className="border-t border-outline-variant pt-4 space-y-2">
           <div className="flex items-center space-x-2 font-mono text-[10px] text-on-surface-variant">
             <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />

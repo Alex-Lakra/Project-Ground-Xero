@@ -6,7 +6,7 @@ interface MatrixLoaderProps {
 }
 
 const BOOT_LOGS = [
-  { text: "INITIALIZING GROUND_XERO COGNITIVE TERMINAL...", minProgress: 0 },
+  { text: "INITIALIZING GROUND_XERO_OS COGNITIVE TERMINAL...", minProgress: 0 },
   { text: "ESTABLISHING SECURE GATEWAY TUNNEL VIA ZION NODE-7...", minProgress: 15 },
   { text: "BYPASSING SENTINEL FIREWALL INTRUSION DETECTORS...", minProgress: 35 },
   { text: "ALLOCATING NEURAL MEMORY SUBSPACES [OK]...", minProgress: 55 },
@@ -69,9 +69,8 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
 
   return (
     <div
-      className={`fixed inset-0 bg-[#020303] z-[9999] flex flex-col items-center justify-center font-mono text-on-surface-variant select-none transition-opacity duration-500 ease-in-out ${
-        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
+      className={`fixed inset-0 bg-[#020303] z-[9999] flex flex-col items-center justify-center font-mono text-on-surface-variant select-none transition-opacity duration-500 ease-in-out ${isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
     >
       {/* Immersive Background Rain */}
       <div className="absolute inset-0 z-0">
@@ -108,9 +107,8 @@ export default function MatrixLoader({ onFinished }: MatrixLoaderProps) {
             return (
               <div
                 key={index}
-                className={`flex items-start ${
-                  isLast ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-on-surface-variant'
-                }`}
+                className={`flex items-start ${isLast ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-on-surface-variant'
+                  }`}
               >
                 <span className="mr-2.5 select-none">{isLast && progress < 100 ? '►' : '✔'}</span>
                 <span>{log}</span>

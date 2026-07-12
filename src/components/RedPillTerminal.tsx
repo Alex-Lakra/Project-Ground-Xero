@@ -9,24 +9,28 @@ interface RedPillTerminalProps {
 }
 
 export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTerminalProps) {
+  // ==========================================
+  // State Definitions
+  // ==========================================
+  
   // Navigation State
   const [currentTab, setCurrentTab] = useState<'terminal' | 'decryptor' | 'rain'>('terminal');
 
-  // Input States
+  // Input & Command States
   const [cliInput, setCliInput] = useState('');
   const [decryptInput, setDecryptInput] = useState('');
 
-  // Active status/progress states
+  // Hacking Simulation State
   const [activeHack, setActiveHack] = useState<'none' | 'firewall' | 'memory' | 'sentinel'>('none');
   const [hackProgress, setHackProgress] = useState(0);
   const [hackLogs, setHackLogs] = useState<string[]>([]);
   const [rainDensity, setRainDensity] = useState(1.2);
 
-  // Focus and Scroll Refs
+  // References for UI focus & scroll alignment
   const cliInputRef = useRef<HTMLInputElement | null>(null);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Terminal Stream logs
+  // Terminal history logs
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     '█   █  █████  ████    ███',
     ' █ █   █      █   █  █   █ ',
@@ -43,7 +47,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     ' '
   ]);
 
-  // Decryption log lists
+  // Scramble logs for the decrypter utility
   const [decryptionLogs, setDecryptionLogs] = useState<DecryptionLog[]>([
     {
       id: 'dec1',
@@ -55,7 +59,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }
   ]);
 
-  // Core Diagnostics list
+  // Core Diagnostics readout metrics
   const diagnostics: DiagnosticsItem[] = [
     { name: 'ZION CORE MAIN LINK', status: 'active', value: 'DECRYPTED_LINK_ALPHA' },
     { name: 'AGENT TRACE RADIUS', status: 'warning', value: '4.2 KM // CLOSING_IN' },
@@ -63,14 +67,18 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     { name: 'SUBCONSCIOUS COUPLER', status: 'active', value: 'RED_PILL_ALIGNED' },
   ];
 
-  // Auto-Scroll terminal logs
+  // ==========================================
+  // Hooks & Effects
+  // ==========================================
+
+  // Automatically scroll down when terminal logs buffer updates
   useEffect(() => {
     if (currentTab === 'terminal') {
       terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [terminalLogs, currentTab]);
 
-  // Click anywhere to focus terminal input
+  // Auto-focus terminal command input when clicking anywhere on the screen
   useEffect(() => {
     const handleGlobalClick = () => {
       if (currentTab === 'terminal') {
@@ -81,7 +89,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     return () => document.removeEventListener('click', handleGlobalClick);
   }, [currentTab]);
 
-  // CLI execute command handler
+  // ==========================================
+  // CLI Command Logic
+  // ==========================================
+  
   const handleExecuteCliCommand = async () => {
     const cmd = cliInput.trim();
     if (!cmd) return;
@@ -92,7 +103,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     const parts = cmd.split(' ');
     const base = parts[0].toLowerCase();
 
-    // 1. HELP
+    // 1. Command: help
     if (base === 'help' || base === '?') {
       setTerminalLogs(prev => [
         ...prev,
@@ -111,13 +122,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // 2. CLEAR
+    // 2. Command: clear
     if (base === 'clear') {
       setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
       return;
     }
 
-    // 3. EXIT / BLUE
+    // 3. Command: exit / blue
     if (base === 'exit' || base === 'blue') {
       setTerminalLogs(prev => [...prev, ' ', '>> DETACHING NEURAL COUPLING SYSTEM...', '>> RE-INJECTING COGNITIVE COMFORT BUFFER...']);
       setTimeout(() => {
@@ -126,7 +137,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // 4. DIAGNOSE
+    // 4. Command: diagnose
     if (base === 'diagnose') {
       setTerminalLogs(prev => [
         ...prev,
@@ -144,7 +155,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // 5. BYPASS / HACK
+    // 5. Command: bypass / hack
     if (base === 'bypass' || base === 'hack') {
       setTerminalLogs(prev => [...prev, ' ', '>> BOOTSTRAPPING GLITCH BYPASS CODES...']);
       const logs = [
@@ -162,7 +173,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // 6. DECRYPT
+    // 6. Command: decrypt
     if (base === 'decrypt') {
       const text = parts.slice(1).join(' ');
       if (!text) {
@@ -176,18 +187,21 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // 7. RAIN
+    // 7. Command: rain
     if (base === 'rain') {
       setTerminalLogs(prev => [...prev, '>> ADJUSTING AMBIENT WATERFALL CASCADE DENSITY...', ' ']);
       setRainDensity(prev => (prev >= 2.0 ? 0.5 : prev + 0.5));
       return;
     }
 
-    // 8. Unknown command fallback
+    // 8. Command: fallback
     setTerminalLogs(prev => [...prev, `command not found: "${cmd}"`]);
   };
 
-  // Diagnostics Tab - Run simulated hack operations
+  // ==========================================
+  // Diagnostics / Hacking Simulation
+  // ==========================================
+  
   const runHack = (type: 'firewall' | 'memory' | 'sentinel') => {
     if (activeHack !== 'none') return;
     setActiveHack(type);
@@ -237,7 +251,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }, 120);
   };
 
-  // Text Decryption tool implementation
+  // ==========================================
+  // Text Decryption Panel Logic
+  // ==========================================
+  
   const handleDecryptText = (e: React.FormEvent) => {
     e.preventDefault();
     if (!decryptInput.trim()) return;
@@ -289,56 +306,73 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }, 100);
   };
 
+  // ==========================================
+  // JSX Layout Rendering
+  // ==========================================
+
   return (
     <div className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative">
 
       {/* Background Matrix Rain Cascade */}
       <DigitalRain color="#ff0033" density={rainDensity} />
 
-      {/* TopAppBar (Desktop Navigation) */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 bg-black border-b border-[#5f3e3d] flat no shadows md:flex hidden">
+      {/* Top Header App Bar (Desktop Navigation) */}
+      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 bg-black border-b border-[#5f3e3d] md:flex hidden">
         <div className="font-anton text-4xl text-[#ffb3af] tracking-tighter select-none">
-            Ground_Xero
+          Ground_Xero
         </div>
         <div className="flex gap-4 items-center">
+          {/* CLI Tab Button */}
           <button
             onClick={() => setCurrentTab('terminal')}
             title="Core CLI Shell"
-            className={`cursor-pointer instant state changes no-transition p-2 hover:bg-neutral-900 transition-colors ${currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
+              currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
           >
             <TermIcon className="w-5 h-5" />
           </button>
+          
+          {/* Diagnostics Tab Button */}
           <button
             onClick={() => setCurrentTab('decryptor')}
             title="Diagnostics & Tools"
-            className={`cursor-pointer instant state changes no-transition p-2 hover:bg-neutral-900 transition-colors ${currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
+              currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
           >
             <Brain className="w-5 h-5" />
           </button>
+          
+          {/* Immersive Rain Control Button */}
           <button
             onClick={() => setCurrentTab('rain')}
             title="Waterfall Screen"
-            className={`cursor-pointer instant state changes no-transition p-2 hover:bg-neutral-900 transition-colors ${currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
+              currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
           >
             <Eye className="w-5 h-5" />
           </button>
+
+          {/* Quick Settings Action */}
           <button
             onClick={onOpenSettings}
             title="System Settings"
-            className="text-[#e9bcb9] cursor-pointer hover:bg-neutral-900 p-2 transition-colors"
+            className="text-[#e9bcb9] cursor-pointer hover:bg-neutral-900 p-2 transition-colors rounded-xs"
           >
             <Settings className="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Main Viewport Container */}
       <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10">
 
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
           <div className="flex-1 flex flex-col justify-between h-full">
-            {/* Scrollable logs */}
+            {/* Scrollable logs list */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text text-[#ff0033] leading-relaxed max-h-[calc(100vh-220px)] mt-4">
               {terminalLogs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap font-mono font-medium tracking-wide">
@@ -348,7 +382,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
               <div ref={terminalEndRef} />
             </div>
 
-            {/* Input prompt at the very bottom */}
+            {/* Input Prompt Panel */}
             <div className="flex items-center font-mono text-sm mt-auto border-t border-[#5f3e3d]/40 pt-4 mb-2 md:mb-0">
               <span className="text-[#e2e2e2] mr-2">root/</span>
               <span className="text-[#ff0033] animate-pulse mr-2">$</span>
@@ -371,14 +405,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           </div>
         )}
 
-        {/* TAB 3: DECRYPTOR & DIAGNOSTICS */}
+        {/* TAB 2: DECRYPTOR & DIAGNOSTICS */}
         {currentTab === 'decryptor' && (
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4 max-w-6xl mx-auto w-full h-[calc(100vh-180px)] overflow-y-auto">
 
             {/* Diagnostics Column */}
             <div className="lg:col-span-5 space-y-6">
 
-              {/* Diagnostic table */}
+              {/* Diagnostic Parameters Table */}
               <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
                 <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
                   <Activity className="w-4 h-4 text-[#ff0033]" />
@@ -390,8 +424,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                       <span className="text-[#e9bcb9] uppercase">{diag.name}</span>
                       <div className="text-right">
                         <span className="text-white font-bold block">{diag.value}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active' ? 'text-[#ff0033]' : diag.status === 'warning' ? 'text-yellow-500' : 'text-red-500'
-                          }`}>
+                        <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                          diag.status === 'active' 
+                            ? 'text-[#ff0033]' 
+                            : diag.status === 'warning' 
+                              ? 'text-yellow-500' 
+                              : 'text-red-500'
+                        }`}>
                           {diag.status}
                         </span>
                       </div>
@@ -400,34 +439,39 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 </div>
               </div>
 
-              {/* Action tools */}
+              {/* Simulation Exploiter Tools */}
               <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-3">
                 <h3 className="font-anton text-lg tracking-wider text-white uppercase">MAINFRAME BYPASS EXPLOITS</h3>
 
+                {/* firewall hack */}
                 <button
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('firewall')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'firewall'
+                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${
+                    activeHack === 'firewall'
                       ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
                       : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                    }`}
+                  }`}
                 >
                   <span>OVERRIDE AGENT FIREWALL</span>
                   <Shield className="w-4 h-4" />
                 </button>
 
+                {/* memory hack */}
                 <button
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('memory')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'memory'
+                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${
+                    activeHack === 'memory'
                       ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
                       : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                    }`}
+                  }`}
                 >
                   <span>PURGE SUBSYSTEM BUFFER</span>
                   <TermIcon className="w-4 h-4" />
                 </button>
 
+                {/* Live Hack Logging feedback */}
                 {activeHack !== 'none' && (
                   <div className="space-y-2 border border-[#5f3e3d] p-3 bg-black/60 font-mono text-xs">
                     <div className="flex justify-between text-[#ff0033] font-bold">
@@ -446,7 +490,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
             </div>
 
-            {/* Decryptor Column */}
+            {/* Scrambled Text Decryptor Column */}
             <div className="lg:col-span-7">
               <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
                 <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
@@ -471,6 +515,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   </button>
                 </form>
 
+                {/* Decoded records stream */}
                 <div className="space-y-3 pt-2">
                   <h4 className="font-sans text-xs tracking-wider uppercase text-white font-bold">DECRYPTION RECORD STREAM</h4>
                   <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
@@ -508,7 +553,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           </div>
         )}
 
-        {/* TAB 4: IMMERSIVE RAIN VISUALIZER */}
+        {/* TAB 3: IMMERSIVE WATERFALL VISUALIZER */}
         {currentTab === 'rain' && (
           <div className="flex-1 flex flex-col items-center justify-center text-center mt-4 h-[calc(100vh-220px)] relative">
             <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
@@ -524,6 +569,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 Adjust stream transmission density parameters to alter transmission clarity.
               </p>
 
+              {/* Rain density range adjust */}
               <div className="space-y-2 pt-2 text-left">
                 <span className="font-mono text-xs text-white uppercase block">
                   Waterfall Density: {rainDensity.toFixed(1)}x
@@ -539,6 +585,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 />
               </div>
 
+              {/* Density reset trigger */}
               <button
                 onClick={() => setRainDensity(1.2)}
                 className="w-full bg-neutral-900 hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-widest font-bold py-2.5 transition-all cursor-pointer"
@@ -555,19 +602,25 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121414] border-t border-[#5f3e3d] flex justify-around py-3 z-50">
         <button
           onClick={() => setCurrentTab('decryptor')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+          className={`flex flex-col items-center gap-1 p-2 ${
+            currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+          }`}
         >
           <Brain className="w-5 h-5" />
         </button>
         <button
           onClick={() => setCurrentTab('rain')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+          className={`flex flex-col items-center gap-1 p-2 ${
+            currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+          }`}
         >
           <Eye className="w-5 h-5" />
         </button>
         <button
           onClick={() => setCurrentTab('terminal')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'}`}
+          className={`flex flex-col items-center gap-1 p-2 ${
+            currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+          }`}
         >
           <TermIcon className="w-5 h-5" />
         </button>

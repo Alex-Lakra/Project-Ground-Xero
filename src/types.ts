@@ -1,18 +1,26 @@
+// ==========================================
+// Application Core Types & Interfaces
+// ==========================================
+
+// Defines the chosen reality path ('none' = selector construct, 'red' = mainframe CLI, 'blue' = cozy construct)
 export type PillChoice = 'none' | 'red' | 'blue';
 
+// Message format for standard interactive chatbot channels
 export interface ChatMessage {
+  id: string;
   role: 'user' | 'model';
   text: string;
   timestamp: string;
-  id: string;
 }
 
+// Diagnostic readout rows for the mainframe bypass tools
 export interface DiagnosticsItem {
   name: string;
   status: 'active' | 'warning' | 'error' | 'pending';
   value: string;
 }
 
+// Cozy calendar tasks for the Blue Pill environment
 export interface ComfortableTask {
   id: string;
   text: string;
@@ -20,26 +28,29 @@ export interface ComfortableTask {
   time: string;
 }
 
+// Subconscious dream records stored in the cozy Citizen construct
 export interface DreamRecord {
   id: string;
   title: string;
   content: string;
   date: string;
-  pleasantness: number; // 1-5 scale
+  pleasantness: number; // 1-5 stars scale
 }
 
+// Scrambled logs for the text packet decryptor CLI utilities
 export interface DecryptionLog {
   id: string;
   original: string;
   decrypted: string;
-  progress: number; // 0-100
+  progress: number; // 0-100% scale
   timestamp: string;
   status: 'decrypting' | 'completed' | 'failed';
 }
 
+// Main custom configurations parameters governed by the settings panel
 export interface SystemSettings {
-  scanlineOpacity: number;
-  terminalSpeed: 'fast' | 'normal' | 'slow';
-  digitalRainDensity: number;
-  retroFont: boolean;
+  scanlineOpacity: number; // CRT raster opacity limit
+  terminalSpeed: 'fast' | 'normal' | 'slow'; // startup diagnostics speed
+  digitalRainDensity: number; // rain frequency multipliers
+  retroFont: boolean; // toggle JetBrains Mono monospace font overlay
 }
