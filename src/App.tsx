@@ -6,8 +6,12 @@ import RedPillTerminal from './components/RedPillTerminal';
 import BluePillConstruct from './components/BluePillConstruct';
 import TerminalOverlay from './components/TerminalOverlay';
 import SettingsPanel from './components/SettingsPanel';
+import MatrixLoader from './components/MatrixLoader';
 
 export default function App() {
+  // App initialization load screen state
+  const [isLoading, setIsLoading] = useState(true);
+
   // Pill choice state ('none' for Choice, 'red' for Red Pill terminal, 'blue' for Blue Pill construct)
   const [choice, setChoice] = useState<PillChoice>('none');
   
@@ -134,7 +138,7 @@ export default function App() {
               onClick={handleResetToChoice}
               className="font-anton text-3xl md:text-4xl text-on-surface-variant cursor-pointer select-none tracking-wider uppercase hover:text-white transition-colors"
             >
-              CONSTRUCT_OS
+              Ground_Xero
             </div>
 
             {/* Core system state chips and action controls */}
@@ -217,6 +221,10 @@ export default function App() {
           onClose={() => setShowSettings(false)}
           onResetToChoice={handleResetToChoice}
         />
+      )}
+
+      {isLoading && (
+        <MatrixLoader onFinished={() => setIsLoading(false)} />
       )}
     </div>
   );

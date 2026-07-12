@@ -28,15 +28,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Terminal Stream logs
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    '_________  ________    _______    ______________________________ ____ _______________________ ________    _________ ',
-    '\\_   ___ \\ \\_____  \\   \\      \\  /   _____/\\__    ___/\\______   \\    |   \\_   ___ \\__    ___/ \\_____  \\  /   _____/ ',
-    '/    \\  \\/  /   |   \\  /   |   \\ \\_____  \\   |    |    |       _/    |   /    \\  \\/ |    |     /   |   \\ \\_____  \\  ',
-    '\\     \\____/    |    \\/    |    \\/        \\  |    |    |    |   \\    |  /\\     \\____|    |    /    |    \\/        \\ ',
-    ' \\______  /\\_______  /\\____|__  /_______  /  |____|    |____|_  /______/  \\______  /|____|____\\_______  /_______  / ',
-    '        \\/         \\/         \\/        \\/                    \\/                 \\/     /_____/       \\/        \\/  ',
+    '█   █  █████  ████    ███',
+    ' █ █   █      █   █  █   █ ',
+    '  █    ████   ████   █   █ ',
+    ' █ █   █      █  █   █   █ ',
+    '█   █  █████  █   █   ███  ',
     ' ',
     '====================================================================================================================',
-    `[SYSTEM]: LOGGED IN TO CONSTRUCT_OS SECURE NODE // OPERATOR CHANNEL ALIGNED`,
+    `[SYSTEM]: LOGGED IN TO Ground_Xero SECURE NODE // OPERATOR CHANNEL ALIGNED`,
     `[SYSTEM]: CONNECTION INTRUSION STATUS: SECURE // DIRECT_BYPASS: OK // TIME: ${new Date().toLocaleTimeString()}`,
     '====================================================================================================================',
     ' ',
@@ -98,7 +97,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       setTerminalLogs(prev => [
         ...prev,
         ' ',
-        'CONSTRUCT_OS COGNITIVE CORE BYPASS CONSOLE',
+        'Ground_Xero COGNITIVE CORE BYPASS CONSOLE',
         '==========================================',
         'help / ?           - List active terminal bypass operations.',
         'diagnose           - Perform instant mainframe diagnostic sector analysis.',
@@ -299,7 +298,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       {/* TopAppBar (Desktop Navigation) */}
       <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 bg-black border-b border-[#5f3e3d] flat no shadows md:flex hidden">
         <div className="font-anton text-4xl text-[#ffb3af] tracking-tighter select-none">
-          CONSTRUCT_OS
+            Ground_Xero
         </div>
         <div className="flex gap-4 items-center">
           <button
