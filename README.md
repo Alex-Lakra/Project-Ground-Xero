@@ -3,7 +3,7 @@
 Ground_Xero OS is a futuristic, highly immersive, Matrix-themed reality selector application. It allows users to mount cognitive interfaces, simulate mainframe security overrides, and select between two completely distinct virtual constructs.
 
 <div align="center">
-  <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="Morpheus Choice" src="src/assets/morpheus.svg" />
 </div>
 
 ---
@@ -21,13 +21,22 @@ An immersive initial zero-white-flash loader that renders immediately upon page 
 The gateway interface displaying Morpheus holding the Red and Blue pills. Users can choose their reality path via interactive pulsing hand hotspots or brutalist buttons below the artwork.
 
 ### 3. Red Pill Terminal (The Mainframe)
-A raw developer CLI terminal that lets you override firewalls, trigger diagnostics sweeps, translate/decrypt text packets, and view falling Matrix waterfall cascades in real-time. CLI Commands:
-- `help` / `?` - Display available exploits and operations map.
-- `diagnose` - Ping live diagnostic packets.
-- `bypass` / `hack` - Run network floods to disable cognitive sentinel array firewalls.
-- `decrypt <string>` - Scramble decrypt packets.
-- `rain` - Adjust matrix rain density limits.
-- `exit` / `blue` - Terminate terminal session and return to Morpheus.
+A raw developer CLI terminal with built-in hacking simulations and an SSH mainframe state-machine connecting to the zero node.
+- **Local Terminal Commands**:
+  - `help` / `?` - List active terminal operations.
+  - `clear` - Erase local console logs buffer cache.
+  - `ssh username@zero` - Open an SSH tunnel into the zero mainframe node.
+  - `exit` / `blue` - Terminate terminal session and return to Morpheus.
+- **Zero Mainframe SSH Commands (Authenticated Session)**:
+  - `help` / `?` - List authorized mainframe console operations.
+  - `whoami` - Print the current active user username.
+  - `passwd <new_password>` - Reset the password for your active user.
+  - `logout` / `exit` - Terminate SSH session and return to local shell.
+- **Mainframe Administrative Commands (Root Access)**:
+  - `createuser <name> <default_password>` - Provision a new user account.
+  - `listusers` - List all registered user accounts and their status in a clean ASCII table.
+  - `deleteuser <name>` - Delete a standard user account.
+  - `reset2fa <username>` - Reset 2FA status keys for a user.
 
 ### 4. Blue Pill Construct (Cozy Sector)
 A soothing citizen portal designed to maintain comfort:
