@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Terminal as TermIcon, Check, Eye, Activity, Brain, Settings } from 'lucide-react';
 import { DecryptionLog, DiagnosticsItem } from '../types';
 import DigitalRain from './DigitalRain';
+import { firebaseDb, SSHUser } from '../services/firebaseDb';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -12,13 +13,20 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // ==========================================
   // State Definitions
   // ==========================================
-  
+
   // Navigation State
   const [currentTab, setCurrentTab] = useState<'terminal' | 'decryptor' | 'rain'>('terminal');
 
   // Input & Command States
   const [cliInput, setCliInput] = useState('');
   const [decryptInput, setDecryptInput] = useState('');
+
+  // SSH Mainframe Login and Session States
+  const [sshState, setSshState] = useState<'none' | 'ssh_password' | 'ssh_new_password' | 'ssh_confirm_password' | 'ssh_2fa_setup' | 'ssh_2fa_verify' | 'logged_in'>('none');
+  const [sshUser, setSshUser] = useState('');
+  const [sshSessionUser, setSshSessionUser] = useState<SSHUser | null>(null);
+  const [sshTempPassword, setSshTempPassword] = useState('');
+  const [ssh2faSecret, setSsh2faSecret] = useState('');
 
   // Hacking Simulation State
   const [activeHack, setActiveHack] = useState<'none' | 'firewall' | 'memory' | 'sentinel'>('none');
@@ -90,118 +98,636 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   }, [currentTab]);
 
   // ==========================================
+  // SSH Session Utilities
+  // ==========================================
+
+  // Generate standard 16-character Base32 secret key for Google Authenticator app
+  const generate2faSecret = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let secret = '';
+    for (let i = 0; i < 16; i++) {
+      secret += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return secret;
+  };
+
+  // Decode Base32 string to Uint8Array for RFC 4226 / 6238 TOTP
+  const decodeBase32 = (base32Str: string): Uint8Array => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    const cleanStr = base32Str.toUpperCase().replace(/[\s-]/g, '');
+    const bytes = new Uint8Array(Math.floor((cleanStr.length * 5) / 8));
+    
+    let buffer = 0;
+    let bitsLeft = 0;
+    let index = 0;
+    
+    for (let i = 0; i < cleanStr.length; i++) {
+      const idx = alphabet.indexOf(cleanStr[i]);
+      if (idx === -1) continue;
+      
+      buffer = (buffer << 5) | idx;
+      bitsLeft += 5;
+      
+      if (bitsLeft >= 8) {
+        bytes[index++] = (buffer >> (bitsLeft - 8)) & 0xff;
+        bitsLeft -= 8;
+        buffer &= (1 << bitsLeft) - 1;
+      }
+    }
+    return bytes;
+  };
+
+  // Verify standard TOTP using pure JS SHA1/HMAC-SHA1 (fully compatible with Google Authenticator, immune to secure-context locks)
+  const verifyTOTP = async (secret: string, inputOtp: string): Promise<boolean> => {
+    // Standard developer bypass code
+    if (inputOtp === '123456') return true;
+    
+    // Tiny SHA-1 hashing algorithm in pure JS
+    const sha1 = (buffer: Uint8Array): Uint8Array => {
+      const blocks = new Uint32Array(((buffer.length + 8) >> 6) + 1 << 4);
+      for (let i = 0; i < buffer.length; i++) {
+        blocks[i >> 2] |= buffer[i] << (24 - (i % 4) * 8);
+      }
+      blocks[buffer.length >> 2] |= 0x80 << (24 - (buffer.length % 4) * 8);
+      blocks[blocks.length - 1] = buffer.length * 8;
+
+      let h0 = 0x67452301;
+      let h1 = 0xEFCDAB89;
+      let h2 = 0x98BADCFE;
+      let h3 = 0x10325476;
+      let h4 = 0xC3D2E1F0;
+
+      const w = new Uint32Array(80);
+
+      for (let i = 0; i < blocks.length; i += 16) {
+        for (let j = 0; j < 16; j++) w[j] = blocks[i + j];
+        for (let j = 16; j < 80; j++) {
+          const val = w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16];
+          w[j] = (val << 1) | (val >>> 31);
+        }
+
+        let a = h0;
+        let b = h1;
+        let c = h2;
+        let d = h3;
+        let e = h4;
+
+        for (let j = 0; j < 80; j++) {
+          let f, k;
+          if (j < 20) {
+            f = (b & c) | (~b & d);
+            k = 0x5A827999;
+          } else if (j < 40) {
+            f = b ^ c ^ d;
+            k = 0x6ED9EBA1;
+          } else if (j < 60) {
+            f = (b & c) | (b & d) | (c & d);
+            k = 0x8F1BBCDC;
+          } else {
+            f = b ^ c ^ d;
+            k = 0xCA62C1D6;
+          }
+
+          const temp = (((a << 5) | (a >>> 27)) + f + e + k + w[j]) | 0;
+          e = d;
+          d = c;
+          c = (b << 30) | (b >>> 2);
+          b = a;
+          a = temp;
+        }
+
+        h0 = (h0 + a) | 0;
+        h1 = (h1 + b) | 0;
+        h2 = (h2 + c) | 0;
+        h3 = (h3 + d) | 0;
+        h4 = (h4 + e) | 0;
+      }
+
+      const result = new Uint8Array(20);
+      for (let i = 0; i < 5; i++) {
+        const val = [h0, h1, h2, h3, h4][i];
+        result[i * 4] = (val >>> 24) & 0xff;
+        result[i * 4 + 1] = (val >>> 16) & 0xff;
+        result[i * 4 + 2] = (val >>> 8) & 0xff;
+        result[i * 4 + 3] = val & 0xff;
+      }
+      return result;
+    };
+
+    // Standard HMAC-SHA-1 computation
+    const hmacSha1 = (keyBytes: Uint8Array, msgBytes: Uint8Array): Uint8Array => {
+      const blockBytes = new Uint8Array(64);
+      if (keyBytes.length > 64) {
+        blockBytes.set(sha1(keyBytes));
+      } else {
+        blockBytes.set(keyBytes);
+      }
+
+      const ipad = new Uint8Array(64);
+      const opad = new Uint8Array(64);
+      for (let i = 0; i < 64; i++) {
+        ipad[i] = blockBytes[i] ^ 0x36;
+        opad[i] = blockBytes[i] ^ 0x5c;
+      }
+
+      const innerMsg = new Uint8Array(64 + msgBytes.length);
+      innerMsg.set(ipad);
+      innerMsg.set(msgBytes, 64);
+      const innerHash = sha1(innerMsg);
+
+      const outerMsg = new Uint8Array(64 + 20);
+      outerMsg.set(opad);
+      outerMsg.set(innerHash, 64);
+      return sha1(outerMsg);
+    };
+
+    try {
+      const cleanSecret = secret.toUpperCase().replace(/[\s-]/g, '');
+      const keyBytes = decodeBase32(cleanSecret);
+      
+      const currentTimeStep = Math.floor(Date.now() / 1000 / 30);
+      
+      // Look checking range [-4, 4] to account for clock time drifts
+      for (let drift = -4; drift <= 4; drift++) {
+        const timeStep = currentTimeStep + drift;
+        const msg = new Uint8Array(8);
+        let temp = timeStep;
+        for (let i = 7; i >= 0; i--) {
+          msg[i] = temp & 0xff;
+          temp = Math.floor(temp / 256);
+        }
+        
+        const hmac = hmacSha1(keyBytes, msg);
+        
+        const offset = hmac[19] & 0xf;
+        const codeBin = 
+          ((hmac[offset] & 0x7f) << 24) |
+          ((hmac[offset + 1] & 0xff) << 16) |
+          ((hmac[offset + 2] & 0xff) << 8) |
+          (hmac[offset + 3] & 0xff);
+        
+        const calculatedOtp = (codeBin % 1000000).toString().padStart(6, '0');
+        if (calculatedOtp === inputOtp) {
+          return true;
+        }
+      }
+    } catch (e) {
+      console.error('Error verifying TOTP:', e);
+    }
+    return false;
+  };
+
+  // ==========================================
   // CLI Command Logic
   // ==========================================
-  
+
   const handleExecuteCliCommand = async () => {
     const cmd = cliInput.trim();
     if (!cmd) return;
 
     setCliInput('');
-    setTerminalLogs(prev => [...prev, `root/ $ ${cmd}`]);
 
-    const parts = cmd.split(' ');
-    const base = parts[0].toLowerCase();
+    // Print command line representation in history logs
+    // (If in password/sensitive state, print masked dots instead of raw passwords)
+    const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
+    const logPrefix = sshState === 'logged_in'
+      ? `${sshSessionUser?.username}@zero:~$`
+      : (sshState === 'none' ? 'root/ $' : `[SSH INPUT]`);
 
-    // 1. Command: help
-    if (base === 'help' || base === '?') {
-      setTerminalLogs(prev => [
-        ...prev,
-        ' ',
-        'Ground_Xero COGNITIVE CORE BYPASS CONSOLE',
-        '==========================================',
-        'help / ?           - List active terminal bypass operations.',
-        'diagnose           - Perform instant mainframe diagnostic sector analysis.',
-        'bypass / hack      - Trigger multi-layer cognitive firewall overload sequence.',
-        'decrypt <text>     - Run custom text scrambling translator on a text string.',
-        'rain               - Adjust ambient Matrix rain visual density.',
-        'clear              - Erase local console logs buffer cache.',
-        'exit / blue        - Return to Morpheus, escape reality (take Blue Pill).',
-        ' '
-      ]);
-      return;
-    }
+    const displayCmd = isSensitive ? '•'.repeat(Math.min(cmd.length, 12)) : cmd;
+    setTerminalLogs(prev => [...prev, `${logPrefix} ${displayCmd}`]);
 
-    // 2. Command: clear
-    if (base === 'clear') {
-      setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
-      return;
-    }
+    // ----------------------------------------------------
+    // STATE: NONE (Local terminal mode)
+    // ----------------------------------------------------
+    if (sshState === 'none') {
+      const parts = cmd.split(' ');
+      const base = parts[0].toLowerCase();
 
-    // 3. Command: exit / blue
-    if (base === 'exit' || base === 'blue') {
-      setTerminalLogs(prev => [...prev, ' ', '>> DETACHING NEURAL COUPLING SYSTEM...', '>> RE-INJECTING COGNITIVE COMFORT BUFFER...']);
-      setTimeout(() => {
-        onExit?.();
-      }, 700);
-      return;
-    }
-
-    // 4. Command: diagnose
-    if (base === 'diagnose') {
-      setTerminalLogs(prev => [
-        ...prev,
-        ' ',
-        '>> INITIATING DIAGNOSTIC PING PACKETS...',
-        '-------------------------------------------------------',
-        '● ZION CORE MAIN LINK      : ACTIVE   [100% SECURE INTEGRITY]',
-        '● AGENT TRACE RADIUS       : WARNING  [4.2 KM // DECREASING]',
-        '● MEMORY BUFFER DECAY      : CRITICAL [BUFFER EXCEEDED STABLE SECTORS]',
-        '● SUBCONSCIOUS COUPLER     : ALIGNED  [RED_PILL_ALIGNED]',
-        '-------------------------------------------------------',
-        '>> ADVISE: Trigger firewall bypass hack or clear buffer overflow.',
-        ' '
-      ]);
-      return;
-    }
-
-    // 5. Command: bypass / hack
-    if (base === 'bypass' || base === 'hack') {
-      setTerminalLogs(prev => [...prev, ' ', '>> BOOTSTRAPPING GLITCH BYPASS CODES...']);
-      const logs = [
-        '>> [PORT-80] FLOODING LOCAL NETWORK GATEWAYS... [OK]',
-        '>> [SEC_DUMP] INJECTING MALICIOUS COGNITIVE STRINGS... [OK]',
-        '>> [DECRYPT] SECURING RE-ROUTING BEACONS... [OK]',
-        '>> [STEALTH] ACTIVATING EM EMISSION SHIELD CONCEALER... [OK]',
-        '>> COGNITIVE INTERACTION OVERRIDE SUCCESSFUL! FIREWALL GONE.'
-      ];
-      logs.forEach((log, i) => {
-        setTimeout(() => {
-          setTerminalLogs(prev => [...prev, log]);
-        }, (i + 1) * 350);
-      });
-      return;
-    }
-
-    // 6. Command: decrypt
-    if (base === 'decrypt') {
-      const text = parts.slice(1).join(' ');
-      if (!text) {
-        setTerminalLogs(prev => [...prev, '[ERROR] Incorrect syntax. Use: decrypt <string>']);
+      // Help command
+      if (base === 'help' || base === '?') {
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          'Ground_Xero COGNITIVE CORE BYPASS CONSOLE',
+          '==========================================',
+          'help / ?           - List active terminal operations.',
+          'clear              - Erase local console logs buffer cache.',
+          'ssh user@zero      - SSH tunnel into the zero server node.',
+          'exit / blue        - Return to Morpheus, escape reality (take Blue Pill).',
+          ' '
+        ]);
         return;
       }
-      setTerminalLogs(prev => [...prev, `>> TRANSLATING MATRIX SCRAMBLED PACKET: "${text}"`]);
-      setTimeout(() => {
-        setTerminalLogs(prev => [...prev, `>> DECRYPTED RESULT: "${text.toUpperCase()}"`, ' ']);
-      }, 400);
+
+      // Clear logs
+      if (base === 'clear') {
+        setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
+        return;
+      }
+
+      // Exit constructor
+      if (base === 'exit' || base === 'blue') {
+        setTerminalLogs(prev => [...prev, ' ', '>> DETACHING NEURAL COUPLING SYSTEM...', '>> RE-INJECTING COGNITIVE COMFORT BUFFER...']);
+        setTimeout(() => {
+          onExit?.();
+        }, 700);
+        return;
+      }
+
+      // SSH Trigger command matching user@zero
+      const sshMatch = cmd.match(/^ssh\s+([a-zA-Z0-9_-]+)@([a-zA-Z0-9._-]+)$/i);
+      if (sshMatch) {
+        const username = sshMatch[1];
+        const host = sshMatch[2].toLowerCase();
+
+        if (host !== 'zero') {
+          setTerminalLogs(prev => [...prev, `ssh: Could not resolve hostname ${host}: Name or service not known`]);
+          return;
+        }
+
+        // Fetch user from DB first to verify existence
+        const userObj = await firebaseDb.getUser(username);
+        if (!userObj) {
+          setTerminalLogs(prev => [...prev, `ssh: ${username}@zero: User account does not exist in the database.`]);
+          return;
+        }
+
+        setTerminalLogs(prev => [
+          ...prev,
+          `Connecting to server '${host}'...`,
+          `Establishing secure user-session handshake...`,
+          `${username}@${host}'s password: `
+        ]);
+        setSshUser(username);
+        setSshState('ssh_password');
+        return;
+      }
+
+      setTerminalLogs(prev => [...prev, `command not found: "${cmd}"`]);
       return;
     }
 
-    // 7. Command: rain
-    if (base === 'rain') {
-      setTerminalLogs(prev => [...prev, '>> ADJUSTING AMBIENT WATERFALL CASCADE DENSITY...', ' ']);
-      setRainDensity(prev => (prev >= 2.0 ? 0.5 : prev + 0.5));
+    // ----------------------------------------------------
+    // STATE: SSH_PASSWORD (Login authentication check)
+    // ----------------------------------------------------
+    if (sshState === 'ssh_password') {
+      const userObj = await firebaseDb.getUser(sshUser);
+
+      if (userObj && userObj.passwordHash === cmd) {
+        setSshSessionUser(userObj);
+
+        // Check if mandatory first login password reset is needed
+        if (!userObj.isPasswordChanged) {
+          setTerminalLogs(prev => [
+            ...prev,
+            `Authentication Approved.`,
+            `[MANDATORY PROTOCOL]: First login detected. You must change your default password.`,
+            `Enter new password:`
+          ]);
+          setSshState('ssh_new_password');
+          return;
+        }
+
+        // Check if 2FA enrollment is completed
+        if (!userObj.is2faEnabled) {
+          const secret = generate2faSecret();
+          const updatedUser = { ...userObj, twoFactorSecret: secret };
+          await firebaseDb.saveUser(updatedUser);
+          setSshSessionUser(updatedUser);
+          setSsh2faSecret(secret);
+          setSshState('ssh_2fa_setup');
+
+          setTerminalLogs(prev => [
+            ...prev,
+            `Authentication Approved.`,
+            `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
+            `----------------------------------------------------`,
+            `1. Open Google Authenticator or another TOTP application.`,
+            `2. Add custom key (copy/paste): ${secret}`,
+            `3. Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+            `4. Enter the 6-digit active verification OTP below to enroll.`,
+            `[TESTING OPTION]: Enter "123456" to bypass.`,
+            `----------------------------------------------------`,
+            `Enter 2FA OTP Code:`
+          ]);
+          return;
+        }
+
+        // Else, ask for standard 2FA OTP verification code
+        setSshState('ssh_2fa_verify');
+        setTerminalLogs(prev => [
+          ...prev,
+          `Enter 2FA Code (OTP) for verification:`,
+          `[TESTING OPTION]: Enter "123456" to bypass.`
+        ]);
+      } else {
+        setTerminalLogs(prev => [...prev, `Permission denied, please try again.`]);
+        setSshState('none');
+        setSshUser('');
+      }
       return;
     }
 
-    // 8. Command: fallback
-    setTerminalLogs(prev => [...prev, `command not found: "${cmd}"`]);
+    // ----------------------------------------------------
+    // STATE: SSH_NEW_PASSWORD (Mandatory reset entry)
+    // ----------------------------------------------------
+    if (sshState === 'ssh_new_password') {
+      if (cmd.length < 4) {
+        setTerminalLogs(prev => [...prev, `[ERROR] Password must be at least 4 characters. Enter new password:`]);
+        return;
+      }
+      setSshTempPassword(cmd);
+      setSshState('ssh_confirm_password');
+      setTerminalLogs(prev => [...prev, `Confirm new password:`]);
+      return;
+    }
+
+    // ----------------------------------------------------
+    // STATE: SSH_CONFIRM_PASSWORD (Password match check)
+    // ----------------------------------------------------
+    if (sshState === 'ssh_confirm_password') {
+      if (cmd !== sshTempPassword) {
+        setTerminalLogs(prev => [...prev, `[ERROR] Passwords do not match. Enter new password:`]);
+        setSshState('ssh_new_password');
+        setSshTempPassword('');
+        return;
+      }
+
+      const userObj = await firebaseDb.getUser(sshUser);
+      if (!userObj) {
+        setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
+        setSshState('none');
+        return;
+      }
+      const updatedUser = { ...userObj, passwordHash: cmd, isPasswordChanged: true };
+
+      // Setup 2FA secret now
+      const secret = generate2faSecret();
+      updatedUser.twoFactorSecret = secret;
+      await firebaseDb.saveUser(updatedUser);
+
+      setSshSessionUser(updatedUser);
+      setSsh2faSecret(secret);
+      setSshState('ssh_2fa_setup');
+
+      setTerminalLogs(prev => [
+        ...prev,
+        `[SUCCESS] Password changed successfully.`,
+        `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
+        `----------------------------------------------------`,
+        `1. Open Google Authenticator or another TOTP application.`,
+        `2. Add custom key (copy/paste): ${secret}`,
+        `3. Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+        `4. Enter the 6-digit active verification OTP below to enroll.`,
+        `----------------------------------------------------`,
+        `Enter 2FA OTP Code:`
+      ]);
+      return;
+    }
+
+    // ----------------------------------------------------
+    // STATE: SSH_2FA_SETUP (OTP enrollment validation)
+    // ----------------------------------------------------
+    if (sshState === 'ssh_2fa_setup') {
+      const isOtpValid = await verifyTOTP(ssh2faSecret, cmd);
+      if (isOtpValid) {
+        const userObj = await firebaseDb.getUser(sshUser);
+        if (userObj) {
+          const updatedUser = { ...userObj, is2faEnabled: true };
+          await firebaseDb.saveUser(updatedUser);
+          setSshSessionUser(updatedUser);
+          setSshState('logged_in');
+
+          setTerminalLogs(prev => [
+            ...prev,
+            `[SUCCESS] Authenticator verified and enrolled successfully.`,
+            ` `,
+            `Welcome to zero mainframe // node: zero // user: ${sshUser}`,
+            `Type 'help' to see authorized node operations.`,
+            ` `
+          ]);
+        }
+      } else {
+        setTerminalLogs(prev => [...prev, `[ERROR] Invalid OTP verification code. Enter active code:`]);
+      }
+      return;
+    }
+
+    // ----------------------------------------------------
+    // STATE: SSH_2FA_VERIFY (Subsequent OTP validations)
+    // ----------------------------------------------------
+    if (sshState === 'ssh_2fa_verify') {
+      const isOtpValid = await verifyTOTP(sshSessionUser!.twoFactorSecret, cmd);
+      if (isOtpValid) {
+        setSshState('logged_in');
+        setTerminalLogs(prev => [
+          ...prev,
+          `[SUCCESS] Verification successful. Access granted.`,
+          ` `,
+          `Welcome to zero mainframe // node: zero // user: ${sshUser}`,
+          `Type 'help' to see authorized node operations.`,
+          ` `
+        ]);
+      } else {
+        setTerminalLogs(prev => [...prev, `Permission denied. SSH Connection Closed.`, ` `]);
+        setSshState('none');
+        setSshUser('');
+        setSshSessionUser(null);
+      }
+      return;
+    }
+
+    // ----------------------------------------------------
+    // STATE: LOGGED_IN (Zero SSH session active)
+    // ----------------------------------------------------
+    if (sshState === 'logged_in') {
+      const parts = cmd.split(' ');
+      const base = parts[0].toLowerCase();
+
+      // Help CLI zero commands
+      if (base === 'help' || base === '?') {
+        const standardLogs = [
+          ' ',
+          'Zero Mainframe SSH Console Operations',
+          '======================================',
+          'whoami           - Display the current active user.',
+          'passwd <new_pass> - Reset your active user password.',
+          'logout / exit    - Terminate SSH session and exit to local shell.'
+        ];
+
+        if (sshSessionUser?.username === 'root') {
+          standardLogs.push(
+            'createuser <name> <pass>  - Create a new user with a default password.',
+            'listusers                 - List all registered users and status.',
+            'deleteuser <name>         - Remove a standard user account.',
+            'reset2fa <username>       - Reset 2FA status and key for a user.'
+          );
+        }
+
+        standardLogs.push(' ');
+        setTerminalLogs(prev => [...prev, ...standardLogs]);
+        return;
+      }
+
+      // Whoami command
+      if (base === 'whoami') {
+        setTerminalLogs(prev => [...prev, sshSessionUser?.username || 'unknown']);
+        return;
+      }
+
+      // User passwd/resetpassword command
+      if (base === 'passwd' || base === 'resetpassword') {
+        const newPassword = parts[1];
+        if (!newPassword) {
+          setTerminalLogs(prev => [...prev, `Usage: passwd <new_password>`]);
+          return;
+        }
+
+        const userObj = await firebaseDb.getUser(sshUser);
+        if (userObj) {
+          const updatedUser = { ...userObj, passwordHash: newPassword };
+          await firebaseDb.saveUser(updatedUser);
+          setSshSessionUser(updatedUser);
+          setTerminalLogs(prev => [...prev, `[SUCCESS] Password changed successfully for user '${sshUser}'.`]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
+        }
+        return;
+      }
+
+      // Exit SSH command
+      if (base === 'exit' || base === 'logout') {
+        setTerminalLogs(prev => [...prev, `Connection to zero closed.`, ` `]);
+        setSshState('none');
+        setSshUser('');
+        setSshSessionUser(null);
+        return;
+      }
+
+      // Admin createuser command
+      if (base === 'createuser') {
+        if (sshSessionUser?.username !== 'root') {
+          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+          return;
+        }
+
+        const newUsername = parts[1];
+        const defaultPassword = parts[2];
+
+        if (!newUsername || !defaultPassword) {
+          setTerminalLogs(prev => [...prev, `Usage: createuser <username> <default_password>`]);
+          return;
+        }
+
+        const existing = await firebaseDb.getUser(newUsername);
+        if (existing) {
+          setTerminalLogs(prev => [...prev, `[ERROR] User account '${newUsername}' already exists.`]);
+          return;
+        }
+
+        await firebaseDb.saveUser({
+          username: newUsername,
+          passwordHash: defaultPassword,
+          isPasswordChanged: false,
+          is2faEnabled: false,
+          twoFactorSecret: '',
+        });
+
+        setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${newUsername}' registered successfully.`]);
+        return;
+      }
+
+      // Admin listusers command
+      if (base === 'listusers') {
+        if (sshSessionUser?.username !== 'root') {
+          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+          return;
+        }
+
+        const usersList = await firebaseDb.listAllUsers();
+
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          'USERNAME        PASSWORD_CHANGED?     2FA_ENABLED?',
+          '-------------------------------------------------------',
+          ...usersList.map(u =>
+            `${u.username.padEnd(16)} ${(u.isPasswordChanged ? 'YES' : 'NO').padEnd(21)} ${u.is2faEnabled ? 'YES' : 'NO'}`
+          ),
+          ' '
+        ]);
+        return;
+      }
+
+      // Admin deleteuser command
+      if (base === 'deleteuser') {
+        if (sshSessionUser?.username !== 'root') {
+          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+          return;
+        }
+
+        const targetUser = parts[1];
+        if (!targetUser) {
+          setTerminalLogs(prev => [...prev, `Usage: deleteuser <username>`]);
+          return;
+        }
+
+        if (targetUser.toLowerCase() === 'root') {
+          setTerminalLogs(prev => [...prev, `[ERROR] Cannot delete admin root account.`]);
+          return;
+        }
+
+        const deleted = await firebaseDb.deleteUser(targetUser);
+        if (deleted) {
+          setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${targetUser}' deleted.`]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
+        }
+        return;
+      }
+
+      // Admin reset2fa command
+      if (base === 'reset2fa') {
+        if (sshSessionUser?.username !== 'root') {
+          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+          return;
+        }
+
+        const targetUser = parts[1];
+        if (!targetUser) {
+          setTerminalLogs(prev => [...prev, `Usage: reset2fa <username>`]);
+          return;
+        }
+
+        const userObj = await firebaseDb.getUser(targetUser);
+        if (userObj) {
+          const updatedUser = { 
+            ...userObj, 
+            is2faEnabled: false, 
+            twoFactorSecret: '' 
+          };
+          await firebaseDb.saveUser(updatedUser);
+          
+          if (targetUser.toLowerCase() === sshSessionUser.username.toLowerCase()) {
+            setSshSessionUser(updatedUser);
+          }
+          
+          setTerminalLogs(prev => [...prev, `[SUCCESS] 2FA configuration reset successfully for user '${targetUser}'.`]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
+        }
+        return;
+      }
+
+      setTerminalLogs(prev => [...prev, `zero-shell: command not found: "${cmd}"`]);
+    }
   };
 
   // ==========================================
   // Diagnostics / Hacking Simulation
   // ==========================================
-  
+
   const runHack = (type: 'firewall' | 'memory' | 'sentinel') => {
     if (activeHack !== 'none') return;
     setActiveHack(type);
@@ -254,7 +780,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // ==========================================
   // Text Decryption Panel Logic
   // ==========================================
-  
+
   const handleDecryptText = (e: React.FormEvent) => {
     e.preventDefault();
     if (!decryptInput.trim()) return;
@@ -321,49 +847,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         <div className="font-anton text-4xl text-[#ffb3af] tracking-tighter select-none">
           Ground_Xero
         </div>
-        <div className="flex gap-4 items-center">
-          {/* CLI Tab Button */}
-          <button
-            onClick={() => setCurrentTab('terminal')}
-            title="Core CLI Shell"
-            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
-              currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-          >
-            <TermIcon className="w-5 h-5" />
-          </button>
-          
-          {/* Diagnostics Tab Button */}
-          <button
-            onClick={() => setCurrentTab('decryptor')}
-            title="Diagnostics & Tools"
-            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
-              currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-          >
-            <Brain className="w-5 h-5" />
-          </button>
-          
-          {/* Immersive Rain Control Button */}
-          <button
-            onClick={() => setCurrentTab('rain')}
-            title="Waterfall Screen"
-            className={`cursor-pointer p-2 hover:bg-neutral-900 transition-colors rounded-xs ${
-              currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-          >
-            <Eye className="w-5 h-5" />
-          </button>
-
-          {/* Quick Settings Action */}
-          <button
-            onClick={onOpenSettings}
-            title="System Settings"
-            className="text-[#e9bcb9] cursor-pointer hover:bg-neutral-900 p-2 transition-colors rounded-xs"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
       </header>
 
       {/* Main Viewport Container */}
@@ -371,36 +854,71 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
-          <div className="flex-1 flex flex-col justify-between h-full">
-            {/* Scrollable logs list */}
+          <div className="flex-1 flex flex-col h-full justify-between">
+            {/* Scrollable logs list and active inline terminal input */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text text-[#ff0033] leading-relaxed max-h-[calc(100vh-220px)] mt-4">
               {terminalLogs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap font-mono font-medium tracking-wide">
                   {log}
                 </div>
               ))}
-              <div ref={terminalEndRef} />
-            </div>
 
-            {/* Input Prompt Panel */}
-            <div className="flex items-center font-mono text-sm mt-auto border-t border-[#5f3e3d]/40 pt-4 mb-2 md:mb-0">
-              <span className="text-[#e2e2e2] mr-2">root/</span>
-              <span className="text-[#ff0033] animate-pulse mr-2">$</span>
-              <input
-                ref={cliInputRef}
-                aria-label="Terminal Input"
-                autoFocus
-                type="text"
-                value={cliInput}
-                onChange={(e) => setCliInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleExecuteCliCommand();
+              {/* Active command line input printed inline directly after history logs */}
+              <div className="flex items-center font-mono text-xs select-none pt-1">
+                {sshState === 'none' && (
+                  <>
+                    <span className="text-[#ff0033] font-bold">root/</span>
+                    <span className="text-white">:</span>
+                    <span className="text-matrix-blue font-bold">~</span>
+                    <span className="text-[#ff0033] animate-pulse font-bold ml-1 mr-2">$</span>
+                  </>
+                )}
+                {sshState === 'ssh_password' && (
+                  <span className="text-[#ff0033] mr-2">{sshUser}@zero's password:</span>
+                )}
+                {sshState === 'ssh_new_password' && (
+                  <span className="text-[#ff0033] mr-2">New password:</span>
+                )}
+                {sshState === 'ssh_confirm_password' && (
+                  <span className="text-[#ff0033] mr-2">Confirm password:</span>
+                )}
+                {(sshState === 'ssh_2fa_setup' || sshState === 'ssh_2fa_verify') && (
+                  <span className="text-[#ff0033] mr-2">Enter 2FA Code (OTP):</span>
+                )}
+                {sshState === 'logged_in' && (
+                  <>
+                    <span className="text-[#ff0033] font-bold">{sshSessionUser?.username}@zero</span>
+                    <span className="text-white">:</span>
+                    <span className="text-matrix-blue font-bold">~</span>
+                    <span className="text-[#ff0033] animate-pulse font-bold ml-1 mr-2">
+                      {sshSessionUser?.username === 'root' ? '#' : '$'}
+                    </span>
+                  </>
+                )}
+                <input
+                  ref={cliInputRef}
+                  aria-label="Terminal Input"
+                  autoFocus
+                  type={
+                    sshState === 'ssh_password' ||
+                      sshState === 'ssh_new_password' ||
+                      sshState === 'ssh_confirm_password'
+                      ? 'password'
+                      : 'text'
                   }
-                }}
-                placeholder="Type 'help' for options..."
-                className="bg-transparent border-none outline-none text-[#ff0033] font-mono text-sm w-full focus:ring-0 p-0 m-0 caret-current placeholder-[#ff0033]/30"
-              />
+                  value={cliInput}
+                  onChange={(e) => setCliInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleExecuteCliCommand();
+                    }
+                  }}
+                  placeholder=""
+                  className="bg-transparent border-none outline-none text-[#ff0033] font-mono text-xs w-full focus:ring-0 p-0 m-0 caret-current"
+                />
+              </div>
+
+              <div ref={terminalEndRef} />
             </div>
           </div>
         )}
@@ -424,13 +942,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                       <span className="text-[#e9bcb9] uppercase">{diag.name}</span>
                       <div className="text-right">
                         <span className="text-white font-bold block">{diag.value}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider ${
-                          diag.status === 'active' 
-                            ? 'text-[#ff0033]' 
-                            : diag.status === 'warning' 
-                              ? 'text-yellow-500' 
-                              : 'text-red-500'
-                        }`}>
+                        <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active'
+                          ? 'text-[#ff0033]'
+                          : diag.status === 'warning'
+                            ? 'text-yellow-500'
+                            : 'text-red-500'
+                          }`}>
                           {diag.status}
                         </span>
                       </div>
@@ -447,11 +964,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 <button
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('firewall')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${
-                    activeHack === 'firewall'
-                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
-                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                  }`}
+                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'firewall'
+                    ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                    : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
+                    }`}
                 >
                   <span>OVERRIDE AGENT FIREWALL</span>
                   <Shield className="w-4 h-4" />
@@ -461,11 +977,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 <button
                   disabled={activeHack !== 'none'}
                   onClick={() => runHack('memory')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${
-                    activeHack === 'memory'
-                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
-                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                  }`}
+                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'memory'
+                    ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                    : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
+                    }`}
                 >
                   <span>PURGE SUBSYSTEM BUFFER</span>
                   <TermIcon className="w-4 h-4" />
@@ -602,25 +1117,22 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121414] border-t border-[#5f3e3d] flex justify-around py-3 z-50">
         <button
           onClick={() => setCurrentTab('decryptor')}
-          className={`flex flex-col items-center gap-1 p-2 ${
-            currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-          }`}
+          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
         >
           <Brain className="w-5 h-5" />
         </button>
         <button
           onClick={() => setCurrentTab('rain')}
-          className={`flex flex-col items-center gap-1 p-2 ${
-            currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-          }`}
+          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
         >
           <Eye className="w-5 h-5" />
         </button>
         <button
           onClick={() => setCurrentTab('terminal')}
-          className={`flex flex-col items-center gap-1 p-2 ${
-            currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-          }`}
+          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+            }`}
         >
           <TermIcon className="w-5 h-5" />
         </button>
