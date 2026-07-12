@@ -95,6 +95,12 @@ export default function TerminalOverlay({ onClose, onExecuteCommand }: TerminalO
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
+              e.preventDefault();
+              onClose();
+            }
+          }}
           placeholder="Enter command (e.g. /help)..."
           className="flex-1 bg-transparent border-0 outline-none p-2 font-mono text-xs text-white placeholder-matrix-green/30"
           autoFocus
