@@ -54,3 +54,12 @@ export interface SystemSettings {
   digitalRainDensity: number; // rain frequency multipliers
   retroFont: boolean; // toggle JetBrains Mono monospace font overlay
 }
+
+// Custom theme for the terminal
+export interface TerminalTheme {
+  name: string;
+  background: string; // Hex code or URL for image
+  text: string; // Hex code
+  imageFit?: 'cover' | 'contain' | 'fill' | 'stretch'; // Sizing option if background is an image
+  rainColor?: string; // Optional rain color for this theme
+}
