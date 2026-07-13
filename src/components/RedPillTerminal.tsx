@@ -517,19 +517,35 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             return;
           }
 
+          setTerminalLogs(prev => [
+            ...prev,
+            `Connecting to server '${host}'...`,
+            `Establishing secure user-session handshake...`
+          ]);
+
           // Fetch user from DB first to verify existence
           const userObj = await firebaseDb.getUser(username);
+
+          const diag = firebaseDb.getDiagnostics();
+          let dbStatus = '';
+          if (diag.isFirebaseConfigured) {
+            if (diag.lastError) {
+              dbStatus = `[Handshake]: Firestore DB connection failed (${diag.lastError}). Falling back to LocalStorage.`;
+            } else {
+              dbStatus = `[Handshake]: Routing session requests to remote Firestore DB.`;
+            }
+          } else {
+            dbStatus = `[Handshake]: No environment URL found. Routing session to LocalStorage simulation.`;
+          }
+
+          setTerminalLogs(prev => [...prev, dbStatus]);
+
           if (!userObj) {
             setTerminalLogs(prev => [...prev, `ssh: ${username}@zero: User account does not exist in the database.`]);
             return;
           }
 
-          setTerminalLogs(prev => [
-            ...prev,
-            `Connecting to server '${host}'...`,
-            `Establishing secure user-session handshake...`,
-            `${username}@${host}'s password: `
-          ]);
+          setTerminalLogs(prev => [...prev, `${username}@${host}'s password: `]);
           setSshUser(username);
           setSshState('ssh_password');
           return;

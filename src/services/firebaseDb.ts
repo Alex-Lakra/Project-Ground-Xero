@@ -9,7 +9,8 @@ export interface SSHUser {
 // ----------------------------------------------------
 // DB Provider Configurations
 // ----------------------------------------------------
-const FIREBASE_URL = (import.meta.env.VITE_FIREBASE_DB_URL || '').trim();
+const PROJECT_ID = (import.meta.env.VITE_FIREBASE_PROJECT_ID || 'project-ground-xero').trim();
+const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 // Seed data: Root account with default password 'matrix'
 const SEED_USERS: Record<string, SSHUser> = {
@@ -39,31 +40,82 @@ const saveLocalUsers = (users: Record<string, SSHUser>) => {
 };
 
 // ----------------------------------------------------
+// Cloud Firestore Mapping Helpers
+// ----------------------------------------------------
+interface FirestoreField {
+  stringValue?: string;
+  booleanValue?: boolean;
+}
+
+interface FirestoreDocument {
+  name: string;
+  fields: Record<string, FirestoreField>;
+}
+
+function mapDocumentToUser(doc: any): SSHUser {
+  const fields = doc.fields || {};
+  return {
+    username: fields.username?.stringValue || '',
+    passwordHash: fields.passwordHash?.stringValue || '',
+    isPasswordChanged: fields.isPasswordChanged?.booleanValue || false,
+    is2faEnabled: fields.is2faEnabled?.booleanValue || false,
+    twoFactorSecret: fields.twoFactorSecret?.stringValue || '',
+  };
+}
+
+function mapUserToDocument(user: SSHUser) {
+  return {
+    fields: {
+      username: { stringValue: user.username },
+      passwordHash: { stringValue: user.passwordHash },
+      isPasswordChanged: { booleanValue: user.isPasswordChanged },
+      is2faEnabled: { booleanValue: user.is2faEnabled },
+      twoFactorSecret: { stringValue: user.twoFactorSecret },
+    }
+  };
+}
+
+// ----------------------------------------------------
 // Public REST API / Simulation Interface
 // ----------------------------------------------------
+let lastError: string | null = null;
+
 export const firebaseDb = {
+  /**
+   * Helper to retrieve diagnostic state
+   */
+  getDiagnostics() {
+    return {
+      isFirebaseConfigured: true,
+      lastError,
+    };
+  },
+
   /**
    * Retrieves a user by their username
    */
   async getUser(username: string): Promise<SSHUser | null> {
     const key = username.toLowerCase();
-    if (FIREBASE_URL) {
-      try {
-        const response = await fetch(`${FIREBASE_URL}/users/${key}.json`);
-        if (!response.ok) throw new Error('Network error');
-        const user = await response.json();
-        
-        // Auto-seed root in Firebase if the database is uninitialized
-        if (!user && key === 'root') {
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/users/${key}`);
+      if (response.status === 404) {
+        // Auto-seed root in Firestore if it doesn't exist
+        if (key === 'root') {
           const defaultRoot = SEED_USERS.root;
           await this.saveUser(defaultRoot);
           return defaultRoot;
         }
-        
-        return user || null;
-      } catch (err) {
-        console.warn('[Firebase DB] Connection failed, using LocalStorage fallback.', err);
+        return null;
       }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} (${response.statusText || 'Forbidden/Locked rules'})`);
+      }
+      const doc = await response.json();
+      lastError = null; // Reset error on successful query
+      return mapDocumentToUser(doc);
+    } catch (err: any) {
+      lastError = err.message || String(err);
+      console.warn('[Firestore DB] Connection failed, using LocalStorage fallback.', err);
     }
     const localUsers = getLocalUsers();
     return localUsers[key] || null;
@@ -74,17 +126,21 @@ export const firebaseDb = {
    */
   async saveUser(user: SSHUser): Promise<void> {
     const key = user.username.toLowerCase();
-    if (FIREBASE_URL) {
-      try {
-        const response = await fetch(`${FIREBASE_URL}/users/${key}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user),
-        });
-        if (response.ok) return;
-      } catch (err) {
-        console.warn('[Firebase DB] Save failed, using LocalStorage fallback.', err);
+    try {
+      const body = mapUserToDocument(user);
+      const response = await fetch(`${FIRESTORE_BASE}/users/${key}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} (${response.statusText || 'Forbidden/Locked rules'})`);
       }
+      lastError = null;
+      return;
+    } catch (err: any) {
+      lastError = err.message || String(err);
+      console.warn('[Firestore DB] Save failed, using LocalStorage fallback.', err);
     }
     const localUsers = getLocalUsers();
     localUsers[key] = user;
@@ -95,18 +151,20 @@ export const firebaseDb = {
    * Retrieves all users currently registered
    */
   async listAllUsers(): Promise<SSHUser[]> {
-    if (FIREBASE_URL) {
-      try {
-        const response = await fetch(`${FIREBASE_URL}/users.json`);
-        if (!response.ok) throw new Error('Network error');
-        const data = await response.json();
-        if (data) {
-          return Object.values(data) as SSHUser[];
-        }
-        return [];
-      } catch (err) {
-        console.warn('[Firebase DB] List failed, using LocalStorage fallback.', err);
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/users`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} (${response.statusText || 'Forbidden/Locked rules'})`);
       }
+      const data = await response.json();
+      lastError = null;
+      if (data && data.documents) {
+        return data.documents.map(mapDocumentToUser);
+      }
+      return [];
+    } catch (err: any) {
+      lastError = err.message || String(err);
+      console.warn('[Firestore DB] List failed, using LocalStorage fallback.', err);
     }
     const localUsers = getLocalUsers();
     return Object.values(localUsers);
@@ -119,15 +177,18 @@ export const firebaseDb = {
     const key = username.toLowerCase();
     if (key === 'root') return false; // Prevent admin deletion
 
-    if (FIREBASE_URL) {
-      try {
-        const response = await fetch(`${FIREBASE_URL}/users/${key}.json`, {
-          method: 'DELETE',
-        });
-        if (response.ok) return true;
-      } catch (err) {
-        console.warn('[Firebase DB] Delete failed, using LocalStorage fallback.', err);
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/users/${key}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} (${response.statusText || 'Forbidden/Locked rules'})`);
       }
+      lastError = null;
+      return true;
+    } catch (err: any) {
+      lastError = err.message || String(err);
+      console.warn('[Firestore DB] Delete failed, using LocalStorage fallback.', err);
     }
     const localUsers = getLocalUsers();
     if (localUsers[key]) {
@@ -142,6 +203,6 @@ export const firebaseDb = {
    * Helper to check if Firebase DB is active
    */
   isFirebaseConfigured(): boolean {
-    return FIREBASE_URL.length > 0;
+    return true;
   },
 };
