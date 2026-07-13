@@ -186,7 +186,7 @@ export default function App() {
                 <button
                   onClick={handleResetToChoice}
                   className={`hidden md:flex items-center space-x-1.5 font-mono text-[10px] uppercase font-bold tracking-widest border px-2.5 py-1 transition-all cursor-pointer ${
-                    activeScreen === 'red' 
+                    (activeScreen as string) === 'red' 
                       ? 'border-matrix-red text-matrix-red hover:bg-matrix-red/15' 
                       : 'border-matrix-blue text-matrix-blue hover:bg-matrix-blue/15'
                   }`}

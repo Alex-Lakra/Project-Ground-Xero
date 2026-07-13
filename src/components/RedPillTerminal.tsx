@@ -3,6 +3,7 @@ import { Shield, Terminal as TermIcon, Check, Eye, Activity, Brain, Settings } f
 import { DecryptionLog, DiagnosticsItem } from '../types';
 import DigitalRain from './DigitalRain';
 import { firebaseDb, SSHUser } from '../services/firebaseDb';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -38,6 +39,11 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // References for UI focus & scroll alignment
   const cliInputRef = useRef<HTMLInputElement | null>(null);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Command history for up/down arrow navigation
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [draftCommand, setDraftCommand] = useState<string>('');
 
   // Terminal history logs
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
@@ -312,12 +318,30 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     const displayCmd = isSensitive ? '•'.repeat(Math.min(cmd.length, 12)) : cmd;
     setTerminalLogs(prev => [...prev, `${logPrefix} ${displayCmd}`]);
 
+    if (!isSensitive) {
+      setCommandHistory(prev => {
+        if (prev[prev.length - 1] !== cmd) {
+          return [...prev, cmd];
+        }
+        return prev;
+      });
+      setHistoryIndex(-1);
+      setDraftCommand('');
+    }
+
     // ----------------------------------------------------
     // STATE: NONE (Local terminal mode)
     // ----------------------------------------------------
+    const parts = cmd.split(' ');
+    const base = parts[0].toLowerCase();
+
+    // Global Commands (Work in any state)
+    if (base === 'clear' || base === 'cls') {
+      setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
+      return;
+    }
+
     if (sshState === 'none') {
-      const parts = cmd.split(' ');
-      const base = parts[0].toLowerCase();
 
       // Help command
       if (base === 'help' || base === '?') {
@@ -328,6 +352,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           '==========================================',
           'help / ?           - List active terminal operations.',
           'clear / cls        - Erase local console logs buffer cache.',
+          'fastfetch          - Display system information and diagnostics.', // Comment by hira, change the ascii art to whatever you desire later. I will add a diffrent command for fetching the profiles and stuff
           'cmatrix            - Enter full screen matrix rain visualizer mode.',
           'ssh user@zero      - SSH tunnel into the zero server node.',
           'exit / ctrl+c / blue        - Return to Morpheus, escape reality (take Blue Pill).',
@@ -336,9 +361,72 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         return;
       }
 
-      // Clear logs
-      if (base === 'clear' || base === 'cls') {
-        setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
+      // Fastfetch command
+      if (base === 'fastfetch') {
+        const os = navigator.platform || 'Unknown OS';
+        const ua = navigator.userAgent.toLowerCase();
+        const browser = ua.includes('chrome') ? 'Chrome' :
+          ua.includes('firefox') ? 'Firefox' :
+            ua.includes('safari') ? 'Safari' :
+              ua.includes('edge') ? 'Edge' : 'Unknown Browser';
+        const resolution = `${window.screen.width}x${window.screen.height}`;
+        const cpuCores = navigator.hardwareConcurrency || 'Unknown';
+        const memory = (navigator as any).deviceMemory ? `${(navigator as any).deviceMemory} GB` : 'Unknown';
+        const language = navigator.language || 'Unknown';
+        const uptime = 'System Online';
+
+        const fastfetchArt = [
+          '                                                  ',
+          '                              ▒         ▒▒        ',
+          '                        ▒▒░▒  ▒▒        ▒▒ ▒      ',
+          '                             ▒▒▒▒                 ',
+          '                             ▒▒▒▒▒▒ ▒             ',
+          '                            ▒▒▒▒    ▒             ',
+          '                            ▒▒  ▒                 ',
+          '                           ▒▒▒▒ ▒ ▒▒▒▒░       ▒░  ',
+          '                          ▒▒▒▒▒▒▒▒▒▒▒▒▒        ░  ',
+          '                           ▒▒▒▒▒▒▒▒▒▒▒░      ▒    ',
+          '                           ▒▒▒▒▒▒▒▒▒▒▒▒      ▒    ',
+          '                           ▒▒▒▒▒▒▒▒▒▒▒▒▒          ',
+          '                            ▒▒▒▒▒▒▒▒▒▒▒▒          ',
+          '                    ▒▒▒     ▒▒▒▒▒ ▒▒▒▒▒▒          ',
+          '                 ▒▒▒▒▒▒▒▒   ▒▒▒▒▒▒▒▒▒▒▒           ',
+          '             ▒▒▒▒▒▒   ▒▒▒▒▒▒ ▒▒▒▒▒▒▒▒             ',
+          '              ▒▒▒▒     ▒▒▒▒░ ▒▒▒▒▒▒    ▒          ',
+          '               ▒▒▒▒▒▒▒▒▒▒            ▒▒▒          ',
+          '               ▒▒ ▒▒▒▒▒▒           ░▒▒▒           ',
+          '                 ▒                                ',
+          '                  ▒▒▒▒▒▒               ▒          ',
+          '                  ▒▒▒▒▒▒▒▒▒     ░▒▒▒▒▒▒▒▒         ',
+          '                  ▒     ▒▒▒▒   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒',
+          '                   ▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒',
+          '              ▒▒▒▒▒▒▒▒▒▒▒▒▒   ░▒▒░ ▒▒▒▒▒▒ ▒▒▒▒▒▒▒▒',
+          '               ▒▒ ░▒▒▒▒▒▒▒▒ ░▒▒▒ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒'
+        ];
+
+        const username = sshSessionUser?.username || 'root';
+        const info = [
+          `${username}@zero`,
+          `---------`,
+          `OS         : ${os}`,
+          `Browser    : ${browser}`,
+          `Resolution : ${resolution}`,
+          `CPU Cores  : ${cpuCores}`,
+          `Memory     : ${memory}`,
+          `Language   : ${language}`,
+          `Status     : ${uptime}`,
+        ];
+
+        const outputLines = [...fastfetchArt];
+        const infoStartIndex = 8;
+
+        info.forEach((inf, idx) => {
+          if (outputLines[infoStartIndex + idx]) {
+            outputLines[infoStartIndex + idx] += `   ${inf}`;
+          }
+        });
+
+        setTerminalLogs(prev => [...prev, ...outputLines, ' ']);
         return;
       }
 
@@ -399,32 +487,56 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       }
 
       // SSH Trigger command matching user@zero
-      const sshMatch = cmd.match(/^ssh\s+([a-zA-Z0-9_-]+)@([a-zA-Z0-9._-]+)$/i);
-      if (sshMatch) {
-        const username = sshMatch[1];
-        const host = sshMatch[2].toLowerCase();
-
-        if (host !== 'zero') {
-          setTerminalLogs(prev => [...prev, `ssh: Could not resolve hostname ${host}: Name or service not known`]);
+      if (base === 'ssh') {
+        const hasHelp = parts.some(p => p.toLowerCase() === '-h' || p.toLowerCase() === '-help');
+        if (hasHelp) {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: ssh [OPTIONS] user@host',
+            ' ',
+            'Establish an authenticated Secure Shell connection to a specified node.',
+            ' ',
+            'Options:',
+            '  -h, -help                   Show this help message and exit.',
+            ' ',
+            'Example:',
+            '  ssh root@zero               Connects to the "zero" mainframe node as "root".',
+            ' '
+          ]);
           return;
         }
 
-        // Fetch user from DB first to verify existence
-        const userObj = await firebaseDb.getUser(username);
-        if (!userObj) {
-          setTerminalLogs(prev => [...prev, `ssh: ${username}@zero: User account does not exist in the database.`]);
+        const sshMatch = cmd.match(/^ssh\s+([a-zA-Z0-9_-]+)@([a-zA-Z0-9._-]+)$/i);
+        if (sshMatch) {
+          const username = sshMatch[1];
+          const host = sshMatch[2].toLowerCase();
+
+          if (host !== 'zero') {
+            setTerminalLogs(prev => [...prev, `ssh: Could not resolve hostname ${host}: Name or service not known`]);
+            return;
+          }
+
+          // Fetch user from DB first to verify existence
+          const userObj = await firebaseDb.getUser(username);
+          if (!userObj) {
+            setTerminalLogs(prev => [...prev, `ssh: ${username}@zero: User account does not exist in the database.`]);
+            return;
+          }
+
+          setTerminalLogs(prev => [
+            ...prev,
+            `Connecting to server '${host}'...`,
+            `Establishing secure user-session handshake...`,
+            `${username}@${host}'s password: `
+          ]);
+          setSshUser(username);
+          setSshState('ssh_password');
+          return;
+        } else {
+          setTerminalLogs(prev => [...prev, `ssh: Invalid syntax. Use 'ssh user@host' or 'ssh -h' for help.`]);
           return;
         }
-
-        setTerminalLogs(prev => [
-          ...prev,
-          `Connecting to server '${host}'...`,
-          `Establishing secure user-session handshake...`,
-          `${username}@${host}'s password: `
-        ]);
-        setSshUser(username);
-        setSshState('ssh_password');
-        return;
       }
 
       setTerminalLogs(prev => [...prev, `command not found: "${cmd}"`]);
@@ -467,9 +579,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
             `----------------------------------------------------`,
             `1. Open Google Authenticator or another TOTP application.`,
-            `2. Add custom key (copy/paste): ${secret}`,
-            `3. Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
-            `4. Enter the 6-digit active verification OTP below to enroll.`,
+            `2. Scan the generated QR Code below, OR add the custom key manually:`,
+            `   Key (Raw): ${secret}`,
+            `   Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+            `3. Enter the 6-digit active verification OTP below to enroll.`,
             `[TESTING OPTION]: Enter "123456" to bypass.`,
             `----------------------------------------------------`,
             `Enter 2FA OTP Code:`
@@ -605,8 +718,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     // STATE: LOGGED_IN (Zero SSH session active)
     // ----------------------------------------------------
     if (sshState === 'logged_in') {
-      const parts = cmd.split(' ');
-      const base = parts[0].toLowerCase();
 
       // Help CLI zero commands
       if (base === 'help' || base === '?') {
@@ -926,6 +1037,17 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 </div>
               ))}
 
+              {/* QR Code rendering during 2FA Setup */}
+              {sshState === 'ssh_2fa_setup' && ssh2faSecret && (
+                <div className="my-4 p-4 bg-white w-max rounded">
+                  <QRCodeSVG
+                    value={`otpauth://totp/${encodeURIComponent(`Ground_Xero:${sshUser}@zero`)}?secret=${ssh2faSecret}&issuer=Ground_Xero`}
+                    size={160}
+                    level="M"
+                  />
+                </div>
+              )}
+
               {/* Active command line input printed inline directly after history logs */}
               <div className="flex items-center font-mono text-xs select-none pt-1">
                 {sshState === 'none' && (
@@ -974,6 +1096,56 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleExecuteCliCommand();
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      if (commandHistory.length > 0) {
+                        const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+                        if (historyIndex === -1) setDraftCommand(cliInput);
+                        setHistoryIndex(nextIndex);
+                        setCliInput(commandHistory[nextIndex]);
+                      }
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      if (historyIndex !== -1) {
+                        const nextIndex = historyIndex + 1;
+                        if (nextIndex >= commandHistory.length) {
+                          setHistoryIndex(-1);
+                          setCliInput(draftCommand);
+                        } else {
+                          setHistoryIndex(nextIndex);
+                          setCliInput(commandHistory[nextIndex]);
+                        }
+                      }
+                    } else if (e.key === 'Tab') {
+                      e.preventDefault();
+                      const input = cliInput;
+                      const inputLower = input.toLowerCase();
+
+                      const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
+                      if (isSensitive || input.length === 0) return;
+
+                      const availableCommands = sshState === 'logged_in'
+                        ? sshSessionUser?.username === 'root'
+                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
+                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue'];
+
+                      const parts = inputLower.split(' ');
+                      if (parts.length === 1) {
+                        const matches = availableCommands.filter(cmd => cmd.startsWith(inputLower));
+                        if (matches.length === 1) {
+                          setCliInput(matches[0] + ' ');
+                        } else if (matches.length > 1) {
+                          const logPrefix = sshState === 'logged_in'
+                            ? `${sshSessionUser?.username}@zero:~$`
+                            : 'root/ :~$';
+                          setTerminalLogs(prev => [
+                            ...prev,
+                            `${logPrefix} ${cliInput}`,
+                            matches.join('  ')
+                          ]);
+                        }
+                      }
                     } else if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
                       e.preventDefault();
                       const logPrefix = sshState === 'logged_in'
