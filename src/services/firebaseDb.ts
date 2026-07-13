@@ -52,6 +52,14 @@ export const firebaseDb = {
         const response = await fetch(`${FIREBASE_URL}/users/${key}.json`);
         if (!response.ok) throw new Error('Network error');
         const user = await response.json();
+        
+        // Auto-seed root in Firebase if the database is uninitialized
+        if (!user && key === 'root') {
+          const defaultRoot = SEED_USERS.root;
+          await this.saveUser(defaultRoot);
+          return defaultRoot;
+        }
+        
         return user || null;
       } catch (err) {
         console.warn('[Firebase DB] Connection failed, using LocalStorage fallback.', err);

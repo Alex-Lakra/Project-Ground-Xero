@@ -353,10 +353,16 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
+        const isFirebase = firebaseDb.isFirebaseConfigured();
+        const dbStatus = isFirebase 
+          ? `[Handshake]: Routing session requests to remote Firebase DB.` 
+          : `[Handshake]: No environment URL found. Routing session to LocalStorage simulation.`;
+
         setTerminalLogs(prev => [
           ...prev,
           `Connecting to server '${host}'...`,
           `Establishing secure user-session handshake...`,
+          dbStatus,
           `${username}@${host}'s password: `
         ]);
         setSshUser(username);
