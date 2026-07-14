@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Terminal as TermIcon, Check, Eye, Activity, Brain, Settings } from 'lucide-react';
-import { AsciiGenerator, CharsetPreset } from 'ts-ascii-engine';
 import { DecryptionLog, DiagnosticsItem, TerminalTheme } from '../types';
 import ThemeEditor from './ThemeEditor';
 import DigitalRain from './DigitalRain';
@@ -18,10 +17,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // ==========================================
 
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<'terminal' | 'decryptor' | 'rain' | 'theme_editor'>('terminal');
-
-  // Theme State
-  const [activeTheme, setActiveTheme] = useState<TerminalTheme | null>(null);
+  const [currentTab, setCurrentTab] = useState<'terminal' | 'decryptor' | 'rain'>('terminal');
 
   // Input & Command States
   const [cliInput, setCliInput] = useState('');
@@ -62,7 +58,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [hackLogs, setHackLogs] = useState<string[]>([]);
   const [rainDensity, setRainDensity] = useState(1.2);
   const [cmatrixConfig, setCmatrixConfig] = useState<{ active: boolean, color: string }>({ active: false, color: '#00ff00' });
-  const [isBgRainActive, setIsBgRainActive] = useState(false);
 
   // References for UI focus & scroll alignment
   const cliInputRef = useRef<HTMLInputElement | null>(null);
@@ -113,32 +108,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // ==========================================
   // Hooks & Effects
   // ==========================================
-
-  // Load custom terminal theme from local storage
-  useEffect(() => {
-    const storedTheme = localStorage.getItem('redpill_active_theme');
-    if (storedTheme) {
-      try {
-        setActiveTheme(JSON.parse(storedTheme));
-      } catch (e) {
-        console.error('Failed to parse active theme:', e);
-      }
-    }
-  }, []);
-
-  // Global safety override to reset active theme
-  useEffect(() => {
-    const handleResetTheme = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
-        e.preventDefault();
-        localStorage.removeItem('redpill_active_theme');
-        setActiveTheme(null);
-        setTerminalLogs(prev => [...prev, '[SYSTEM]: ACTIVE THEME OVERRIDDEN. RESTORED TO DEFAULT MAINFRAME CONFIGURATION.']);
-      }
-    };
-    document.addEventListener('keydown', handleResetTheme);
-    return () => document.removeEventListener('keydown', handleResetTheme);
-  }, []);
 
   // Automatically scroll down when terminal logs buffer updates
   useEffect(() => {
@@ -587,9 +556,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'help / ?                    - List active terminal operations.',
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.', // Comment by hira, change the ascii art to whatever you desire later. I will add a diffrent command for fetching the profiles and stuff
-          'ascii                       - Upload and convert an image to ASCII art.',
-          'yt <URL>                    - Play a YouTube video in-terminal (-help, stop).',
-          'album                       - Random album recommendation by genre (-help).',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
           'bg-rain                     - Toggle background matrix rain effect.',
           'code $Theme                 - Open the interactive theme configuration editor.',
@@ -894,99 +860,6 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         return;
       }
 
-      // bg-rain command
-      if (base === 'bg-rain') {
-        const sub = parts[1]?.toLowerCase();
-
-        if (sub === '-h' || sub === '-help') {
-          setTerminalLogs(prev => [
-            ...prev,
-            ' ',
-            'Usage: bg-rain',
-            ' ',
-            'Toggle the background digital rain effect in the terminal.',
-            ' '
-          ]);
-          return;
-        }
-
-        if (sub === 'on' || sub === 'enable') {
-          setIsBgRainActive(true);
-          setTerminalLogs(prev => [...prev, '[SYSTEM]: Background rain effect ENABLED.']);
-          return;
-        }
-
-        if (sub === 'off' || sub === 'disable') {
-          setIsBgRainActive(false);
-          setTerminalLogs(prev => [...prev, '[SYSTEM]: Background rain effect DISABLED.']);
-          return;
-        }
-
-        const nextState = !isBgRainActive;
-        setIsBgRainActive(nextState);
-        setTerminalLogs(prev => [...prev, `[SYSTEM]: Background rain effect ${nextState ? 'ENABLED' : 'DISABLED'}.`]);
-        return;
-      }
-
-      // Code command for theme editor
-      if (base === 'code' && parts[1]?.toLowerCase() === '$theme') {
-        setCurrentTab('theme_editor');
-        return;
-      }
-
-      // Theme command
-      if (base === 'theme') {
-        const sub = parts[1]?.toLowerCase();
-
-        if (sub === '-list' || sub === '-l') {
-          const savedThemes = JSON.parse(localStorage.getItem('redpill_themes') || '[]') as TerminalTheme[];
-          if (savedThemes.length === 0) {
-            setTerminalLogs(prev => [...prev, 'No custom themes found in local storage.']);
-          } else {
-            const themeNames = savedThemes.map(t => `  - ${t.name}`).join('\n');
-            setTerminalLogs(prev => [...prev, 'Saved Themes:\n' + themeNames]);
-          }
-          return;
-        }
-
-        if (sub === '-switch' || sub === '-s') {
-          const themeName = parts.slice(2).join(' ');
-          if (!themeName) {
-            setTerminalLogs(prev => [...prev, 'Usage: theme -switch <Theme Name>']);
-            return;
-          }
-          const savedThemes = JSON.parse(localStorage.getItem('redpill_themes') || '[]') as TerminalTheme[];
-          const themeToApply = savedThemes.find(t => t.name.toLowerCase() === themeName.toLowerCase());
-
-          if (themeToApply) {
-            setActiveTheme(themeToApply);
-            localStorage.setItem('redpill_active_theme', JSON.stringify(themeToApply));
-            setTerminalLogs(prev => [...prev, `[SUCCESS] Active theme switched to: ${themeToApply.name}`]);
-          } else {
-            setTerminalLogs(prev => [...prev, `[ERROR] Theme "${themeName}" not found.`]);
-          }
-          return;
-        }
-
-        // Default to help if -help, -h, or invalid subcommand
-        setTerminalLogs(prev => [
-          ...prev,
-          ' ',
-          'Usage: theme [OPTIONS]',
-          ' ',
-          'Manage and apply terminal UI themes.',
-          ' ',
-          'Options:',
-          '  -list, -l                   List all saved themes.',
-          '  -switch, -s <Theme Name>    Switch to a specific theme by name.',
-          '  -help, -h                   Show this help page.',
-          ' ',
-          'Tip: Type "code $Theme" to open the visual Theme Editor.',
-          ' '
-        ]);
-        return;
-      }
-
       // Exit constructor
       if (base === 'exit' || base === 'blue') {
         setTerminalLogs(prev => [...prev, ' ', '>> DETACHING NEURAL COUPLING SYSTEM...', '>> RE-INJECTING COGNITIVE COMFORT BUFFER...']);
@@ -1061,519 +934,497 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        setTerminalLogs(prev => [...prev, `Command dosent exist, plese refer to the command list using "help" function`]);
+        setTerminalLogs(prev => [...prev, `command not found: "${cmd}"`]);
+        return;
+      }
+    }
+
+      // ----------------------------------------------------
+      // STATE: SSH_PASSWORD (Login authentication check)
+      // ----------------------------------------------------
+      if (sshState === 'ssh_password') {
+        const userObj = await firebaseDb.getUser(sshUser);
+
+        if (userObj && userObj.passwordHash === cmd) {
+          setSshSessionUser(userObj);
+
+          // Check if mandatory first login password reset is needed
+          if (!userObj.isPasswordChanged) {
+            setTerminalLogs(prev => [
+              ...prev,
+              `Authentication Approved.`,
+              `[MANDATORY PROTOCOL]: First login detected. You must change your default password.`,
+              `Enter new password:`
+            ]);
+            setSshState('ssh_new_password');
+            return;
+          }
+
+          // Check if 2FA enrollment is completed
+          if (!userObj.is2faEnabled) {
+            const secret = generate2faSecret();
+            const updatedUser = { ...userObj, twoFactorSecret: secret };
+            await firebaseDb.saveUser(updatedUser);
+            setSshSessionUser(updatedUser);
+            setSsh2faSecret(secret);
+            setSshState('ssh_2fa_setup');
+
+            setTerminalLogs(prev => [
+              ...prev,
+              `Authentication Approved.`,
+              `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
+              `----------------------------------------------------`,
+              `1. Open Google Authenticator or another TOTP application.`,
+              `2. Scan the generated QR Code below, OR add the custom key manually:`,
+              `   Key (Raw): ${secret}`,
+              `   Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+              `3. Enter the 6-digit active verification OTP below to enroll.`,
+              `[TESTING OPTION]: Enter "123456" to bypass.`,
+              `----------------------------------------------------`,
+              `Enter 2FA OTP Code:`
+            ]);
+            return;
+          }
+
+          // Else, ask for standard 2FA OTP verification code
+          setSshState('ssh_2fa_verify');
+          setTerminalLogs(prev => [
+            ...prev,
+            `Enter 2FA Code (OTP) for verification:`,
+            `[TESTING OPTION]: Enter "123456" to bypass.`
+          ]);
+        } else {
+          setTerminalLogs(prev => [...prev, `Permission denied, please try again.`]);
+          setSshState('none');
+          setSshUser('');
+        }
         return;
       }
 
-      // Default fallback for any unhandled command in the local terminal
-      setTerminalLogs(prev => [...prev, `Command dosent exist, plese refer to the command list using "help" function`]);
-      return;
-    }
+      // ----------------------------------------------------
+      // STATE: SSH_NEW_PASSWORD (Mandatory reset entry)
+      // ----------------------------------------------------
+      if (sshState === 'ssh_new_password') {
+        if (cmd.length < 4) {
+          setTerminalLogs(prev => [...prev, `[ERROR] Password must be at least 4 characters. Enter new password:`]);
+          return;
+        }
+        setSshTempPassword(cmd);
+        setSshState('ssh_confirm_password');
+        setTerminalLogs(prev => [...prev, `Confirm new password:`]);
+        return;
+      }
 
-    // ----------------------------------------------------
-    // STATE: SSH_PASSWORD (Login authentication check)
-    // ----------------------------------------------------
-    if (sshState === 'ssh_password') {
-      const userObj = await firebaseDb.getUser(sshUser);
-
-      if (userObj && userObj.passwordHash === cmd) {
-        setSshSessionUser(userObj);
-
-        // Check if mandatory first login password reset is needed
-        if (!userObj.isPasswordChanged) {
-          setTerminalLogs(prev => [
-            ...prev,
-            `Authentication Approved.`,
-            `[MANDATORY PROTOCOL]: First login detected. You must change your default password.`,
-            `Enter new password:`
-          ]);
+      // ----------------------------------------------------
+      // STATE: SSH_CONFIRM_PASSWORD (Password match check)
+      // ----------------------------------------------------
+      if (sshState === 'ssh_confirm_password') {
+        if (cmd !== sshTempPassword) {
+          setTerminalLogs(prev => [...prev, `[ERROR] Passwords do not match. Enter new password:`]);
           setSshState('ssh_new_password');
+          setSshTempPassword('');
           return;
         }
 
-        // Check if 2FA enrollment is completed
-        if (!userObj.is2faEnabled) {
-          const secret = generate2faSecret();
-          const updatedUser = { ...userObj, twoFactorSecret: secret };
-          await firebaseDb.saveUser(updatedUser);
-          setSshSessionUser(updatedUser);
-          setSsh2faSecret(secret);
-          setSshState('ssh_2fa_setup');
-
-          setTerminalLogs(prev => [
-            ...prev,
-            `Authentication Approved.`,
-            `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
-            `----------------------------------------------------`,
-            `1. Open Google Authenticator or another TOTP application.`,
-            `2. Scan the generated QR Code below, OR add the custom key manually:`,
-            `   Key (Raw): ${secret}`,
-            `   Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
-            `3. Enter the 6-digit active verification OTP below to enroll.`,
-            `[TESTING OPTION]: Enter "123456" to bypass.`,
-            `----------------------------------------------------`,
-            `Enter 2FA OTP Code:`
-          ]);
+        const userObj = await firebaseDb.getUser(sshUser);
+        if (!userObj) {
+          setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
+          setSshState('none');
           return;
         }
+        const updatedUser = { ...userObj, passwordHash: cmd, isPasswordChanged: true };
 
-        // Else, ask for standard 2FA OTP verification code
-        setSshState('ssh_2fa_verify');
+        // Setup 2FA secret now
+        const secret = generate2faSecret();
+        updatedUser.twoFactorSecret = secret;
+        await firebaseDb.saveUser(updatedUser);
+
+        setSshSessionUser(updatedUser);
+        setSsh2faSecret(secret);
+        setSshState('ssh_2fa_setup');
+
         setTerminalLogs(prev => [
           ...prev,
-          `Enter 2FA Code (OTP) for verification:`,
-          `[TESTING OPTION]: Enter "123456" to bypass.`
+          `[SUCCESS] Password changed successfully.`,
+          `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
+          `----------------------------------------------------`,
+          `1. Open Google Authenticator or another TOTP application.`,
+          `2. Add custom key (copy/paste): ${secret}`,
+          `3. Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+          `4. Enter the 6-digit active verification OTP below to enroll.`,
+          `----------------------------------------------------`,
+          `Enter 2FA OTP Code:`
         ]);
-      } else {
-        setTerminalLogs(prev => [...prev, `Permission denied, please try again.`]);
-        setSshState('none');
-        setSshUser('');
-      }
-      return;
-    }
-
-    // ----------------------------------------------------
-    // STATE: SSH_NEW_PASSWORD (Mandatory reset entry)
-    // ----------------------------------------------------
-    if (sshState === 'ssh_new_password') {
-      if (cmd.length < 4) {
-        setTerminalLogs(prev => [...prev, `[ERROR] Password must be at least 4 characters. Enter new password:`]);
-        return;
-      }
-      setSshTempPassword(cmd);
-      setSshState('ssh_confirm_password');
-      setTerminalLogs(prev => [...prev, `Confirm new password:`]);
-      return;
-    }
-
-    // ----------------------------------------------------
-    // STATE: SSH_CONFIRM_PASSWORD (Password match check)
-    // ----------------------------------------------------
-    if (sshState === 'ssh_confirm_password') {
-      if (cmd !== sshTempPassword) {
-        setTerminalLogs(prev => [...prev, `[ERROR] Passwords do not match. Enter new password:`]);
-        setSshState('ssh_new_password');
-        setSshTempPassword('');
         return;
       }
 
-      const userObj = await firebaseDb.getUser(sshUser);
-      if (!userObj) {
-        setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
-        setSshState('none');
+      // ----------------------------------------------------
+      // STATE: SSH_2FA_SETUP (OTP enrollment validation)
+      // ----------------------------------------------------
+      if (sshState === 'ssh_2fa_setup') {
+        const isOtpValid = await verifyTOTP(ssh2faSecret, cmd);
+        if (isOtpValid) {
+          const userObj = await firebaseDb.getUser(sshUser);
+          if (userObj) {
+            const updatedUser = { ...userObj, is2faEnabled: true };
+            await firebaseDb.saveUser(updatedUser);
+            setSshSessionUser(updatedUser);
+            setSshState('logged_in');
+
+            setTerminalLogs(prev => [
+              ...prev,
+              `[SUCCESS] Authenticator verified and enrolled successfully.`,
+              ` `,
+              `Welcome to zero mainframe // node: zero // user: ${sshUser}`,
+              `Type 'help' to see authorized node operations.`,
+              ` `
+            ]);
+          }
+        } else {
+          setTerminalLogs(prev => [...prev, `[ERROR] Invalid OTP verification code. Enter active code:`]);
+        }
         return;
       }
-      const updatedUser = { ...userObj, passwordHash: cmd, isPasswordChanged: true };
 
-      // Setup 2FA secret now
-      const secret = generate2faSecret();
-      updatedUser.twoFactorSecret = secret;
-      await firebaseDb.saveUser(updatedUser);
-
-      setSshSessionUser(updatedUser);
-      setSsh2faSecret(secret);
-      setSshState('ssh_2fa_setup');
-
-      setTerminalLogs(prev => [
-        ...prev,
-        `[SUCCESS] Password changed successfully.`,
-        `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
-        `----------------------------------------------------`,
-        `1. Open Google Authenticator or another TOTP application.`,
-        `2. Add custom key (copy/paste): ${secret}`,
-        `3. Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
-        `4. Enter the 6-digit active verification OTP below to enroll.`,
-        `----------------------------------------------------`,
-        `Enter 2FA OTP Code:`
-      ]);
-      return;
-    }
-
-    // ----------------------------------------------------
-    // STATE: SSH_2FA_SETUP (OTP enrollment validation)
-    // ----------------------------------------------------
-    if (sshState === 'ssh_2fa_setup') {
-      const isOtpValid = await verifyTOTP(ssh2faSecret, cmd);
-      if (isOtpValid) {
-        const userObj = await firebaseDb.getUser(sshUser);
-        if (userObj) {
-          const updatedUser = { ...userObj, is2faEnabled: true };
-          await firebaseDb.saveUser(updatedUser);
-          setSshSessionUser(updatedUser);
+      // ----------------------------------------------------
+      // STATE: SSH_2FA_VERIFY (Subsequent OTP validations)
+      // ----------------------------------------------------
+      if (sshState === 'ssh_2fa_verify') {
+        const isOtpValid = await verifyTOTP(sshSessionUser!.twoFactorSecret, cmd);
+        if (isOtpValid) {
           setSshState('logged_in');
-
           setTerminalLogs(prev => [
             ...prev,
-            `[SUCCESS] Authenticator verified and enrolled successfully.`,
+            `[SUCCESS] Verification successful. Access granted.`,
             ` `,
             `Welcome to zero mainframe // node: zero // user: ${sshUser}`,
             `Type 'help' to see authorized node operations.`,
             ` `
           ]);
-        }
-      } else {
-        setTerminalLogs(prev => [...prev, `[ERROR] Invalid OTP verification code. Enter active code:`]);
-      }
-      return;
-    }
-
-    // ----------------------------------------------------
-    // STATE: SSH_2FA_VERIFY (Subsequent OTP validations)
-    // ----------------------------------------------------
-    if (sshState === 'ssh_2fa_verify') {
-      const isOtpValid = await verifyTOTP(sshSessionUser!.twoFactorSecret, cmd);
-      if (isOtpValid) {
-        setSshState('logged_in');
-        setTerminalLogs(prev => [
-          ...prev,
-          `[SUCCESS] Verification successful. Access granted.`,
-          ` `,
-          `Welcome to zero mainframe // node: zero // user: ${sshUser}`,
-          `Type 'help' to see authorized node operations.`,
-          ` `
-        ]);
-      } else {
-        setTerminalLogs(prev => [...prev, `Permission denied. SSH Connection Closed.`, ` `]);
-        setSshState('none');
-        setSshUser('');
-        setSshSessionUser(null);
-      }
-      return;
-    }
-
-    // ----------------------------------------------------
-    // STATE: LOGGED_IN (Zero SSH session active)
-    // ----------------------------------------------------
-    if (sshState === 'logged_in') {
-
-      // Help CLI zero commands
-      if (base === 'help' || base === '?') {
-        const standardLogs = [
-          ' ',
-          'Zero Mainframe SSH Console Operations',
-          '======================================',
-          'whoami           - Display the current active user.',
-          'passwd <new_pass> - Reset your active user password.',
-          'logout / exit    - Terminate SSH session and exit to local shell.'
-        ];
-
-        if (sshSessionUser?.username === 'root') {
-          standardLogs.push(
-            'createuser <name> <pass>  - Create a new user with a default password.',
-            'listusers                 - List all registered users and status.',
-            'deleteuser <name>         - Remove a standard user account.',
-            'reset2fa <username>       - Reset 2FA status and key for a user.'
-          );
-        }
-
-        standardLogs.push(' ');
-        setTerminalLogs(prev => [...prev, ...standardLogs]);
-        return;
-      }
-
-      // Whoami command
-      if (base === 'whoami') {
-        setTerminalLogs(prev => [...prev, sshSessionUser?.username || 'unknown']);
-        return;
-      }
-
-      // User passwd/resetpassword command
-      if (base === 'passwd' || base === 'resetpassword') {
-        const newPassword = parts[1];
-        if (!newPassword) {
-          setTerminalLogs(prev => [...prev, `Usage: passwd <new_password>`]);
-          return;
-        }
-
-        const userObj = await firebaseDb.getUser(sshUser);
-        if (userObj) {
-          const updatedUser = { ...userObj, passwordHash: newPassword };
-          await firebaseDb.saveUser(updatedUser);
-          setSshSessionUser(updatedUser);
-          setTerminalLogs(prev => [...prev, `[SUCCESS] Password changed successfully for user '${sshUser}'.`]);
         } else {
-          setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
+          setTerminalLogs(prev => [...prev, `Permission denied. SSH Connection Closed.`, ` `]);
+          setSshState('none');
+          setSshUser('');
+          setSshSessionUser(null);
         }
         return;
       }
 
-      // Exit SSH command
-      if (base === 'exit' || base === 'logout') {
-        setTerminalLogs(prev => [...prev, `Connection to zero closed.`, ` `]);
-        setSshState('none');
-        setSshUser('');
-        setSshSessionUser(null);
-        return;
-      }
+      // ----------------------------------------------------
+      // STATE: LOGGED_IN (Zero SSH session active)
+      // ----------------------------------------------------
+      if (sshState === 'logged_in') {
 
-      // Admin createuser command
-      if (base === 'createuser') {
-        if (sshSessionUser?.username !== 'root') {
-          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
-          return;
-        }
+        // Help CLI zero commands
+        if (base === 'help' || base === '?') {
+          const standardLogs = [
+            ' ',
+            'Zero Mainframe SSH Console Operations',
+            '======================================',
+            'whoami           - Display the current active user.',
+            'passwd <new_pass> - Reset your active user password.',
+            'logout / exit    - Terminate SSH session and exit to local shell.'
+          ];
 
-        const newUsername = parts[1];
-        const defaultPassword = parts[2];
-
-        if (!newUsername || !defaultPassword) {
-          setTerminalLogs(prev => [...prev, `Usage: createuser <username> <default_password>`]);
-          return;
-        }
-
-        const existing = await firebaseDb.getUser(newUsername);
-        if (existing) {
-          setTerminalLogs(prev => [...prev, `[ERROR] User account '${newUsername}' already exists.`]);
-          return;
-        }
-
-        await firebaseDb.saveUser({
-          username: newUsername,
-          passwordHash: defaultPassword,
-          isPasswordChanged: false,
-          is2faEnabled: false,
-          twoFactorSecret: '',
-        });
-
-        setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${newUsername}' registered successfully.`]);
-        return;
-      }
-
-      // Admin listusers command
-      if (base === 'listusers') {
-        if (sshSessionUser?.username !== 'root') {
-          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
-          return;
-        }
-
-        const usersList = await firebaseDb.listAllUsers();
-
-        setTerminalLogs(prev => [
-          ...prev,
-          ' ',
-          'USERNAME        PASSWORD_CHANGED?     2FA_ENABLED?',
-          '-------------------------------------------------------',
-          ...usersList.map(u =>
-            `${u.username.padEnd(16)} ${(u.isPasswordChanged ? 'YES' : 'NO').padEnd(21)} ${u.is2faEnabled ? 'YES' : 'NO'}`
-          ),
-          ' '
-        ]);
-        return;
-      }
-
-      // Admin deleteuser command
-      if (base === 'deleteuser') {
-        if (sshSessionUser?.username !== 'root') {
-          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
-          return;
-        }
-
-        const targetUser = parts[1];
-        if (!targetUser) {
-          setTerminalLogs(prev => [...prev, `Usage: deleteuser <username>`]);
-          return;
-        }
-
-        if (targetUser.toLowerCase() === 'root') {
-          setTerminalLogs(prev => [...prev, `[ERROR] Cannot delete admin root account.`]);
-          return;
-        }
-
-        const deleted = await firebaseDb.deleteUser(targetUser);
-        if (deleted) {
-          setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${targetUser}' deleted.`]);
-        } else {
-          setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
-        }
-        return;
-      }
-
-      // Admin reset2fa command
-      if (base === 'reset2fa') {
-        if (sshSessionUser?.username !== 'root') {
-          setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
-          return;
-        }
-
-        const targetUser = parts[1];
-        if (!targetUser) {
-          setTerminalLogs(prev => [...prev, `Usage: reset2fa <username>`]);
-          return;
-        }
-
-        const userObj = await firebaseDb.getUser(targetUser);
-        if (userObj) {
-          const updatedUser = {
-            ...userObj,
-            is2faEnabled: false,
-            twoFactorSecret: ''
-          };
-          await firebaseDb.saveUser(updatedUser);
-
-          if (targetUser.toLowerCase() === sshSessionUser.username.toLowerCase()) {
-            setSshSessionUser(updatedUser);
+          if (sshSessionUser?.username === 'root') {
+            standardLogs.push(
+              'createuser <name> <pass>  - Create a new user with a default password.',
+              'listusers                 - List all registered users and status.',
+              'deleteuser <name>         - Remove a standard user account.',
+              'reset2fa <username>       - Reset 2FA status and key for a user.'
+            );
           }
 
-          setTerminalLogs(prev => [...prev, `[SUCCESS] 2FA configuration reset successfully for user '${targetUser}'.`]);
-        } else {
-          setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
+          standardLogs.push(' ');
+          setTerminalLogs(prev => [...prev, ...standardLogs]);
+          return;
         }
-        return;
+
+        // Whoami command
+        if (base === 'whoami') {
+          setTerminalLogs(prev => [...prev, sshSessionUser?.username || 'unknown']);
+          return;
+        }
+
+        // User passwd/resetpassword command
+        if (base === 'passwd' || base === 'resetpassword') {
+          const newPassword = parts[1];
+          if (!newPassword) {
+            setTerminalLogs(prev => [...prev, `Usage: passwd <new_password>`]);
+            return;
+          }
+
+          const userObj = await firebaseDb.getUser(sshUser);
+          if (userObj) {
+            const updatedUser = { ...userObj, passwordHash: newPassword };
+            await firebaseDb.saveUser(updatedUser);
+            setSshSessionUser(updatedUser);
+            setTerminalLogs(prev => [...prev, `[SUCCESS] Password changed successfully for user '${sshUser}'.`]);
+          } else {
+            setTerminalLogs(prev => [...prev, `[ERROR] User session error.`]);
+          }
+          return;
+        }
+
+        // Exit SSH command
+        if (base === 'exit' || base === 'logout') {
+          setTerminalLogs(prev => [...prev, `Connection to zero closed.`, ` `]);
+          setSshState('none');
+          setSshUser('');
+          setSshSessionUser(null);
+          return;
+        }
+
+        // Admin createuser command
+        if (base === 'createuser') {
+          if (sshSessionUser?.username !== 'root') {
+            setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+            return;
+          }
+
+          const newUsername = parts[1];
+          const defaultPassword = parts[2];
+
+          if (!newUsername || !defaultPassword) {
+            setTerminalLogs(prev => [...prev, `Usage: createuser <username> <default_password>`]);
+            return;
+          }
+
+          const existing = await firebaseDb.getUser(newUsername);
+          if (existing) {
+            setTerminalLogs(prev => [...prev, `[ERROR] User account '${newUsername}' already exists.`]);
+            return;
+          }
+
+          await firebaseDb.saveUser({
+            username: newUsername,
+            passwordHash: defaultPassword,
+            isPasswordChanged: false,
+            is2faEnabled: false,
+            twoFactorSecret: '',
+          });
+
+          setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${newUsername}' registered successfully.`]);
+          return;
+        }
+
+        // Admin listusers command
+        if (base === 'listusers') {
+          if (sshSessionUser?.username !== 'root') {
+            setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+            return;
+          }
+
+          const usersList = await firebaseDb.listAllUsers();
+
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'USERNAME        PASSWORD_CHANGED?     2FA_ENABLED?',
+            '-------------------------------------------------------',
+            ...usersList.map(u =>
+              `${u.username.padEnd(16)} ${(u.isPasswordChanged ? 'YES' : 'NO').padEnd(21)} ${u.is2faEnabled ? 'YES' : 'NO'}`
+            ),
+            ' '
+          ]);
+          return;
+        }
+
+        // Admin deleteuser command
+        if (base === 'deleteuser') {
+          if (sshSessionUser?.username !== 'root') {
+            setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+            return;
+          }
+
+          const targetUser = parts[1];
+          if (!targetUser) {
+            setTerminalLogs(prev => [...prev, `Usage: deleteuser <username>`]);
+            return;
+          }
+
+          if (targetUser.toLowerCase() === 'root') {
+            setTerminalLogs(prev => [...prev, `[ERROR] Cannot delete admin root account.`]);
+            return;
+          }
+
+          const deleted = await firebaseDb.deleteUser(targetUser);
+          if (deleted) {
+            setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${targetUser}' deleted.`]);
+          } else {
+            setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
+          }
+          return;
+        }
+
+        // Admin reset2fa command
+        if (base === 'reset2fa') {
+          if (sshSessionUser?.username !== 'root') {
+            setTerminalLogs(prev => [...prev, `zero-shell: Permission denied. root access required.`]);
+            return;
+          }
+
+          const targetUser = parts[1];
+          if (!targetUser) {
+            setTerminalLogs(prev => [...prev, `Usage: reset2fa <username>`]);
+            return;
+          }
+
+          const userObj = await firebaseDb.getUser(targetUser);
+          if (userObj) {
+            const updatedUser = {
+              ...userObj,
+              is2faEnabled: false,
+              twoFactorSecret: ''
+            };
+            await firebaseDb.saveUser(updatedUser);
+
+            if (targetUser.toLowerCase() === sshSessionUser.username.toLowerCase()) {
+              setSshSessionUser(updatedUser);
+            }
+
+            setTerminalLogs(prev => [...prev, `[SUCCESS] 2FA configuration reset successfully for user '${targetUser}'.`]);
+          } else {
+            setTerminalLogs(prev => [...prev, `[ERROR] User '${targetUser}' not found.`]);
+          }
+          return;
+        }
+
+        setTerminalLogs(prev => [...prev, `zero-shell: command not found: "${cmd}"`]);
       }
-
-      setTerminalLogs(prev => [...prev, `Command dosent exist, plese refer to the command list using "help" function`]);
-    }
-  };
-
-  // ==========================================
-  // Diagnostics / Hacking Simulation
-  // ==========================================
-
-  const runHack = (type: 'firewall' | 'memory' | 'sentinel') => {
-    if (activeHack !== 'none') return;
-    setActiveHack(type);
-    setHackProgress(0);
-    setHackLogs([]);
-
-    const logMessages = {
-      firewall: [
-        'INITIATING BACKDOOR ROUTE ON PORT 8080...',
-        'BYPASSING SECTOR SECURITY CODES...',
-        'FLOODING AGENT SENSOR ARRAYS...',
-        'ESTABLISHING ENCRYPTED ROOT TUNNEL...',
-        'FIREWALL OVERRIDDEN. MAIN-SECURE NODE CAPTURED.'
-      ],
-      memory: [
-        'SCANNING VIRTUAL MEMORY BLOCKS...',
-        'ALLOCATING FLOATING BUFFER SPACE...',
-        'DUMPING CACHED ILLUSION PROTOCOLS...',
-        'RE-INJECTING RAW CONSCIOUSNESS DATA...',
-        'MEMORY OVERFLOW PURGE COMPLETE. STANDBY_STABLE.'
-      ],
-      sentinel: [
-        'PINGING SENTINEL RADAR FREQUENCY...',
-        'INJECTING STATIC NOISE PATHS...',
-        'ENCRYPTING ZION TRACE BEACONS...',
-        'MASKING ELECTROMAGNETIC SIGNATURES...',
-        'SENTINEL SENSORS CONFUSED. SCAN_COOLDOWN ACTIVE.'
-      ]
     };
 
-    let step = 0;
-    const interval = setInterval(() => {
-      setHackProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setActiveHack('none');
-          return 100;
-        }
+    // ==========================================
+    // Diagnostics / Hacking Simulation
+    // ==========================================
 
-        if (prev % 20 === 0 && step < logMessages[type].length) {
-          setHackLogs(logs => [...logs, `[${new Date().toLocaleTimeString()}] ${logMessages[type][step]}`]);
-          step++;
-        }
+    const runHack = (type: 'firewall' | 'memory' | 'sentinel') => {
+      if (activeHack !== 'none') return;
+      setActiveHack(type);
+      setHackProgress(0);
+      setHackLogs([]);
 
-        return prev + 5;
-      });
-    }, 120);
-  };
+      const logMessages = {
+        firewall: [
+          'INITIATING BACKDOOR ROUTE ON PORT 8080...',
+          'BYPASSING SECTOR SECURITY CODES...',
+          'FLOODING AGENT SENSOR ARRAYS...',
+          'ESTABLISHING ENCRYPTED ROOT TUNNEL...',
+          'FIREWALL OVERRIDDEN. MAIN-SECURE NODE CAPTURED.'
+        ],
+        memory: [
+          'SCANNING VIRTUAL MEMORY BLOCKS...',
+          'ALLOCATING FLOATING BUFFER SPACE...',
+          'DUMPING CACHED ILLUSION PROTOCOLS...',
+          'RE-INJECTING RAW CONSCIOUSNESS DATA...',
+          'MEMORY OVERFLOW PURGE COMPLETE. STANDBY_STABLE.'
+        ],
+        sentinel: [
+          'PINGING SENTINEL RADAR FREQUENCY...',
+          'INJECTING STATIC NOISE PATHS...',
+          'ENCRYPTING ZION TRACE BEACONS...',
+          'MASKING ELECTROMAGNETIC SIGNATURES...',
+          'SENTINEL SENSORS CONFUSED. SCAN_COOLDOWN ACTIVE.'
+        ]
+      };
 
-  // ==========================================
-  // Text Decryption Panel Logic
-  // ==========================================
-
-  const handleDecryptText = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!decryptInput.trim()) return;
-
-    const newLogId = Date.now().toString();
-    const originalText = decryptInput;
-    const logItem: DecryptionLog = {
-      id: newLogId,
-      original: originalText,
-      decrypted: '',
-      progress: 0,
-      timestamp: new Date().toLocaleTimeString(),
-      status: 'decrypting'
-    };
-
-    setDecryptionLogs(prev => [logItem, ...prev]);
-    setDecryptInput('');
-
-    let prog = 0;
-    const interval = setInterval(() => {
-      prog += 10;
-      setDecryptionLogs(logs => logs.map(l => {
-        if (l.id === newLogId) {
-          if (prog >= 100) {
+      let step = 0;
+      const interval = setInterval(() => {
+        setHackProgress(prev => {
+          if (prev >= 100) {
             clearInterval(interval);
+            setActiveHack('none');
+            return 100;
+          }
+
+          if (prev % 20 === 0 && step < logMessages[type].length) {
+            setHackLogs(logs => [...logs, `[${new Date().toLocaleTimeString()}] ${logMessages[type][step]}`]);
+            step++;
+          }
+
+          return prev + 5;
+        });
+      }, 120);
+    };
+
+    // ==========================================
+    // Text Decryption Panel Logic
+    // ==========================================
+
+    const handleDecryptText = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!decryptInput.trim()) return;
+
+      const newLogId = Date.now().toString();
+      const originalText = decryptInput;
+      const logItem: DecryptionLog = {
+        id: newLogId,
+        original: originalText,
+        decrypted: '',
+        progress: 0,
+        timestamp: new Date().toLocaleTimeString(),
+        status: 'decrypting'
+      };
+
+      setDecryptionLogs(prev => [logItem, ...prev]);
+      setDecryptInput('');
+
+      let prog = 0;
+      const interval = setInterval(() => {
+        prog += 10;
+        setDecryptionLogs(logs => logs.map(l => {
+          if (l.id === newLogId) {
+            if (prog >= 100) {
+              clearInterval(interval);
+              return {
+                ...l,
+                progress: 100,
+                decrypted: originalText.toUpperCase(),
+                status: 'completed'
+              };
+            }
+
+            const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇ';
+            const scrambled = originalText.split('').map(char => {
+              if (char === ' ') return ' ';
+              return Math.random() > 0.4 ? char.toUpperCase() : katakana[Math.floor(Math.random() * katakana.length)];
+            }).join('');
+
             return {
               ...l,
-              progress: 100,
-              decrypted: originalText.toUpperCase(),
-              status: 'completed'
+              progress: prog,
+              decrypted: scrambled,
+              status: 'decrypting'
             };
           }
+          return l;
+        }));
+      }, 100);
+    };
 
-          const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇ';
-          const scrambled = originalText.split('').map(char => {
-            if (char === ' ') return ' ';
-            return Math.random() > 0.4 ? char.toUpperCase() : katakana[Math.floor(Math.random() * katakana.length)];
-          }).join('');
+    // ==========================================
+    // JSX Layout Rendering
+    // ==========================================
 
-          return {
-            ...l,
-            progress: prog,
-            decrypted: scrambled,
-            status: 'decrypting'
-          };
-        }
-        return l;
-      }));
-    }, 100);
-  };
+    return (
+      <div className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative">
 
-  // ==========================================
-  // JSX Layout Rendering
-  // ==========================================
+        {/* Background Matrix Rain Cascade */}
+        <DigitalRain color="#ff0033" density={rainDensity} />
 
-  const wrapperStyle: React.CSSProperties = activeTheme ? {
-    backgroundColor: activeTheme.background,
-    color: activeTheme.text,
-  } : {};
+        {/* Top Header App Bar (Desktop Navigation) */}
+        <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 bg-black border-b border-[#5f3e3d] md:flex hidden">
+          <div className="font-anton text-4xl text-[#ffb3af] tracking-tighter select-none">
+            Ground_Xero
+          </div>
+        </header>
 
-  return (
-    <div
-      className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative"
-      style={wrapperStyle}
-    >
-
-      {/* Background Matrix Rain Cascade */}
-      {isBgRainActive && <DigitalRain color={activeTheme?.rainColor || "#ff0033"} density={rainDensity} />}
-
-      {/* Top Header App Bar (Desktop Navigation) */}
-      <header
-        className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 py-3 border-b border-[#5f3e3d] md:flex hidden"
-        style={{ backgroundColor: activeTheme ? activeTheme.background : 'black' }}
-      >
-        <div className="font-anton text-4xl text-[#ffb3af] tracking-tighter select-none">
-          Ground_Xero
-        </div>
-      </header>
-
-      {/* Main Viewport Container */}
-      <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto px-6 md:px-12 relative z-10 bg-transparent">
+        {/* Main Viewport Container */}
+        <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10">
 
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
           <div className="flex-1 flex flex-col h-full justify-between">
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleAsciiImageUpload} 
-            />
             {/* Scrollable logs list and active inline terminal input */}
             <div
               className={`flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 ${!activeTheme ? 'text-[#ff0033]' : ''}`}
@@ -1585,233 +1436,107 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 </div>
               ))}
 
-              {/* YouTube Inline Player */}
-              {ytVideoId && (
-                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-2 w-fit max-w-[420px]">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest">▶ YT STREAM ACTIVE</span>
-                    <button
-                      onClick={() => { setYtVideoId(null); setTerminalLogs(prev => [...prev, '[YT]: Video playback stopped.']); }}
-                      className="text-[#ff0033] font-mono text-[10px] uppercase tracking-wider hover:text-white cursor-pointer border border-[#5f3e3d] px-2 py-0.5 hover:border-[#ff0033] transition-colors"
-                    >
-                      ✕ STOP
-                    </button>
-                  </div>
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&vq=hd720&rel=0&modestbranding=1`}
-                    width="400"
-                    height="225"
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                    className="border border-[#5f3e3d]/50"
-                    title="YouTube Video Player"
-                  />
-                </div>
-              )}
-
-              {/* Album Genre Search Box */}
-              {cliMode === 'album_search' && albumGenreResults.length > 0 && (
-                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-3 w-fit max-w-[340px]">
-                  <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest block mb-2">
-                    ♫ GENRE RESULTS {albumSearchQuery && `FOR "${albumSearchQuery.toUpperCase()}"`}
-                  </span>
-                  <div className="space-y-1">
-                    {albumGenreResults.map((tag, i) => (
-                      <div key={i} className="font-mono text-xs text-white">
-                        <span className="text-[#ff0033] mr-2">{i + 1})</span>
-                        {tag}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="font-mono text-[10px] text-[#e9bcb9] block mt-2 border-t border-[#5f3e3d]/40 pt-1.5">
-                    Enter number to select, or type genre and press Enter.
-                  </span>
-                </div>
-              )}
-
-              {/* Album Loading Indicator */}
-              {albumLoading && (
-                <div className="my-2 font-mono text-xs text-[#ff0033] animate-pulse">
-                  [ALBUM]: Scanning genre database...
-                </div>
-              )}
-
-              {/* Album Recommendation Display */}
-              {albumRecommendation && (
-                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-4 w-fit max-w-[340px]">
-                  <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest block mb-3">
-                    ♫ ALBUM RECOMMENDATION
-                  </span>
-                  {albumRecommendation.image && (
-                    <img
-                      src={albumRecommendation.image}
-                      alt={albumRecommendation.name}
-                      className="w-[200px] h-[200px] object-cover border border-[#5f3e3d]/50 mb-3"
+                {/* QR Code rendering during 2FA Setup */}
+                {sshState === 'ssh_2fa_setup' && ssh2faSecret && (
+                  <div className="my-4 p-4 bg-white w-max rounded">
+                    <QRCodeSVG
+                      value={`otpauth://totp/${encodeURIComponent(`Ground_Xero:${sshUser}@zero`)}?secret=${ssh2faSecret}&issuer=Ground_Xero`}
+                      size={160}
+                      level="M"
                     />
-                  )}
-                  <div className="space-y-1">
-                    <div className="font-mono text-sm text-white font-bold tracking-wide">
-                      {albumRecommendation.name}
-                    </div>
-                    <div className="font-mono text-xs text-[#e9bcb9]">
-                      {albumRecommendation.artist}
-                    </div>
-                    <div className="font-mono text-[10px] text-[#e9bcb9]/70 uppercase">
-                      Released: {albumRecommendation.releaseDate}
-                    </div>
                   </div>
-                  <button
-                    onClick={() => setAlbumRecommendation(null)}
-                    className="mt-3 text-[#ff0033] font-mono text-[10px] uppercase tracking-wider hover:text-white cursor-pointer border border-[#5f3e3d] px-2 py-0.5 hover:border-[#ff0033] transition-colors"
-                  >
-                    ✕ DISMISS
-                  </button>
-                </div>
-              )}
+                )}
 
-              {/* QR Code rendering during 2FA Setup */}
-              {sshState === 'ssh_2fa_setup' && ssh2faSecret && (
-                <div className="my-4 p-4 bg-white w-max rounded">
-                  <QRCodeSVG
-                    value={`otpauth://totp/${encodeURIComponent(`Ground_Xero:${sshUser}@zero`)}?secret=${ssh2faSecret}&issuer=Ground_Xero`}
-                    size={160}
-                    level="M"
-                  />
-                </div>
-              )}
-
-              {/* Active command line input printed inline directly after history logs */}
-              <div className="flex items-center font-mono text-xs select-none pt-1">
-                {sshState === 'none' && (
-                  <>
-                    <span className={`font-bold ${!activeTheme ? 'text-[#ff0033]' : ''}`} style={activeTheme ? { color: activeTheme.text } : undefined}>root/</span>
-                    <span className="text-white">:</span>
-                    <span className="text-matrix-blue font-bold">~</span>
-                    <span className={`animate-pulse font-bold ml-1 mr-2 ${!activeTheme ? 'text-[#ff0033]' : ''}`} style={activeTheme ? { color: activeTheme.text } : undefined}>$</span>
-                  </>
-                )}
-                {sshState === 'ssh_password' && (
-                  <span className="text-[#ff0033] mr-2">{sshUser}@zero's password:</span>
-                )}
-                {sshState === 'ssh_new_password' && (
-                  <span className="text-[#ff0033] mr-2">New password:</span>
-                )}
-                {sshState === 'ssh_confirm_password' && (
-                  <span className="text-[#ff0033] mr-2">Confirm password:</span>
-                )}
-                {(sshState === 'ssh_2fa_setup' || sshState === 'ssh_2fa_verify') && (
-                  <span className="text-[#ff0033] mr-2">Enter 2FA Code (OTP):</span>
-                )}
-                {sshState === 'logged_in' && (
-                  <>
-                    <span className="text-[#ff0033] font-bold">{sshSessionUser?.username}@zero</span>
-                    <span className="text-white">:</span>
-                    <span className="text-matrix-blue font-bold">~</span>
-                    <span className="text-[#ff0033] animate-pulse font-bold ml-1 mr-2">
-                      {sshSessionUser?.username === 'root' ? '#' : '$'}
-                    </span>
-                  </>
-                )}
-                <input
-                  ref={cliInputRef}
-                  aria-label="Terminal Input"
-                  autoFocus
-                  type={
-                    sshState === 'ssh_password' ||
-                      sshState === 'ssh_new_password' ||
-                      sshState === 'ssh_confirm_password'
-                      ? 'password'
-                      : 'text'
-                  }
-                  className={`bg-transparent border-none outline-none flex-1 font-mono tracking-wide ml-1 w-full text-xs focus:ring-0 p-0 m-0 caret-current ${!activeTheme ? 'text-[#ff0033]' : ''}`}
-                  style={activeTheme ? { color: activeTheme.text } : undefined}
-                  value={cliInput}
-                  onChange={(e) => setCliInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleExecuteCliCommand();
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      if (commandHistory.length > 0) {
-                        const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
-                        if (historyIndex === -1) setDraftCommand(cliInput);
-                        setHistoryIndex(nextIndex);
-                        setCliInput(commandHistory[nextIndex]);
-                      }
-                    } else if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      if (historyIndex !== -1) {
-                        const nextIndex = historyIndex + 1;
-                        if (nextIndex >= commandHistory.length) {
-                          setHistoryIndex(-1);
-                          setCliInput(draftCommand);
-                        } else {
+                {/* Active command line input printed inline directly after history logs */}
+                <div className="flex items-center font-mono text-xs select-none pt-1">
+                  {sshState === 'none' && (
+                    <>
+                      <span className="text-[#ff0033] font-bold">root/</span>
+                      <span className="text-white">:</span>
+                      <span className="text-matrix-blue font-bold">~</span>
+                      <span className="text-[#ff0033] animate-pulse font-bold ml-1 mr-2">$</span>
+                    </>
+                  )}
+                  {sshState === 'ssh_password' && (
+                    <span className="text-[#ff0033] mr-2">{sshUser}@zero's password:</span>
+                  )}
+                  {sshState === 'ssh_new_password' && (
+                    <span className="text-[#ff0033] mr-2">New password:</span>
+                  )}
+                  {sshState === 'ssh_confirm_password' && (
+                    <span className="text-[#ff0033] mr-2">Confirm password:</span>
+                  )}
+                  {(sshState === 'ssh_2fa_setup' || sshState === 'ssh_2fa_verify') && (
+                    <span className="text-[#ff0033] mr-2">Enter 2FA Code (OTP):</span>
+                  )}
+                  {sshState === 'logged_in' && (
+                    <>
+                      <span className="text-[#ff0033] font-bold">{sshSessionUser?.username}@zero</span>
+                      <span className="text-white">:</span>
+                      <span className="text-matrix-blue font-bold">~</span>
+                      <span className="text-[#ff0033] animate-pulse font-bold ml-1 mr-2">
+                        {sshSessionUser?.username === 'root' ? '#' : '$'}
+                      </span>
+                    </>
+                  )}
+                  <input
+                    ref={cliInputRef}
+                    aria-label="Terminal Input"
+                    autoFocus
+                    type={
+                      sshState === 'ssh_password' ||
+                        sshState === 'ssh_new_password' ||
+                        sshState === 'ssh_confirm_password'
+                        ? 'password'
+                        : 'text'
+                    }
+                    value={cliInput}
+                    onChange={(e) => setCliInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleExecuteCliCommand();
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (commandHistory.length > 0) {
+                          const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+                          if (historyIndex === -1) setDraftCommand(cliInput);
                           setHistoryIndex(nextIndex);
                           setCliInput(commandHistory[nextIndex]);
                         }
-                      }
-                    } else if (e.key === 'Tab') {
-                      e.preventDefault();
-                      const input = cliInput;
-                      const inputLower = input.toLowerCase();
+                      } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (historyIndex !== -1) {
+                          const nextIndex = historyIndex + 1;
+                          if (nextIndex >= commandHistory.length) {
+                            setHistoryIndex(-1);
+                            setCliInput(draftCommand);
+                          } else {
+                            setHistoryIndex(nextIndex);
+                            setCliInput(commandHistory[nextIndex]);
+                          }
+                        }
+                      } else if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const input = cliInput;
+                        const inputLower = input.toLowerCase();
 
-                      const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
-                      if (isSensitive || input.length === 0) return;
+                        const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
+                        if (isSensitive || input.length === 0) return;
 
                       const availableCommands = sshState === 'logged_in'
                         ? sshSessionUser?.username === 'root'
                           ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
                           : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'ascii', 'yt', 'album', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
 
-                      if (partsLower.length === 1) {
-                        const matches = availableCommands.filter(cmd => cmd.startsWith(partsLower[0]));
-                        if (matches.length === 1) {
-                          if (matches[0] === 'code') {
-                            setCliInput('code $Theme');
-                          } else {
+                        const parts = inputLower.split(' ');
+                        if (parts.length === 1) {
+                          const matches = availableCommands.filter(cmd => cmd.startsWith(inputLower));
+                          if (matches.length === 1) {
                             setCliInput(matches[0] + ' ');
-                          }
-                        } else if (matches.length > 1) {
-                          const logPrefix = sshState === 'logged_in'
-                            ? `${sshSessionUser?.username}@zero:~$`
-                            : 'root/ :~$';
-                          setTerminalLogs(prev => [
-                            ...prev,
-                            `${logPrefix} ${cliInput}`,
-                            matches.join('  ')
-                          ]);
-                        }
-                      } else if (partsLower.length === 2) {
-                        if (partsLower[0] === 'code') {
-                          const subOptions = ['$Theme'];
-                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
-                          if (matches.length >= 1) {
-                            setCliInput('code $Theme');
-                          }
-                        } else if (partsLower[0] === 'theme') {
-                          const subOptions = ['-list', '-l', '-switch', '-s', '-help', '-h'];
-                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
-                          if (matches.length === 1) {
-                            setCliInput(`theme ${matches[0]} `);
-                          } else if (matches.length > 1) {
-                            const logPrefix = sshState === 'logged_in'
-                              ? `${sshSessionUser?.username}@zero:~$`
-                              : 'root/ :~$';
-                            setTerminalLogs(prev => [
-                              ...prev,
-                              `${logPrefix} ${cliInput}`,
-                              matches.join('  ')
-                            ]);
-                          }
-                        } else if (partsLower[0] === 'bg-rain') {
-                          const subOptions = ['on', 'off', 'enable', 'disable', '-help', '-h'];
-                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
-                          if (matches.length === 1) {
-                            setCliInput(`bg-rain ${matches[0]} `);
                           } else if (matches.length > 1) {
                             const logPrefix = sshState === 'logged_in'
                               ? `${sshSessionUser?.username}@zero:~$`
@@ -1868,297 +1593,268 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                             ]);
                           }
                         }
+                      } else if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
+                        e.preventDefault();
+                        const logPrefix = sshState === 'logged_in'
+                          ? `${sshSessionUser?.username}@zero:~$`
+                          : (sshState === 'none' ? 'root/ $' : `[SSH INPUT]`);
+                        const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
+                        const displayCmd = isSensitive ? '•'.repeat(Math.min(cliInput.length, 12)) : cliInput;
+
+                        setTerminalLogs(prev => [
+                          ...prev,
+                          `${logPrefix} ${displayCmd}^C`,
+                          ' ',
+                          '>> DETACHING NEURAL COUPLING SYSTEM...',
+                          '>> RE-INJECTING COGNITIVE COMFORT BUFFER...'
+                        ]);
+                        setCliInput('');
+                        setTimeout(() => {
+                          onExit?.();
+                        }, 700);
                       }
-                    } else if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
-                      e.preventDefault();
-                      const logPrefix = sshState === 'logged_in'
-                        ? `${sshSessionUser?.username}@zero:~$`
-                        : (sshState === 'none' ? 'root/ $' : `[SSH INPUT]`);
-                      const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
-                      const displayCmd = isSensitive ? '•'.repeat(Math.min(cliInput.length, 12)) : cliInput;
-
-                      setTerminalLogs(prev => [
-                        ...prev,
-                        `${logPrefix} ${displayCmd}^C`,
-                        ' ',
-                        '>> DETACHING NEURAL COUPLING SYSTEM...',
-                        '>> RE-INJECTING COGNITIVE COMFORT BUFFER...'
-                      ]);
-                      setCliInput('');
-                      setTimeout(() => {
-                        onExit?.();
-                      }, 700);
-                    }
-                  }}
-                  placeholder=""
-                />
-              </div>
-
-              <div ref={terminalEndRef} />
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: DECRYPTOR & DIAGNOSTICS */}
-        {currentTab === 'decryptor' && (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4 max-w-6xl mx-auto w-full h-[calc(100vh-180px)] overflow-y-auto">
-
-            {/* Diagnostics Column */}
-            <div className="lg:col-span-5 space-y-6">
-
-              {/* Diagnostic Parameters Table */}
-              <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
-                <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-[#ff0033]" />
-                  MAINFRAME LIVE DIAGNOSTICS
-                </h3>
-                <div className="space-y-4 font-mono text-xs">
-                  {diagnostics.map((diag, i) => (
-                    <div key={i} className="flex justify-between items-center border-b border-[#5f3e3d]/30 pb-2.5">
-                      <span className="text-[#e9bcb9] uppercase">{diag.name}</span>
-                      <div className="text-right">
-                        <span className="text-white font-bold block">{diag.value}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active'
-                          ? 'text-[#ff0033]'
-                          : diag.status === 'warning'
-                            ? 'text-yellow-500'
-                            : 'text-red-500'
-                          }`}>
-                          {diag.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Simulation Exploiter Tools */}
-              <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-3">
-                <h3 className="font-anton text-lg tracking-wider text-white uppercase">MAINFRAME BYPASS EXPLOITS</h3>
-
-                {/* firewall hack */}
-                <button
-                  disabled={activeHack !== 'none'}
-                  onClick={() => runHack('firewall')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'firewall'
-                    ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
-                    : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                    }`}
-                >
-                  <span>OVERRIDE AGENT FIREWALL</span>
-                  <Shield className="w-4 h-4" />
-                </button>
-
-                {/* memory hack */}
-                <button
-                  disabled={activeHack !== 'none'}
-                  onClick={() => runHack('memory')}
-                  className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'memory'
-                    ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
-                    : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
-                    }`}
-                >
-                  <span>PURGE SUBSYSTEM BUFFER</span>
-                  <TermIcon className="w-4 h-4" />
-                </button>
-
-                {/* Live Hack Logging feedback */}
-                {activeHack !== 'none' && (
-                  <div className="space-y-2 border border-[#5f3e3d] p-3 bg-black/60 font-mono text-xs">
-                    <div className="flex justify-between text-[#ff0033] font-bold">
-                      <span>RUNNING SYSTEM GLITCH: {activeHack.toUpperCase()}</span>
-                      <span>{hackProgress}%</span>
-                    </div>
-                    <div className="w-full bg-neutral-900 h-2 border border-[#5f3e3d]">
-                      <div className="bg-[#ff0033] h-full transition-all duration-150" style={{ width: `${hackProgress}%` }} />
-                    </div>
-                    <div className="text-[10px] text-[#e9bcb9] h-20 overflow-y-auto space-y-0.5 pt-1 mt-1 border-t border-[#5f3e3d]/20">
-                      {hackLogs.map((log, index) => <div key={index}>{log}</div>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Scrambled Text Decryptor Column */}
-            <div className="lg:col-span-7">
-              <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
-                <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
-                  <TermIcon className="w-4 h-4 text-[#ff0033]" />
-                  TEXT PACKET DECRYPTOR
-                </h3>
-
-                <form onSubmit={handleDecryptText} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={decryptInput}
-                    onChange={(e) => setDecryptInput(e.target.value)}
-                    placeholder="Enter Matrix text to scramble decrypt..."
-                    className="flex-1 bg-black border border-[#5f3e3d] text-white font-mono text-xs p-3 focus:border-[#ff0033] outline-none"
+                    }}
+                    placeholder=""
+                    className="bg-transparent border-none outline-none text-[#ff0033] font-mono text-xs w-full focus:ring-0 p-0 m-0 caret-current"
                   />
-                  <button
-                    type="submit"
-                    className="bg-black hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-wider font-bold px-5 cursor-pointer flex items-center gap-1"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span>DECRYPT</span>
-                  </button>
-                </form>
+                </div>
 
-                {/* Decoded records stream */}
-                <div className="space-y-3 pt-2">
-                  <h4 className="font-sans text-xs tracking-wider uppercase text-white font-bold">DECRYPTION RECORD STREAM</h4>
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                    {decryptionLogs.map((log) => (
-                      <div key={log.id} className="border border-[#5f3e3d]/30 p-3 bg-[#121414]/55 font-mono text-xs flex justify-between items-center">
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-[#e9bcb9] block uppercase">
-                            RAW: "{log.original}"
-                          </span>
-                          <span className="text-white font-bold block tracking-wider">
-                            DECODED: "{log.decrypted}"
-                          </span>
-                        </div>
+                <div ref={terminalEndRef} />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: DECRYPTOR & DIAGNOSTICS */}
+          {currentTab === 'decryptor' && (
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4 max-w-6xl mx-auto w-full h-[calc(100vh-180px)] overflow-y-auto">
+
+              {/* Diagnostics Column */}
+              <div className="lg:col-span-5 space-y-6">
+
+                {/* Diagnostic Parameters Table */}
+                <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
+                  <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-[#ff0033]" />
+                    MAINFRAME LIVE DIAGNOSTICS
+                  </h3>
+                  <div className="space-y-4 font-mono text-xs">
+                    {diagnostics.map((diag, i) => (
+                      <div key={i} className="flex justify-between items-center border-b border-[#5f3e3d]/30 pb-2.5">
+                        <span className="text-[#e9bcb9] uppercase">{diag.name}</span>
                         <div className="text-right">
-                          <span className="text-[10px] text-[#e9bcb9] block">{log.timestamp}</span>
-                          {log.status === 'completed' ? (
-                            <span className="text-[#ff0033] font-bold text-[10px] uppercase flex items-center gap-1 justify-end mt-1">
-                              <Check className="w-3.5 h-3.5" />
-                              <span>SECURE</span>
-                            </span>
-                          ) : (
-                            <span className="text-yellow-500 font-bold text-[10px] uppercase animate-pulse block mt-1">
-                              SOLVING {log.progress}%
-                            </span>
-                          )}
+                          <span className="text-white font-bold block">{diag.value}</span>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${diag.status === 'active'
+                            ? 'text-[#ff0033]'
+                            : diag.status === 'warning'
+                              ? 'text-yellow-500'
+                              : 'text-red-500'
+                            }`}>
+                            {diag.status}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Simulation Exploiter Tools */}
+                <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-3">
+                  <h3 className="font-anton text-lg tracking-wider text-white uppercase">MAINFRAME BYPASS EXPLOITS</h3>
+
+                  {/* firewall hack */}
+                  <button
+                    disabled={activeHack !== 'none'}
+                    onClick={() => runHack('firewall')}
+                    className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'firewall'
+                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
+                      }`}
+                  >
+                    <span>OVERRIDE AGENT FIREWALL</span>
+                    <Shield className="w-4 h-4" />
+                  </button>
+
+                  {/* memory hack */}
+                  <button
+                    disabled={activeHack !== 'none'}
+                    onClick={() => runHack('memory')}
+                    className={`w-full font-mono text-xs py-2.5 border uppercase tracking-widest cursor-pointer text-left px-4 flex justify-between items-center ${activeHack === 'memory'
+                      ? 'border-[#ff0033] bg-[#ff0033]/10 text-[#ff0033]'
+                      : 'border-[#5f3e3d] text-[#e9bcb9] hover:border-[#ff0033] hover:text-[#ff0033]'
+                      }`}
+                  >
+                    <span>PURGE SUBSYSTEM BUFFER</span>
+                    <TermIcon className="w-4 h-4" />
+                  </button>
+
+                  {/* Live Hack Logging feedback */}
+                  {activeHack !== 'none' && (
+                    <div className="space-y-2 border border-[#5f3e3d] p-3 bg-black/60 font-mono text-xs">
+                      <div className="flex justify-between text-[#ff0033] font-bold">
+                        <span>RUNNING SYSTEM GLITCH: {activeHack.toUpperCase()}</span>
+                        <span>{hackProgress}%</span>
+                      </div>
+                      <div className="w-full bg-neutral-900 h-2 border border-[#5f3e3d]">
+                        <div className="bg-[#ff0033] h-full transition-all duration-150" style={{ width: `${hackProgress}%` }} />
+                      </div>
+                      <div className="text-[10px] text-[#e9bcb9] h-20 overflow-y-auto space-y-0.5 pt-1 mt-1 border-t border-[#5f3e3d]/20">
+                        {hackLogs.map((log, index) => <div key={index}>{log}</div>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Scrambled Text Decryptor Column */}
+              <div className="lg:col-span-7">
+                <div className="bg-black/90 border border-[#5f3e3d] p-5 space-y-4">
+                  <h3 className="font-anton text-lg tracking-wider text-white uppercase flex items-center gap-2">
+                    <TermIcon className="w-4 h-4 text-[#ff0033]" />
+                    TEXT PACKET DECRYPTOR
+                  </h3>
+
+                  <form onSubmit={handleDecryptText} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={decryptInput}
+                      onChange={(e) => setDecryptInput(e.target.value)}
+                      placeholder="Enter Matrix text to scramble decrypt..."
+                      className="flex-1 bg-black border border-[#5f3e3d] text-white font-mono text-xs p-3 focus:border-[#ff0033] outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-black hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-wider font-bold px-5 cursor-pointer flex items-center gap-1"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>DECRYPT</span>
+                    </button>
+                  </form>
+
+                  {/* Decoded records stream */}
+                  <div className="space-y-3 pt-2">
+                    <h4 className="font-sans text-xs tracking-wider uppercase text-white font-bold">DECRYPTION RECORD STREAM</h4>
+                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                      {decryptionLogs.map((log) => (
+                        <div key={log.id} className="border border-[#5f3e3d]/30 p-3 bg-[#121414]/55 font-mono text-xs flex justify-between items-center">
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-[#e9bcb9] block uppercase">
+                              RAW: "{log.original}"
+                            </span>
+                            <span className="text-white font-bold block tracking-wider">
+                              DECODED: "{log.decrypted}"
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-[#e9bcb9] block">{log.timestamp}</span>
+                            {log.status === 'completed' ? (
+                              <span className="text-[#ff0033] font-bold text-[10px] uppercase flex items-center gap-1 justify-end mt-1">
+                                <Check className="w-3.5 h-3.5" />
+                                <span>SECURE</span>
+                              </span>
+                            ) : (
+                              <span className="text-yellow-500 font-bold text-[10px] uppercase animate-pulse block mt-1">
+                                SOLVING {log.progress}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 3: IMMERSIVE WATERFALL VISUALIZER */}
+          {currentTab === 'rain' && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center mt-4 h-[calc(100vh-220px)] relative">
+              <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
+                <DigitalRain color="#ff0033" density={rainDensity * 1.5} />
+              </div>
+
+              <div className="bg-black/90 border border-[#5f3e3d] p-6 max-w-md w-full relative z-10 space-y-4">
+                <h3 className="font-anton text-2xl text-white uppercase tracking-wider">
+                  COGNITIVE MATRIX RAIN
+                </h3>
+                <p className="font-mono text-xs text-[#e9bcb9] leading-relaxed">
+                  You are witnessing the sub-code of the simulation flowing in real-time.
+                  Adjust stream transmission density parameters to alter transmission clarity.
+                </p>
+
+                {/* Rain density range adjust */}
+                <div className="space-y-2 pt-2 text-left">
+                  <span className="font-mono text-xs text-white uppercase block">
+                    Waterfall Density: {rainDensity.toFixed(1)}x
+                  </span>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="3.0"
+                    step="0.2"
+                    value={rainDensity}
+                    onChange={(e) => setRainDensity(parseFloat(e.target.value))}
+                    className="w-full accent-[#ff0033] bg-neutral-900 border border-[#5f3e3d]"
+                  />
+                </div>
+
+                {/* Density reset trigger */}
+                <button
+                  onClick={() => setRainDensity(1.2)}
+                  className="w-full bg-neutral-900 hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-widest font-bold py-2.5 transition-all cursor-pointer"
+                >
+                  RE-ALIGN SECTOR RESOLUTION
+                </button>
               </div>
             </div>
+          )}
 
-          </div>
-        )}
+        </main>
 
-        {/* TAB 3: IMMERSIVE WATERFALL VISUALIZER */}
-        {currentTab === 'rain' && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center mt-4 h-[calc(100vh-220px)] relative">
-            <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-              <DigitalRain color="#ff0033" density={rainDensity * 1.5} />
-            </div>
+        {/* Bottom Mobile Navigation Bar (Fixed Bottom) */}
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121414] border-t border-[#5f3e3d] flex justify-around py-3 z-50">
+          <button
+            onClick={() => setCurrentTab('decryptor')}
+            className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+              }`}
+          >
+            <Brain className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setCurrentTab('rain')}
+            className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+              }`}
+          >
+            <Eye className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setCurrentTab('terminal')}
+            className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
+              }`}
+          >
+            <TermIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="flex flex-col items-center gap-1 p-2 text-[#e9bcb9]"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </nav>
 
-            <div className="bg-black/90 border border-[#5f3e3d] p-6 max-w-md w-full relative z-10 space-y-4">
-              <h3 className="font-anton text-2xl text-white uppercase tracking-wider">
-                COGNITIVE MATRIX RAIN
-              </h3>
-              <p className="font-mono text-xs text-[#e9bcb9] leading-relaxed">
-                You are witnessing the sub-code of the simulation flowing in real-time.
-                Adjust stream transmission density parameters to alter transmission clarity.
-              </p>
-
-              {/* Rain density range adjust */}
-              <div className="space-y-2 pt-2 text-left">
-                <span className="font-mono text-xs text-white uppercase block">
-                  Waterfall Density: {rainDensity.toFixed(1)}x
-                </span>
-                <input
-                  type="range"
-                  min="0.2"
-                  max="3.0"
-                  step="0.2"
-                  value={rainDensity}
-                  onChange={(e) => setRainDensity(parseFloat(e.target.value))}
-                  className="w-full accent-[#ff0033] bg-neutral-900 border border-[#5f3e3d]"
-                />
-              </div>
-
-              {/* Density reset trigger */}
-              <button
-                onClick={() => setRainDensity(1.2)}
-                className="w-full bg-neutral-900 hover:bg-[#ff0033]/10 border border-[#ff0033] text-[#ff0033] font-sans text-xs uppercase tracking-widest font-bold py-2.5 transition-all cursor-pointer"
-              >
-                RE-ALIGN SECTOR RESOLUTION
-              </button>
+        {/* Cmatrix Fullscreen Visualizer Overlay */}
+        {cmatrixConfig.active && (
+          <div className="fixed inset-0 w-screen h-screen z-[100] bg-black cursor-none">
+            <DigitalRain color={cmatrixConfig.color} density={1.5} opacity={1} />
+            <div className="absolute top-4 left-4 text-white font-mono text-xs opacity-50 pointer-events-none">
+              [ cmatrix active ] press 'q' to exit
             </div>
           </div>
         )}
 
-        {/* TAB 4: THEME EDITOR */}
-        {currentTab === 'theme_editor' && (
-          <div className="flex-1 overflow-hidden">
-            <ThemeEditor
-              currentTheme={activeTheme || { name: '', background: '#121414', text: '#e2e2e2' }}
-              onClose={() => setCurrentTab('terminal')}
-              onThemeSaved={(theme) => {
-                const savedThemes = JSON.parse(localStorage.getItem('redpill_themes') || '[]') as TerminalTheme[];
-                const existingIndex = savedThemes.findIndex(t => t.name === theme.name);
-                if (existingIndex >= 0) {
-                  savedThemes[existingIndex] = theme;
-                } else {
-                  savedThemes.push(theme);
-                }
-                localStorage.setItem('redpill_themes', JSON.stringify(savedThemes));
-
-                setActiveTheme(theme);
-                localStorage.setItem('redpill_active_theme', JSON.stringify(theme));
-
-                setTerminalLogs(prev => [...prev, `[SYSTEM]: Custom theme "${theme.name}" saved and applied.`]);
-                setCurrentTab('terminal');
-              }}
-            />
-          </div>
-        )}
-
-      </main>
-
-      {/* Bottom Mobile Navigation Bar (Fixed Bottom) */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 w-full border-t border-[#5f3e3d] flex justify-around py-3 z-50"
-        style={{ backgroundColor: activeTheme ? activeTheme.background : '#121414' }}
-      >
-        <button
-          onClick={() => setCurrentTab('decryptor')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'decryptor' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-        >
-          <Brain className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setCurrentTab('rain')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'rain' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-        >
-          <Eye className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setCurrentTab('terminal')}
-          className={`flex flex-col items-center gap-1 p-2 ${currentTab === 'terminal' ? 'text-[#ffb3af]' : 'text-[#e9bcb9]'
-            }`}
-        >
-          <TermIcon className="w-5 h-5" />
-        </button>
-        <button
-          onClick={onOpenSettings}
-          className="flex flex-col items-center gap-1 p-2 text-[#e9bcb9]"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      </nav>
-
-      {/* Cmatrix Fullscreen Visualizer Overlay */}
-      {cmatrixConfig.active && (
-        <div className="fixed inset-0 w-screen h-screen z-[100] bg-black cursor-none">
-          <DigitalRain color={cmatrixConfig.color} density={1.5} opacity={1} />
-          <div className="absolute top-4 left-4 text-white font-mono text-xs opacity-50 pointer-events-none">
-            [ cmatrix active ] press 'q' to exit
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
+      </div>
+    );
+  }
