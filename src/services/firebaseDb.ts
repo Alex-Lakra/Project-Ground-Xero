@@ -47,11 +47,6 @@ interface FirestoreField {
   booleanValue?: boolean;
 }
 
-interface FirestoreDocument {
-  name: string;
-  fields: Record<string, FirestoreField>;
-}
-
 function mapDocumentToUser(doc: any): SSHUser {
   const fields = doc.fields || {};
   return {
@@ -197,12 +192,5 @@ export const firebaseDb = {
       return true;
     }
     return false;
-  },
-
-  /**
-   * Helper to check if Firebase DB is active
-   */
-  isFirebaseConfigured(): boolean {
-    return true;
   },
 };

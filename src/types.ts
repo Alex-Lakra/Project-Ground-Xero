@@ -13,12 +13,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-// Diagnostic readout rows for the mainframe bypass tools
-export interface DiagnosticsItem {
-  name: string;
-  status: 'active' | 'warning' | 'error' | 'pending';
-  value: string;
-}
+
 
 // Cozy calendar tasks for the Blue Pill environment
 export interface ComfortableTask {
@@ -37,15 +32,7 @@ export interface DreamRecord {
   pleasantness: number; // 1-5 stars scale
 }
 
-// Scrambled logs for the text packet decryptor CLI utilities
-export interface DecryptionLog {
-  id: string;
-  original: string;
-  decrypted: string;
-  progress: number; // 0-100% scale
-  timestamp: string;
-  status: 'decrypting' | 'completed' | 'failed';
-}
+
 
 // Main custom configurations parameters governed by the settings panel
 export interface SystemSettings {

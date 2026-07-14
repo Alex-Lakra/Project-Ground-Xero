@@ -80,9 +80,7 @@ export default function App() {
       return `Available mainframe operations:
   /help - Display this command map.
   /choice - Reset cognitive state and return to Morpheus.
-  /pill <red|blue> - Force load a specific pill reality.
-  /decrypt <text> - Translate a text packet into uppercase mainframe string.
-  /diagnose - Perform diagnostics scan on active node state.`;
+  /pill <red|blue> - Force load a specific pill reality.`;
     }
 
     // Command: /choice
@@ -99,22 +97,6 @@ export default function App() {
         return `[SUCCESS] Loaded subspace matrices for ${p.toUpperCase()}_PILL reality.`;
       }
       return '[ERROR] Invalid argument. Syntax: /pill <red|blue>';
-    }
-
-    // Command: /decrypt
-    if (base === '/decrypt') {
-      const text = parts.slice(1).join(' ');
-      if (!text) return '[ERROR] Please provide text to decrypt. Syntax: /decrypt <message>';
-      return `[SUCCESS] Decryption translation complete: "${text.toUpperCase()}"`;
-    }
-
-    // Command: /diagnose
-    if (base === '/diagnose') {
-      return `[DIAGNOSTICS READOUT]
-  ZION MAIN TRANSMITTER: ${choice !== 'none' ? 'CONNECTED' : 'DISCONNECTED'}
-  ACTIVE COGNITIVE CELL: ${choice.toUpperCase() || 'STANDBY_CONSTRUCT'}
-  MEMORY BUFFERS: STABLE
-  STATUS: CORE_SYSTEM_ALIGNED`;
     }
 
     return `[ERROR] Unknown command: "${cmd}". Type /help to see available operations.`;
