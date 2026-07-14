@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Terminal as TermIcon, Check, Eye, Activity, Brain, Settings } from 'lucide-react';
+import { AsciiGenerator, CharsetPreset } from 'ts-ascii-engine';
 import { DecryptionLog, DiagnosticsItem, TerminalTheme } from '../types';
 import ThemeEditor from './ThemeEditor';
 import DigitalRain from './DigitalRain';
@@ -33,6 +34,15 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [sshTempPassword, setSshTempPassword] = useState('');
   const [ssh2faSecret, setSsh2faSecret] = useState('');
 
+  // ASCII Engine State
+  const [cliMode, setCliMode] = useState<'none' | 'ascii_charset' | 'ascii_width' | 'ascii_color'>('none');
+  const [asciiConfig, setAsciiConfig] = useState<{ imageSrc: string | null; charset: CharsetPreset; width: number }>({
+    imageSrc: null,
+    charset: CharsetPreset.STANDARD,
+    width: 80,
+  });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Hacking Simulation State
   const [activeHack, setActiveHack] = useState<'none' | 'firewall' | 'memory' | 'sentinel'>('none');
   const [hackProgress, setHackProgress] = useState(0);
@@ -51,7 +61,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [draftCommand, setDraftCommand] = useState<string>('');
 
   // Terminal history logs
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([
+  const [terminalLogs, setTerminalLogs] = useState<(string | React.ReactNode)[]>([
     '█   █  █████  ████    ███',
     ' █ █   █      █   █  █   █ ',
     '  █    ████   ████   █   █ ',
@@ -330,12 +340,43 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   };
 
   // ==========================================
+  // ASCII File Upload Logic
+  // ==========================================
+  const handleAsciiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const src = event.target?.result as string;
+        setAsciiConfig((prev) => ({ ...prev, imageSrc: src }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Image loaded: ${file.name}`,
+          ` `,
+          `Select Charset:`,
+          `  1) STANDARD (Default)`,
+          `  2) BLOCK`,
+          `  3) SIMPLE`,
+          ` `,
+          `Enter selection (1-3) or press Enter for default:`,
+        ]);
+        setCliMode('ascii_charset');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setTerminalLogs((prev) => [...prev, `[ERROR] No image selected. ASCII conversion aborted.`]);
+      setCliMode('none');
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // ==========================================
   // CLI Command Logic
   // ==========================================
 
   const handleExecuteCliCommand = async () => {
     const cmd = cliInput.trim();
-    if (!cmd) return;
+    if (!cmd && cliMode === 'none') return;
 
     setCliInput('');
 
@@ -349,7 +390,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     const displayCmd = isSensitive ? '•'.repeat(Math.min(cmd.length, 12)) : cmd;
     setTerminalLogs(prev => [...prev, `${logPrefix} ${displayCmd}`]);
 
-    if (!isSensitive) {
+    if (!isSensitive && cmd) {
       setCommandHistory(prev => {
         if (prev[prev.length - 1] !== cmd) {
           return [...prev, cmd];
@@ -358,6 +399,78 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       });
       setHistoryIndex(-1);
       setDraftCommand('');
+    }
+
+    // ----------------------------------------------------
+    // STATE: ASCII MODE
+    // ----------------------------------------------------
+    if (cliMode !== 'none') {
+      if (cliMode === 'ascii_charset') {
+        let selectedCharset = CharsetPreset.STANDARD;
+        if (cmd === '2') selectedCharset = CharsetPreset.BLOCK;
+        if (cmd === '3') selectedCharset = CharsetPreset.SIMPLE;
+        
+        setAsciiConfig((prev) => ({ ...prev, charset: selectedCharset }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Charset selected.`,
+          `Enter width (number of characters, default 80):`,
+        ]);
+        setCliMode('ascii_width');
+        return;
+      }
+      if (cliMode === 'ascii_width') {
+        let width = 80;
+        if (cmd && !isNaN(parseInt(cmd))) {
+          width = parseInt(cmd);
+        }
+        setAsciiConfig((prev) => ({ ...prev, width }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Width set to ${width}.`,
+          `Enter text color (hex code like #ff0033) or press Enter for default terminal color:`,
+        ]);
+        setCliMode('ascii_color');
+        return;
+      }
+      if (cliMode === 'ascii_color') {
+        const color = cmd || '';
+        
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Processing image...`
+        ]);
+
+        const img = new Image();
+        img.onload = () => {
+          const generator = new AsciiGenerator({
+            charset: asciiConfig.charset,
+            width: asciiConfig.width,
+            colored: false, // Apply uniform styling instead
+          });
+          const result = generator.convertImage(img);
+          
+          setTerminalLogs((prev) => {
+            const newLogs = [...prev];
+            if (color) {
+              newLogs.push(<span style={{ color }}>{result.text}</span>);
+            } else {
+              newLogs.push(result.text);
+            }
+            newLogs.push(` `);
+            return newLogs;
+          });
+          setCliMode('none');
+          setAsciiConfig({ imageSrc: null, charset: CharsetPreset.STANDARD, width: 80 });
+        };
+        if (asciiConfig.imageSrc) {
+          img.src = asciiConfig.imageSrc;
+        } else {
+          setTerminalLogs((prev) => [...prev, `[ERROR] Missing image source.`]);
+          setCliMode('none');
+        }
+        return;
+      }
     }
 
     // ----------------------------------------------------
@@ -384,6 +497,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'help / ?                    - List active terminal operations.',
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.', // Comment by hira, change the ascii art to whatever you desire later. I will add a diffrent command for fetching the profiles and stuff
+          'ascii                       - Upload and convert an image to ASCII art.',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
           'bg-rain                     - Toggle background matrix rain effect.',
           'code $Theme                 - Open the interactive theme configuration editor.',
@@ -393,6 +507,41 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'exit / ctrl+c / blue        - Return to Morpheus, escape reality (take Blue Pill).',
           ' '
         ]);
+        return;
+      }
+
+      // Ascii Image command
+      if (base === 'ascii') {
+        const sub = parts[1]?.toLowerCase();
+        if (sub === '-h' || sub === '-help' || sub === 'help') {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: ascii [OPTIONS]',
+            ' ',
+            'Convert a local image from your system into ASCII art.',
+            ' ',
+            'Options:',
+            '  -h, -help, help             Show this help page and exit.',
+            ' ',
+            'Interactive Workflow:',
+            '  1. Select an image file via the system file picker dialog.',
+            '  2. Select character set density:',
+            '     1) STANDARD (Default - detailed gradient)',
+            '     2) BLOCK    (High contrast blocks)',
+            '     3) SIMPLE   (Minimal characters)',
+            '  3. Set output width in characters (default: 80).',
+            '  4. Specify custom text color (e.g. #ff0033) or press Enter for default theme color.',
+            ' '
+          ]);
+          return;
+        }
+
+        setTerminalLogs((prev) => [
+          ...prev,
+          '[ASCII ENGINE]: Please select an image from your system to convert...',
+        ]);
+        fileInputRef.current?.click();
         return;
       }
 
@@ -1185,6 +1334,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
           <div className="flex-1 flex flex-col h-full justify-between">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleAsciiImageUpload} 
+            />
             {/* Scrollable logs list and active inline terminal input */}
             <div
               className={`flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 ${!activeTheme ? 'text-[#ff0033]' : ''}`}
@@ -1289,7 +1445,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         ? sshSessionUser?.username === 'root'
                           ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
                           : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'ascii', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
@@ -1339,6 +1495,21 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                           const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
                           if (matches.length === 1) {
                             setCliInput(`bg-rain ${matches[0]} `);
+                          } else if (matches.length > 1) {
+                            const logPrefix = sshState === 'logged_in'
+                              ? `${sshSessionUser?.username}@zero:~$`
+                              : 'root/ :~$';
+                            setTerminalLogs(prev => [
+                              ...prev,
+                              `${logPrefix} ${cliInput}`,
+                              matches.join('  ')
+                            ]);
+                          }
+                        } else if (partsLower[0] === 'ascii') {
+                          const subOptions = ['-help', '-h', 'help'];
+                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
+                          if (matches.length === 1) {
+                            setCliInput(`ascii ${matches[0]} `);
                           } else if (matches.length > 1) {
                             const logPrefix = sshState === 'logged_in'
                               ? `${sshSessionUser?.username}@zero:~$`
