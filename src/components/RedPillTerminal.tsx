@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Terminal as TermIcon, Check, Eye, Activity, Brain, Settings } from 'lucide-react';
+import { AsciiGenerator, CharsetPreset } from 'ts-ascii-engine';
 import { DecryptionLog, DiagnosticsItem, TerminalTheme } from '../types';
 import ThemeEditor from './ThemeEditor';
 import DigitalRain from './DigitalRain';
@@ -33,6 +34,28 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [sshTempPassword, setSshTempPassword] = useState('');
   const [ssh2faSecret, setSsh2faSecret] = useState('');
 
+  // ASCII Engine State
+  const [cliMode, setCliMode] = useState<'none' | 'ascii_charset' | 'ascii_width' | 'ascii_color' | 'album_search' | 'album_select'>('none');
+  const [asciiConfig, setAsciiConfig] = useState<{ imageSrc: string | null; charset: CharsetPreset; width: number }>({
+    imageSrc: null,
+    charset: CharsetPreset.STANDARD,
+    width: 80,
+  });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // YouTube Player State
+  const [ytVideoId, setYtVideoId] = useState<string | null>(null);
+
+  // Album Recommendation State
+  const LASTFM_API_KEY = '11717c414dbf68ac607332a45b38c139';
+  const [allGenreTags, setAllGenreTags] = useState<string[]>([]);
+  const [albumGenreResults, setAlbumGenreResults] = useState<string[]>([]);
+  const [albumSearchQuery, setAlbumSearchQuery] = useState('');
+  const [albumRecommendation, setAlbumRecommendation] = useState<{
+    name: string; artist: string; image: string; releaseDate: string;
+  } | null>(null);
+  const [albumLoading, setAlbumLoading] = useState(false);
+
   // Hacking Simulation State
   const [activeHack, setActiveHack] = useState<'none' | 'firewall' | 'memory' | 'sentinel'>('none');
   const [hackProgress, setHackProgress] = useState(0);
@@ -51,7 +74,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [draftCommand, setDraftCommand] = useState<string>('');
 
   // Terminal history logs
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([
+  const [terminalLogs, setTerminalLogs] = useState<(string | React.ReactNode)[]>([
     '█   █  █████  ████    ███',
     ' █ █   █      █   █  █   █ ',
     '  █    ████   ████   █   █ ',
@@ -148,6 +171,23 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }
     return () => document.removeEventListener('keydown', handleCmatrixExit);
   }, [cmatrixConfig.active]);
+
+  // Live client-side filter for genre tags (album recommendation)
+  useEffect(() => {
+    if (cliMode !== 'album_search') return;
+    const query = cliInput.trim().toLowerCase();
+    if (!query) {
+      setAlbumGenreResults([]);
+      setAlbumSearchQuery('');
+      return;
+    }
+    // Filter cached tags client-side — instant, no API calls
+    const filtered = allGenreTags
+      .filter(t => t.toLowerCase().includes(query))
+      .slice(0, 8);
+    setAlbumGenreResults(filtered);
+    setAlbumSearchQuery(cliInput.trim());
+  }, [cliInput, cliMode, allGenreTags]);
 
   // ==========================================
   // SSH Session Utilities
@@ -330,12 +370,43 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   };
 
   // ==========================================
+  // ASCII File Upload Logic
+  // ==========================================
+  const handleAsciiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const src = event.target?.result as string;
+        setAsciiConfig((prev) => ({ ...prev, imageSrc: src }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Image loaded: ${file.name}`,
+          ` `,
+          `Select Charset:`,
+          `  1) STANDARD (Default)`,
+          `  2) BLOCK`,
+          `  3) SIMPLE`,
+          ` `,
+          `Enter selection (1-3) or press Enter for default:`,
+        ]);
+        setCliMode('ascii_charset');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setTerminalLogs((prev) => [...prev, `[ERROR] No image selected. ASCII conversion aborted.`]);
+      setCliMode('none');
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // ==========================================
   // CLI Command Logic
   // ==========================================
 
   const handleExecuteCliCommand = async () => {
     const cmd = cliInput.trim();
-    if (!cmd) return;
+    if (!cmd && cliMode === 'none') return;
 
     setCliInput('');
 
@@ -349,7 +420,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     const displayCmd = isSensitive ? '•'.repeat(Math.min(cmd.length, 12)) : cmd;
     setTerminalLogs(prev => [...prev, `${logPrefix} ${displayCmd}`]);
 
-    if (!isSensitive) {
+    if (!isSensitive && cmd) {
       setCommandHistory(prev => {
         if (prev[prev.length - 1] !== cmd) {
           return [...prev, cmd];
@@ -361,6 +432,137 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }
 
     // ----------------------------------------------------
+    // STATE: ASCII MODE
+    // ----------------------------------------------------
+    if (cliMode !== 'none') {
+      if (cliMode === 'ascii_charset') {
+        let selectedCharset = CharsetPreset.STANDARD;
+        if (cmd === '2') selectedCharset = CharsetPreset.BLOCK;
+        if (cmd === '3') selectedCharset = CharsetPreset.SIMPLE;
+        
+        setAsciiConfig((prev) => ({ ...prev, charset: selectedCharset }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Charset selected.`,
+          `Enter width (number of characters, default 80):`,
+        ]);
+        setCliMode('ascii_width');
+        return;
+      }
+      if (cliMode === 'ascii_width') {
+        let width = 80;
+        if (cmd && !isNaN(parseInt(cmd))) {
+          width = parseInt(cmd);
+        }
+        setAsciiConfig((prev) => ({ ...prev, width }));
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Width set to ${width}.`,
+          `Enter text color (hex code like #ff0033) or press Enter for default terminal color:`,
+        ]);
+        setCliMode('ascii_color');
+        return;
+      }
+      if (cliMode === 'ascii_color') {
+        const color = cmd || '';
+        
+        setTerminalLogs((prev) => [
+          ...prev,
+          `Processing image...`
+        ]);
+
+        const img = new Image();
+        img.onload = () => {
+          const generator = new AsciiGenerator({
+            charset: asciiConfig.charset,
+            width: asciiConfig.width,
+            colored: false, // Apply uniform styling instead
+          });
+          const result = generator.convertImage(img);
+          
+          setTerminalLogs((prev) => {
+            const newLogs = [...prev];
+            if (color) {
+              newLogs.push(<span style={{ color }}>{result.text}</span>);
+            } else {
+              newLogs.push(result.text);
+            }
+            newLogs.push(` `);
+            return newLogs;
+          });
+          setCliMode('none');
+          setAsciiConfig({ imageSrc: null, charset: CharsetPreset.STANDARD, width: 80 });
+        };
+        if (asciiConfig.imageSrc) {
+          img.src = asciiConfig.imageSrc;
+        } else {
+          setTerminalLogs((prev) => [...prev, `[ERROR] Missing image source.`]);
+          setCliMode('none');
+        }
+        return;
+      }
+
+      // Album recommendation genre selection
+      if (cliMode === 'album_search') {
+        // User typed a number to select from search results, or typed genre directly
+        let selectedGenre = cmd;
+        const num = parseInt(cmd);
+        if (!isNaN(num) && num >= 1 && num <= albumGenreResults.length) {
+          selectedGenre = albumGenreResults[num - 1];
+        }
+
+        setAlbumGenreResults([]);
+        setAlbumSearchQuery('');
+        setTerminalLogs(prev => [...prev, `[ALBUM]: Searching genre "${selectedGenre}" for recommendations...`]);
+        setAlbumLoading(true);
+        setCliMode('none');
+
+        // Fetch albums for this genre/tag
+        try {
+          const resp = await fetch(
+            `https://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=${encodeURIComponent(selectedGenre)}&api_key=${LASTFM_API_KEY}&format=json&limit=50`
+          );
+          const data = await resp.json();
+          const albums = data?.albums?.album;
+          if (!albums || albums.length === 0) {
+            setTerminalLogs(prev => [...prev, `[ALBUM ERROR]: No albums found for genre "${selectedGenre}".`]);
+            setAlbumLoading(false);
+            return;
+          }
+
+          // Pick a random album
+          const randomAlbum = albums[Math.floor(Math.random() * albums.length)];
+          const albumName = randomAlbum.name;
+          const artistName = randomAlbum.artist?.name || 'Unknown Artist';
+          const imageUrl = randomAlbum.image?.find((img: any) => img.size === 'extralarge')?.['#text']
+            || randomAlbum.image?.find((img: any) => img.size === 'large')?.['#text']
+            || '';
+
+          // Fetch album details for release date (rate-limit safe: 2nd call)
+          let releaseDate = 'Unknown';
+          try {
+            const detailResp = await fetch(
+              `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist=${encodeURIComponent(artistName)}&album=${encodeURIComponent(albumName)}&api_key=${LASTFM_API_KEY}&format=json`
+            );
+            const detailData = await detailResp.json();
+            if (detailData?.album?.wiki?.published) {
+              releaseDate = detailData.album.wiki.published;
+            }
+          } catch {
+            // Keep Unknown
+          }
+
+          setAlbumRecommendation({ name: albumName, artist: artistName, image: imageUrl, releaseDate });
+          setTerminalLogs(prev => [...prev, `[ALBUM]: Recommendation found for genre "${selectedGenre}"!`]);
+        } catch {
+          setTerminalLogs(prev => [...prev, `[ALBUM ERROR]: Failed to fetch albums. Check network connectivity.`]);
+        }
+        setAlbumLoading(false);
+        return;
+      }
+    }
+
+    // ----------------------------------------------------
     // STATE: NONE (Local terminal mode)
     // ----------------------------------------------------
     const parts = cmd.split(' ');
@@ -369,6 +571,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     // Global Commands (Work in any state)
     if (base === 'clear' || base === 'cls') {
       setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
+      setAlbumRecommendation(null);
       return;
     }
 
@@ -384,6 +587,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'help / ?                    - List active terminal operations.',
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.', // Comment by hira, change the ascii art to whatever you desire later. I will add a diffrent command for fetching the profiles and stuff
+          'ascii                       - Upload and convert an image to ASCII art.',
+          'yt <URL>                    - Play a YouTube video in-terminal (-help, stop).',
+          'album                       - Random album recommendation by genre (-help).',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
           'bg-rain                     - Toggle background matrix rain effect.',
           'code $Theme                 - Open the interactive theme configuration editor.',
@@ -393,6 +599,182 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'exit / ctrl+c / blue        - Return to Morpheus, escape reality (take Blue Pill).',
           ' '
         ]);
+        return;
+      }
+
+      // Ascii Image command
+      if (base === 'ascii') {
+        const sub = parts[1]?.toLowerCase();
+        if (sub === '-h' || sub === '-help' || sub === 'help') {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: ascii [OPTIONS]',
+            ' ',
+            'Convert a local image from your system into ASCII art.',
+            ' ',
+            'Options:',
+            '  -h, -help, help             Show this help page and exit.',
+            ' ',
+            'Interactive Workflow:',
+            '  1. Select an image file via the system file picker dialog.',
+            '  2. Select character set density:',
+            '     1) STANDARD (Default - detailed gradient)',
+            '     2) BLOCK    (High contrast blocks)',
+            '     3) SIMPLE   (Minimal characters)',
+            '  3. Set output width in characters (default: 80).',
+            '  4. Specify custom text color (e.g. #ff0033) or press Enter for default theme color.',
+            ' '
+          ]);
+          return;
+        }
+
+        setTerminalLogs((prev) => [
+          ...prev,
+          '[ASCII ENGINE]: Please select an image from your system to convert...',
+        ]);
+        fileInputRef.current?.click();
+        return;
+      }
+
+      // YouTube player command
+      if (base === 'yt') {
+        const sub = parts[1]?.toLowerCase();
+
+        if (!sub || sub === '-h' || sub === '-help' || sub === 'help') {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: yt <YouTube URL | OPTION>',
+            ' ',
+            'Play a YouTube video directly inside the terminal.',
+            ' ',
+            'Options:',
+            '  -h, -help, help             Show this help page and exit.',
+            '  stop                        Stop and close the active video player.',
+            ' ',
+            'Supported URL Formats:',
+            '  https://www.youtube.com/watch?v=VIDEO_ID',
+            '  https://youtu.be/VIDEO_ID',
+            '  https://youtube.com/shorts/VIDEO_ID',
+            '  https://www.youtube.com/embed/VIDEO_ID',
+            ' ',
+            'Details:',
+            '  The video plays in a compact overlay at the bottom-right of the terminal.',
+            '  Playback defaults to 720p or the highest available resolution below it.',
+            '  Use "yt stop" to close the player at any time.',
+            ' '
+          ]);
+          return;
+        }
+
+        if (sub === 'stop') {
+          if (ytVideoId) {
+            setYtVideoId(null);
+            setTerminalLogs(prev => [...prev, '[YT]: Video playback stopped.']);
+          } else {
+            setTerminalLogs(prev => [...prev, '[YT]: No video is currently playing.']);
+          }
+          return;
+        }
+
+        // Extract video ID from various YouTube URL formats
+        const url = parts[1];
+        let videoId: string | null = null;
+        try {
+          const urlObj = new URL(url);
+          if (urlObj.hostname.includes('youtube.com')) {
+            if (urlObj.pathname.startsWith('/watch')) {
+              videoId = urlObj.searchParams.get('v');
+            } else if (urlObj.pathname.startsWith('/embed/')) {
+              videoId = urlObj.pathname.split('/embed/')[1]?.split(/[?/]/)[0] || null;
+            } else if (urlObj.pathname.startsWith('/shorts/')) {
+              videoId = urlObj.pathname.split('/shorts/')[1]?.split(/[?/]/)[0] || null;
+            }
+          } else if (urlObj.hostname === 'youtu.be') {
+            videoId = urlObj.pathname.slice(1).split(/[?/]/)[0] || null;
+          }
+        } catch {
+          // Not a valid URL
+          videoId = null;
+        }
+
+        if (videoId) {
+          setYtVideoId(videoId);
+          setTerminalLogs(prev => [
+            ...prev,
+            `[YT]: Loading video (${videoId})...`,
+            `[YT]: Streaming at max 720p. Type "yt stop" to close.`
+          ]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[YT ERROR]: Could not extract video ID from URL. Type "yt -h" for supported formats.`]);
+        }
+        return;
+      }
+
+      // Album recommendation command
+      if (base === 'album') {
+        const sub = parts[1]?.toLowerCase();
+
+        if (sub === '-h' || sub === '-help' || sub === 'help') {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: album [OPTIONS]',
+            ' ',
+            'Discover a random album recommendation by genre.',
+            ' ',
+            'Options:',
+            '  -h, -help, help             Show this help page and exit.',
+            ' ',
+            'Interactive Workflow:',
+            '  1. Type "album" to enter genre search mode.',
+            '  2. Start typing a genre name — live results will appear as you type.',
+            '  3. Select a genre by entering its number from the results list,',
+            '     or type the genre name directly and press Enter.',
+            '  4. A random album from that genre will be recommended with:',
+            '     - Album art, Album name, Artist name, and Release date.',
+            ' ',
+          ]);
+          return;
+        }
+
+        setAlbumRecommendation(null);
+        setAlbumGenreResults([]);
+        setAlbumSearchQuery('');
+        setCliMode('album_search');
+
+        // Lazy-fetch all genre tags on first use, then cache for instant filtering
+        if (allGenreTags.length === 0) {
+          setTerminalLogs(prev => [
+            ...prev,
+            '[ALBUM]: Loading genre database...',
+          ]);
+          try {
+            const resp = await fetch(
+              `https://ws.audioscrobbler.com/2.0/?method=tag.getTopTags&api_key=${LASTFM_API_KEY}&format=json`
+            );
+            const data = await resp.json();
+            const tags: string[] = data?.toptags?.tag?.map((t: any) => t.name) || [];
+            setAllGenreTags(tags);
+            setTerminalLogs(prev => [
+              ...prev,
+              `[ALBUM]: ${tags.length} genres loaded. Start typing to search...`,
+            ]);
+          } catch {
+            setTerminalLogs(prev => [
+              ...prev,
+              '[ALBUM ERROR]: Failed to load genre database. Try again later.',
+            ]);
+            setCliMode('none');
+            return;
+          }
+        } else {
+          setTerminalLogs(prev => [
+            ...prev,
+            '[ALBUM]: Entering genre search mode. Start typing a genre to search...',
+          ]);
+        }
         return;
       }
 
@@ -1185,6 +1567,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
           <div className="flex-1 flex flex-col h-full justify-between">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleAsciiImageUpload} 
+            />
             {/* Scrollable logs list and active inline terminal input */}
             <div
               className={`flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 ${!activeTheme ? 'text-[#ff0033]' : ''}`}
@@ -1195,6 +1584,90 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                   {log}
                 </div>
               ))}
+
+              {/* YouTube Inline Player */}
+              {ytVideoId && (
+                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-2 w-fit max-w-[420px]">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest">▶ YT STREAM ACTIVE</span>
+                    <button
+                      onClick={() => { setYtVideoId(null); setTerminalLogs(prev => [...prev, '[YT]: Video playback stopped.']); }}
+                      className="text-[#ff0033] font-mono text-[10px] uppercase tracking-wider hover:text-white cursor-pointer border border-[#5f3e3d] px-2 py-0.5 hover:border-[#ff0033] transition-colors"
+                    >
+                      ✕ STOP
+                    </button>
+                  </div>
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&vq=hd720&rel=0&modestbranding=1`}
+                    width="400"
+                    height="225"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    className="border border-[#5f3e3d]/50"
+                    title="YouTube Video Player"
+                  />
+                </div>
+              )}
+
+              {/* Album Genre Search Box */}
+              {cliMode === 'album_search' && albumGenreResults.length > 0 && (
+                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-3 w-fit max-w-[340px]">
+                  <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest block mb-2">
+                    ♫ GENRE RESULTS {albumSearchQuery && `FOR "${albumSearchQuery.toUpperCase()}"`}
+                  </span>
+                  <div className="space-y-1">
+                    {albumGenreResults.map((tag, i) => (
+                      <div key={i} className="font-mono text-xs text-white">
+                        <span className="text-[#ff0033] mr-2">{i + 1})</span>
+                        {tag}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="font-mono text-[10px] text-[#e9bcb9] block mt-2 border-t border-[#5f3e3d]/40 pt-1.5">
+                    Enter number to select, or type genre and press Enter.
+                  </span>
+                </div>
+              )}
+
+              {/* Album Loading Indicator */}
+              {albumLoading && (
+                <div className="my-2 font-mono text-xs text-[#ff0033] animate-pulse">
+                  [ALBUM]: Scanning genre database...
+                </div>
+              )}
+
+              {/* Album Recommendation Display */}
+              {albumRecommendation && (
+                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-4 w-fit max-w-[340px]">
+                  <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest block mb-3">
+                    ♫ ALBUM RECOMMENDATION
+                  </span>
+                  {albumRecommendation.image && (
+                    <img
+                      src={albumRecommendation.image}
+                      alt={albumRecommendation.name}
+                      className="w-[200px] h-[200px] object-cover border border-[#5f3e3d]/50 mb-3"
+                    />
+                  )}
+                  <div className="space-y-1">
+                    <div className="font-mono text-sm text-white font-bold tracking-wide">
+                      {albumRecommendation.name}
+                    </div>
+                    <div className="font-mono text-xs text-[#e9bcb9]">
+                      {albumRecommendation.artist}
+                    </div>
+                    <div className="font-mono text-[10px] text-[#e9bcb9]/70 uppercase">
+                      Released: {albumRecommendation.releaseDate}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setAlbumRecommendation(null)}
+                    className="mt-3 text-[#ff0033] font-mono text-[10px] uppercase tracking-wider hover:text-white cursor-pointer border border-[#5f3e3d] px-2 py-0.5 hover:border-[#ff0033] transition-colors"
+                  >
+                    ✕ DISMISS
+                  </button>
+                </div>
+              )}
 
               {/* QR Code rendering during 2FA Setup */}
               {sshState === 'ssh_2fa_setup' && ssh2faSecret && (
@@ -1289,7 +1762,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         ? sshSessionUser?.username === 'root'
                           ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
                           : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'ascii', 'yt', 'album', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
@@ -1339,6 +1812,51 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                           const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
                           if (matches.length === 1) {
                             setCliInput(`bg-rain ${matches[0]} `);
+                          } else if (matches.length > 1) {
+                            const logPrefix = sshState === 'logged_in'
+                              ? `${sshSessionUser?.username}@zero:~$`
+                              : 'root/ :~$';
+                            setTerminalLogs(prev => [
+                              ...prev,
+                              `${logPrefix} ${cliInput}`,
+                              matches.join('  ')
+                            ]);
+                          }
+                        } else if (partsLower[0] === 'ascii') {
+                          const subOptions = ['-help', '-h', 'help'];
+                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
+                          if (matches.length === 1) {
+                            setCliInput(`ascii ${matches[0]} `);
+                          } else if (matches.length > 1) {
+                            const logPrefix = sshState === 'logged_in'
+                              ? `${sshSessionUser?.username}@zero:~$`
+                              : 'root/ :~$';
+                            setTerminalLogs(prev => [
+                              ...prev,
+                              `${logPrefix} ${cliInput}`,
+                              matches.join('  ')
+                            ]);
+                          }
+                        } else if (partsLower[0] === 'yt') {
+                          const subOptions = ['stop', '-help', '-h', 'help'];
+                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
+                          if (matches.length === 1) {
+                            setCliInput(`yt ${matches[0]} `);
+                          } else if (matches.length > 1) {
+                            const logPrefix = sshState === 'logged_in'
+                              ? `${sshSessionUser?.username}@zero:~$`
+                              : 'root/ :~$';
+                            setTerminalLogs(prev => [
+                              ...prev,
+                              `${logPrefix} ${cliInput}`,
+                              matches.join('  ')
+                            ]);
+                          }
+                        } else if (partsLower[0] === 'album') {
+                          const subOptions = ['-help', '-h', 'help'];
+                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
+                          if (matches.length === 1) {
+                            setCliInput(`album ${matches[0]} `);
                           } else if (matches.length > 1) {
                             const logPrefix = sshState === 'logged_in'
                               ? `${sshSessionUser?.username}@zero:~$`
