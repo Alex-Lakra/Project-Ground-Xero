@@ -43,6 +43,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // YouTube Player State
+  const [ytVideoId, setYtVideoId] = useState<string | null>(null);
+
   // Hacking Simulation State
   const [activeHack, setActiveHack] = useState<'none' | 'firewall' | 'memory' | 'sentinel'>('none');
   const [hackProgress, setHackProgress] = useState(0);
@@ -498,6 +501,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.', // Comment by hira, change the ascii art to whatever you desire later. I will add a diffrent command for fetching the profiles and stuff
           'ascii                       - Upload and convert an image to ASCII art.',
+          'yt <URL>                    - Play a YouTube video in-terminal (-help, stop).',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
           'bg-rain                     - Toggle background matrix rain effect.',
           'code $Theme                 - Open the interactive theme configuration editor.',
@@ -542,6 +546,81 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           '[ASCII ENGINE]: Please select an image from your system to convert...',
         ]);
         fileInputRef.current?.click();
+        return;
+      }
+
+      // YouTube player command
+      if (base === 'yt') {
+        const sub = parts[1]?.toLowerCase();
+
+        if (!sub || sub === '-h' || sub === '-help' || sub === 'help') {
+          setTerminalLogs(prev => [
+            ...prev,
+            ' ',
+            'Usage: yt <YouTube URL | OPTION>',
+            ' ',
+            'Play a YouTube video directly inside the terminal.',
+            ' ',
+            'Options:',
+            '  -h, -help, help             Show this help page and exit.',
+            '  stop                        Stop and close the active video player.',
+            ' ',
+            'Supported URL Formats:',
+            '  https://www.youtube.com/watch?v=VIDEO_ID',
+            '  https://youtu.be/VIDEO_ID',
+            '  https://youtube.com/shorts/VIDEO_ID',
+            '  https://www.youtube.com/embed/VIDEO_ID',
+            ' ',
+            'Details:',
+            '  The video plays in a compact overlay at the bottom-right of the terminal.',
+            '  Playback defaults to 720p or the highest available resolution below it.',
+            '  Use "yt stop" to close the player at any time.',
+            ' '
+          ]);
+          return;
+        }
+
+        if (sub === 'stop') {
+          if (ytVideoId) {
+            setYtVideoId(null);
+            setTerminalLogs(prev => [...prev, '[YT]: Video playback stopped.']);
+          } else {
+            setTerminalLogs(prev => [...prev, '[YT]: No video is currently playing.']);
+          }
+          return;
+        }
+
+        // Extract video ID from various YouTube URL formats
+        const url = parts[1];
+        let videoId: string | null = null;
+        try {
+          const urlObj = new URL(url);
+          if (urlObj.hostname.includes('youtube.com')) {
+            if (urlObj.pathname.startsWith('/watch')) {
+              videoId = urlObj.searchParams.get('v');
+            } else if (urlObj.pathname.startsWith('/embed/')) {
+              videoId = urlObj.pathname.split('/embed/')[1]?.split(/[?/]/)[0] || null;
+            } else if (urlObj.pathname.startsWith('/shorts/')) {
+              videoId = urlObj.pathname.split('/shorts/')[1]?.split(/[?/]/)[0] || null;
+            }
+          } else if (urlObj.hostname === 'youtu.be') {
+            videoId = urlObj.pathname.slice(1).split(/[?/]/)[0] || null;
+          }
+        } catch {
+          // Not a valid URL
+          videoId = null;
+        }
+
+        if (videoId) {
+          setYtVideoId(videoId);
+          setTerminalLogs(prev => [
+            ...prev,
+            `[YT]: Loading video (${videoId})...`,
+            `[YT]: Streaming at max 720p. Type "yt stop" to close.`
+          ]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[YT ERROR]: Could not extract video ID from URL. Type "yt -h" for supported formats.`]);
+        }
         return;
       }
 
@@ -1352,6 +1431,30 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 </div>
               ))}
 
+              {/* YouTube Inline Player */}
+              {ytVideoId && (
+                <div className="my-3 border border-[#5f3e3d] bg-black/95 p-2 w-fit max-w-[420px]">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-mono text-[10px] text-[#e9bcb9] uppercase tracking-widest">▶ YT STREAM ACTIVE</span>
+                    <button
+                      onClick={() => { setYtVideoId(null); setTerminalLogs(prev => [...prev, '[YT]: Video playback stopped.']); }}
+                      className="text-[#ff0033] font-mono text-[10px] uppercase tracking-wider hover:text-white cursor-pointer border border-[#5f3e3d] px-2 py-0.5 hover:border-[#ff0033] transition-colors"
+                    >
+                      ✕ STOP
+                    </button>
+                  </div>
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&vq=hd720&rel=0&modestbranding=1`}
+                    width="400"
+                    height="225"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    className="border border-[#5f3e3d]/50"
+                    title="YouTube Video Player"
+                  />
+                </div>
+              )}
+
               {/* QR Code rendering during 2FA Setup */}
               {sshState === 'ssh_2fa_setup' && ssh2faSecret && (
                 <div className="my-4 p-4 bg-white w-max rounded">
@@ -1445,7 +1548,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         ? sshSessionUser?.username === 'root'
                           ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
                           : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'ascii', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'ascii', 'yt', 'cmatrix', 'bg-rain', 'code', 'theme', 'ssh', 'exit', 'blue'];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
@@ -1510,6 +1613,21 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                           const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
                           if (matches.length === 1) {
                             setCliInput(`ascii ${matches[0]} `);
+                          } else if (matches.length > 1) {
+                            const logPrefix = sshState === 'logged_in'
+                              ? `${sshSessionUser?.username}@zero:~$`
+                              : 'root/ :~$';
+                            setTerminalLogs(prev => [
+                              ...prev,
+                              `${logPrefix} ${cliInput}`,
+                              matches.join('  ')
+                            ]);
+                          }
+                        } else if (partsLower[0] === 'yt') {
+                          const subOptions = ['stop', '-help', '-h', 'help'];
+                          const matches = subOptions.filter(opt => opt.toLowerCase().startsWith(partsLower[1]));
+                          if (matches.length === 1) {
+                            setCliInput(`yt ${matches[0]} `);
                           } else if (matches.length > 1) {
                             const logPrefix = sshState === 'logged_in'
                               ? `${sshSessionUser?.username}@zero:~$`
