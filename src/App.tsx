@@ -80,9 +80,7 @@ export default function App() {
       return `Available mainframe operations:
   /help - Display this command map.
   /choice - Reset cognitive state and return to Morpheus.
-  /pill <red|blue> - Force load a specific pill reality.
-  /decrypt <text> - Translate a text packet into uppercase mainframe string.
-  /diagnose - Perform diagnostics scan on active node state.`;
+  /pill <red|blue> - Force load a specific pill reality.`;
     }
 
     // Command: /choice
@@ -99,22 +97,6 @@ export default function App() {
         return `[SUCCESS] Loaded subspace matrices for ${p.toUpperCase()}_PILL reality.`;
       }
       return '[ERROR] Invalid argument. Syntax: /pill <red|blue>';
-    }
-
-    // Command: /decrypt
-    if (base === '/decrypt') {
-      const text = parts.slice(1).join(' ');
-      if (!text) return '[ERROR] Please provide text to decrypt. Syntax: /decrypt <message>';
-      return `[SUCCESS] Decryption translation complete: "${text.toUpperCase()}"`;
-    }
-
-    // Command: /diagnose
-    if (base === '/diagnose') {
-      return `[DIAGNOSTICS READOUT]
-  ZION MAIN TRANSMITTER: ${choice !== 'none' ? 'CONNECTED' : 'DISCONNECTED'}
-  ACTIVE COGNITIVE CELL: ${choice.toUpperCase() || 'STANDBY_CONSTRUCT'}
-  MEMORY BUFFERS: STABLE
-  STATUS: CORE_SYSTEM_ALIGNED`;
     }
 
     return `[ERROR] Unknown command: "${cmd}". Type /help to see available operations.`;
@@ -186,7 +168,7 @@ export default function App() {
                 <button
                   onClick={handleResetToChoice}
                   className={`hidden md:flex items-center space-x-1.5 font-mono text-[10px] uppercase font-bold tracking-widest border px-2.5 py-1 transition-all cursor-pointer ${
-                    activeScreen === 'red' 
+                    (activeScreen as string) === 'red' 
                       ? 'border-matrix-red text-matrix-red hover:bg-matrix-red/15' 
                       : 'border-matrix-blue text-matrix-blue hover:bg-matrix-blue/15'
                   }`}
