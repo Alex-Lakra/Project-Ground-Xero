@@ -286,12 +286,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     try {
       if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
         const urlObj = new URL(trimmed);
-        const pathname = urlObj.pathname;
-        const parts = pathname.split("/").filter(Boolean);
-        if (parts[0] === "u" && parts[1]) {
-          return parts[1];
-        } else if (parts[0]) {
-          return parts[0];
+        const parts = urlObj.pathname.split("/").filter(Boolean);
+        if (parts.length > 0) {
+          return parts[parts.length - 1];
         }
       }
     } catch (e) {
