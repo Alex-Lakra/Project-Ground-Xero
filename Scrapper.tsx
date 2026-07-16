@@ -2,7 +2,6 @@ import puppeteer from 'puppeteer';
 
 export async function scrapeLeetCodeProfile(username: string) {
     const url = `https://leetcode.com/u/${username}/`;
-    console.log(`Launching headless browser and navigating to ${url}...`);
 
     // Launch Puppeteer
     const browser = await puppeteer.launch({
@@ -19,7 +18,6 @@ export async function scrapeLeetCodeProfile(username: string) {
     try {
         // Wait until network activity settles so React has time to render the DOM
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-        console.log("Page title:", await page.title());
 
         // Execute code inside the browser environment to extract DOM elements
         const scrapedData = await page.evaluate(() => {
@@ -67,31 +65,52 @@ export async function scrapeLeetCodeProfile(username: string) {
             };
         });
 
-        // Print Results
-        console.log(`\n--- Problem Solved Stats for ${username} ---`);
-        console.log(`Easy:   ${scrapedData.stats.easy}`);
-        console.log(`Medium: ${scrapedData.stats.medium}`);
-        console.log(`Hard:   ${scrapedData.stats.hard}`);
-
-        console.log(`\n--- Top Recent Accepted Submissions ---`);
-        if (scrapedData.recent.length === 0) {
-            console.log("No recent submissions found. (The DOM structure might have changed or profile is private)");
-        } else {
-            scrapedData.recent.forEach((sub, index) => {
-                console.log(`${index + 1}. ${sub}`);
-            });
-        }
-
         return scrapedData;
 
     } catch (error) {
-        console.error("An error occurred during scraping:", (error as Error).message);
         throw error;
     } finally {
         await browser.close();
     }
 }
 
-// Execute the function (disabled during import)
-// const targetUsername = "lee215";
-// scrapeLeetCodeProfile(targetUsername);
+export async function scrapeCodeforcesProfile(handle: string) {
+    try {
+        const url = `https://codeforces.com/api/user.status?handle=${handle}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Codeforces API returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.status !== "OK") {
+            throw new Error(data.comment || "Failed to fetch Codeforces status");
+        }
+
+        const submissions = data.result || [];
+        const solvedProblems = new Set<string>();
+        const recentSubmissions: string[] = [];
+        const seenRecent = new Set<string>();
+
+        for (const sub of submissions) {
+            if (sub.verdict === "OK" && sub.problem) {
+                const problemId = `${sub.problem.contestId}-${sub.problem.index}`;
+                solvedProblems.add(problemId);
+
+                if (recentSubmissions.length < 5 && !seenRecent.has(sub.problem.name)) {
+                    seenRecent.add(sub.problem.name);
+                    recentSubmissions.push(sub.problem.name);
+                }
+            }
+        }
+
+        return {
+            stats: {
+                solved: solvedProblems.size
+            },
+            recent: recentSubmissions
+        };
+    } catch (error: any) {
+        throw new Error(`Codeforces fetch failed: ${error.message}`);
+    }
+}

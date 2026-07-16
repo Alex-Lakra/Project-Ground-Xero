@@ -22,7 +22,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [decryptInput, setDecryptInput] = useState('');
 
   // SSH Mainframe Login and Session States
-  const [sshState, setSshState] = useState<'none' | 'ssh_password' | 'ssh_new_password' | 'ssh_confirm_password' | 'ssh_2fa_setup' | 'ssh_2fa_verify' | 'logged_in' | 'leetcode_setup'>('none');
+  const [sshState, setSshState] = useState<'none' | 'ssh_password' | 'ssh_new_password' | 'ssh_confirm_password' | 'ssh_2fa_setup' | 'ssh_2fa_verify' | 'logged_in' | 'leetcode_setup' | 'codeforces_setup'>('none');
   const [sshPrevState, setSshPrevState] = useState<'none' | 'logged_in'>('none');
   const [sshUser, setSshUser] = useState('');
   const [sshSessionUser, setSshSessionUser] = useState<SSHUser | null>(null);
@@ -354,6 +354,45 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }
   };
 
+  // Fetch Codeforces stats and print to terminal logs
+  const fetchCodeforcesStatsAndPrint = async (username: string) => {
+    try {
+      const response = await fetch('/api/scrape-codeforces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Server error');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setTerminalLogs(prev => [
+          ...prev,
+          ` `,
+          `--- Codeforces Stats for ${username} ---`,
+          `Problems Solved: ${data.stats.solved}`,
+          ` `,
+          `--- Top Recent Accepted Submissions ---`,
+          ...(data.recent.length === 0 
+            ? ['No recent submissions found.']
+            : data.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
+          ` `
+        ]);
+      } else {
+        throw new Error('Response unsuccessful');
+      }
+    } catch (error: any) {
+      setTerminalLogs(prev => [
+        ...prev,
+        `[ERROR] Failed to fetch Codeforces data: ${error.message}`
+      ]);
+    }
+  };
+
   // ==========================================
   // CLI Command Logic
   // ==========================================
@@ -403,6 +442,34 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     }
 
     // ----------------------------------------------------
+    // STATE: CODEFORCES_SETUP
+    // ----------------------------------------------------
+    if (sshState === 'codeforces_setup') {
+      const url = cmd.trim();
+      if (!url) {
+        const currentUrl = localStorage.getItem(`codeforces_url_${sshSessionUser?.username || 'global'}`);
+        if (currentUrl) {
+          setTerminalLogs(prev => [...prev, `Kept current profile/handle.`]);
+        } else {
+          setTerminalLogs(prev => [...prev, `[ERROR] Handle/URL cannot be empty. Setup aborted.`]);
+        }
+        setSshState(sshPrevState);
+        return;
+      }
+
+      localStorage.setItem(`codeforces_url_${sshSessionUser?.username || 'global'}`, url);
+      const username = extractUsername(url);
+      setTerminalLogs(prev => [
+        ...prev,
+        `[SUCCESS] Codeforces handle/URL saved.`,
+        `Extracted handle: ${username}`,
+        `You can now type "codef" to fetch your Codeforces stats!`
+      ]);
+      setSshState(sshPrevState);
+      return;
+    }
+
+    // ----------------------------------------------------
     // STATE: NONE (Local terminal mode)
     // ----------------------------------------------------
     if (sshState === 'none') {
@@ -422,14 +489,16 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'ssh user@zero      - SSH tunnel into the zero server node.',
           '/leet              - Configure LeetCode profile (requires login).',
           'leet               - View LeetCode solved stats (requires login).',
+          '/codef             - Configure Codeforces profile (requires login).',
+          'codef              - View Codeforces solved stats (requires login).',
           'exit / ctrl+c / blue        - Return to Morpheus, escape reality (take Blue Pill).',
           ' '
         ]);
         return;
       }
 
-      // LeetCode commands check - require login
-      if (base === '/leet' || base === 'leet') {
+      // LeetCode & Codeforces commands check - require login
+      if (base === '/leet' || base === 'leet' || base === '/codef' || base === 'codef') {
         setTerminalLogs(prev => [
           ...prev,
           `[ERROR] You must be logged in to zero to use this command.`,
@@ -720,6 +789,8 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'passwd <new_pass> - Reset your active user password.',
           '/leet            - Configure your LeetCode profile URL.',
           'leet             - View your LeetCode stats & recent submissions.',
+          '/codef           - Configure your Codeforces profile URL/handle.',
+          'codef            - View your Codeforces stats & recent submissions.',
           'logout / exit    - Terminate SSH session and exit to local shell.'
         ];
 
@@ -772,6 +843,44 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         const username = extractUsername(savedUrl);
         setTerminalLogs(prev => [...prev, `Fetching LeetCode stats for ${username}...`]);
         fetchStatsAndPrint(username);
+        return;
+      }
+
+      // /codef command
+      if (base === '/codef') {
+        const savedUrl = localStorage.getItem(`codeforces_url_${sshSessionUser?.username || 'global'}`);
+        setSshPrevState(sshState);
+        setSshState('codeforces_setup');
+        if (savedUrl) {
+          setTerminalLogs(prev => [
+            ...prev,
+            `Current Codeforces Profile/Handle: ${savedUrl}`,
+            `Enter new Codeforces handle or profile URL (or press Enter to cancel):`
+          ]);
+        } else {
+          setTerminalLogs(prev => [
+            ...prev,
+            `Enter Codeforces handle or profile URL (e.g. https://codeforces.com/profile/tourist):`
+          ]);
+        }
+        return;
+      }
+
+      // codef command
+      if (base === 'codef') {
+        const savedUrl = localStorage.getItem(`codeforces_url_${sshSessionUser?.username || 'global'}`);
+        if (!savedUrl) {
+          setTerminalLogs(prev => [
+            ...prev,
+            `[ERROR] No Codeforces profile URL/handle found in database.`,
+            `Please run "/codef" first to set up your profile.`
+          ]);
+          return;
+        }
+
+        const username = extractUsername(savedUrl);
+        setTerminalLogs(prev => [...prev, `Fetching Codeforces stats for ${username}...`]);
+        fetchCodeforcesStatsAndPrint(username);
         return;
       }
 
@@ -1102,6 +1211,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                 )}
                 {sshState === 'leetcode_setup' && (
                   <span className="text-[#ff0033] mr-2">leetcode url:</span>
+                )}
+                {sshState === 'codeforces_setup' && (
+                  <span className="text-[#ff0033] mr-2">codeforces url:</span>
                 )}
                 <input
                   ref={cliInputRef}
