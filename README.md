@@ -31,6 +31,10 @@ A raw developer CLI terminal with built-in hacking simulations and an SSH mainfr
   - `help` / `?` - List authorized mainframe console operations.
   - `whoami` - Print the current active user username.
   - `passwd <new_password>` - Reset the password for your active user.
+  - `/leet` - Configure your LeetCode profile URL.
+  - `leet` - View your LeetCode stats & recent submissions.
+  - `/codef` - Configure your Codeforces profile URL/handle.
+  - `codef` - View your Codeforces stats & recent submissions.
   - `logout` / `exit` - Terminate SSH session and return to local shell.
 - **Mainframe Administrative Commands (Root Access)**:
   - `createuser <name> <default_password>` - Provision a new user account.

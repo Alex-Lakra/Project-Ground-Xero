@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import { scrapeLeetCodeProfile, scrapeCodeforcesProfile } from "./Scrapper.tsx";
 
 dotenv.config();
 
@@ -13,6 +14,32 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  app.post("/api/scrape", async (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+    try {
+      const data = await scrapeLeetCodeProfile(username);
+      return res.json({ success: true, stats: data.stats, recent: data.recent });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || "Failed to scrape LeetCode profile" });
+    }
+  });
+
+  app.post("/api/scrape-codeforces", async (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: "Username/handle is required" });
+    }
+    try {
+      const data = await scrapeCodeforcesProfile(username);
+      return res.json({ success: true, stats: data.stats, recent: data.recent });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || "Failed to scrape Codeforces profile" });
+    }
+  });
 
   // Serve static files / Vite middleware
   if (process.env.NODE_ENV !== "production") {
