@@ -64,6 +64,15 @@
   mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 70%, rgba(0,0,0,0));
 }
 
+/* Hide scrollbars utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
 /* Custom scrollbars for neo-brutalist technical look */
 ::-webkit-scrollbar {
   width: 6px;
@@ -93,3 +102,109 @@
 .glow-peach {
   box-shadow: 0 0 15px rgba(233, 188, 185, 0.4);
 }
+
+/* Matrix Profile Card Styles */
+.profile-card {
+  background-color: #000000;
+  border: 1px solid #ff0000;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.25);
+  font-family: var(--font-mono);
+  color: #ff0000;
+  overflow: hidden;
+}
+
+.profile-card .scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(255, 0, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 20;
+}
+
+.profile-card .banner {
+  height: 96px;
+  background: linear-gradient(180deg, #330000 0%, #000000 100%);
+  border-bottom: 1px dashed #ff0000;
+  position: relative;
+}
+
+.profile-card .banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#ff0000 1px, transparent 1px);
+  background-size: 12px 12px;
+  opacity: 0.15;
+}
+
+.profile-card .avatar-wrapper {
+  position: absolute;
+  top: 40px;
+  left: 16px;
+}
+
+.profile-card .avatar {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 2px solid #ff0000;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  background-color: #000000;
+}
+
+.profile-card .status-indicator {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 14px;
+  height: 14px;
+  background-color: #ff0000;
+  border: 2px solid #000000;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ff0000;
+}
+
+.profile-card .status-bubble {
+  position: absolute;
+  top: 48px;
+  left: 104px;
+  right: 16px;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid #ff0000;
+  padding: 6px 10px;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.2);
+}
+
+.profile-card .terminal-text {
+  color: #ff0000;
+  text-shadow: 0 0 4px rgba(255, 0, 0, 0.5);
+}
+
+.profile-card .terminal-text-dim {
+  color: #880000;
+}
+
+.profile-card .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid #ff0000;
+  background-color: rgba(255, 0, 0, 0.1);
+  font-size: 10px;
+  font-weight: bold;
+  color: #ff0000;
+}
+
+.profile-card .activity-card {
+  background-color: #000000;
+  border: 1px dashed #ff0000;
+  padding: 12px;
+}
+

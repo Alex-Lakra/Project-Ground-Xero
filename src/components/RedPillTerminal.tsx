@@ -3,6 +3,7 @@ import { Terminal as TermIcon, Eye, Settings } from 'lucide-react';
 import DigitalRain from './DigitalRain';
 import { firebaseDb, SSHUser } from '../services/firebaseDb';
 import { QRCodeSVG } from 'qrcode.react';
+import ProfileCard from './ProfileCard';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -27,6 +28,31 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [sshSessionUser, setSshSessionUser] = useState<SSHUser | null>(null);
   const [sshTempPassword, setSshTempPassword] = useState('');
   const [ssh2faSecret, setSsh2faSecret] = useState('');
+
+  // Profile Card Panel Visibility & Customization State
+  const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [localGuestProfile, setLocalGuestProfile] = useState<SSHUser>(() => {
+    const saved = localStorage.getItem('ground_xero_guest_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      username: 'guest',
+      passwordHash: '',
+      isPasswordChanged: true,
+      is2faEnabled: false,
+      twoFactorSecret: '',
+      displayName: 'Alex_The_Gamer',
+      statusBubble: '> Compiling kernel...',
+      bioLink: 'https://github.com/AlexTheCoder/projects',
+      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6GitQ1FgotQ3ZRvpwtA7OqLnbSM252dmUg6zl6vacllhND-FyKowiKAvD-KfIxqHPTZusmImpUcMM1zyjLPrMIu3X0Sg4K8-YMGLjSFmCf-Ydkd-Ns8lMotlwgkFYjL6eyuVEDUU86zsPW2XaTj2XG2e4kgiqwNLkcoChnDEnvzybiRiCOWTYWaY1LsW7fEv1THKeamH1MreFDxqSojSNVDIsg4I4plkwXMfGVUQ7CaVxaBXanodGmOdz642Fqw48UnHYE84PtV77',
+      techStack: ['TS', 'REACT', 'NODE'],
+      pronouns: 'he/him',
+      uid: '25UCOMP008',
+    };
+  });
 
   // Rain visualizer configuration State
   const [rainDensity, setRainDensity] = useState(1.2);
@@ -420,6 +446,167 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
+    // Global Profile Commands (Work in local shell or SSH session)
+    if (base === 'profile' || base === 'rename' || base === 'about' || base === 'addstack' || base === 'repo' || base === 'profpic' || base === 'clearstack') {
+      if (base === 'profile') {
+        setShowProfile(prev => !prev);
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          '======================================================',
+          '[SYSTEM]: OPERATOR MAINFRAME PROFILE PANEL TOGGLED',
+          '======================================================',
+          'Profile matrix displayed on the right viewport panel.',
+          ' ',
+          'Available Profile Customization Commands:',
+          '  rename <display_name>   - Update operator display name.',
+          '  about <status>          - Update status bubble / bio message.',
+          '  addstack <tech>         - Add tech stack tag (e.g. TS, REACT, NODE, PY).',
+          '  repo <url>              - Update repository / GitHub URL.',
+          '  profpic <url>           - Update avatar profile picture URL.',
+          '  clearstack              - Clear all tech stack tags.',
+          ' '
+        ]);
+        return;
+      }
+
+      if (base === 'rename') {
+        const newName = cmd.slice(6).trim();
+        if (!newName) {
+          setTerminalLogs(prev => [...prev, 'Usage: rename <display_name>']);
+          return;
+        }
+
+        if (sshSessionUser) {
+          const updated = { ...sshSessionUser, displayName: newName };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const updated = { ...prev, displayName: newName };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile display name updated to "${newName}" (Synced with Database).`]);
+        return;
+      }
+
+      if (base === 'about') {
+        const newStatus = cmd.slice(5).trim();
+        if (!newStatus) {
+          setTerminalLogs(prev => [...prev, 'Usage: about <status_text_or_bio>']);
+          return;
+        }
+
+        if (sshSessionUser) {
+          const updated = { ...sshSessionUser, statusBubble: newStatus };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const updated = { ...prev, statusBubble: newStatus };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile status bubble updated to "> ${newStatus}" (Synced with Database).`]);
+        return;
+      }
+
+      if (base === 'addstack') {
+        const tech = cmd.slice(8).trim().toUpperCase();
+        if (!tech) {
+          setTerminalLogs(prev => [...prev, 'Usage: addstack <tech_name> (e.g. TS, REACT, NODE, PYTHON)']);
+          return;
+        }
+
+        if (sshSessionUser) {
+          const currentStack = sshSessionUser.techStack || [];
+          const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
+          const updated = { ...sshSessionUser, techStack: updatedStack };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const currentStack = prev.techStack || [];
+          const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
+          const updated = { ...prev, techStack: updatedStack };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Added '${tech}' to profile tech stack (Synced with Database).`]);
+        return;
+      }
+
+      if (base === 'repo') {
+        const newRepo = cmd.slice(4).trim();
+        if (!newRepo) {
+          setTerminalLogs(prev => [...prev, 'Usage: repo <url> (e.g. https://github.com/username/project)']);
+          return;
+        }
+
+        if (sshSessionUser) {
+          const updated = { ...sshSessionUser, bioLink: newRepo };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const updated = { ...prev, bioLink: newRepo };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile repository URL set to ${newRepo} (Synced with Database).`]);
+        return;
+      }
+
+      if (base === 'profpic') {
+        const newPic = cmd.slice(7).trim();
+        if (!newPic) {
+          setTerminalLogs(prev => [...prev, 'Usage: profpic <image_url>']);
+          return;
+        }
+
+        if (sshSessionUser) {
+          const updated = { ...sshSessionUser, avatarUrl: newPic };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const updated = { ...prev, avatarUrl: newPic };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile picture URL updated (Synced with Database).`]);
+        return;
+      }
+
+      if (base === 'clearstack') {
+        if (sshSessionUser) {
+          const updated = { ...sshSessionUser, techStack: [] };
+          setSshSessionUser(updated);
+          await firebaseDb.saveUser(updated);
+        }
+        setLocalGuestProfile(prev => {
+          const updated = { ...prev, techStack: [] };
+          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
+          return updated;
+        });
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile tech stack cleared (Synced with Database).`]);
+        return;
+      }
+    }
+
     // ----------------------------------------------------
     // STATE: LEETCODE_SETUP
     // ----------------------------------------------------
@@ -489,6 +676,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
+          'profile                     - Toggle operator profile card on right side.',
+          'rename <name>               - Update display name.',
+          'about <status>              - Update status bubble message.',
+          'addstack <tech>             - Add tech stack tag (TS, REACT, NODE, etc.).',
+          'repo <url>                  - Update repository link.',
+          'profpic <url>               - Update avatar profile picture URL.',
           'ssh user@zero               - SSH tunnel into the zero server node.',
           '/leet                       - Configure LeetCode profile (requires login).',
           'leet                        - View LeetCode solved stats (requires login).',
@@ -892,6 +1085,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             '======================================',
             'whoami           - Display the current active user.',
             'passwd <new_pass> - Reset your active user password.',
+            'profile          - Toggle operator profile matrix card on right side.',
+            'rename <name>    - Update profile display name (saves to DB).',
+            'about <status>   - Update profile status message (saves to DB).',
+            'addstack <tech>  - Add tech stack item (saves to DB).',
+            'repo <url>       - Update profile repository URL (saves to DB).',
+            'profpic <url>    - Update profile picture URL (saves to DB).',
             '/leet            - Configure your LeetCode profile URL.',
             'leet             - View your LeetCode stats & recent submissions.',
             '/codef           - Configure your Codeforces profile URL/handle.',
@@ -1196,14 +1395,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         </header>
 
         {/* Main Viewport Container */}
-        <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10">
+        <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10 no-scrollbar">
 
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
-          <div className="flex-1 flex flex-col h-full justify-between">
+          <div className={`flex-1 flex ${showProfile ? 'flex-col lg:flex-row gap-6' : 'flex-col'} h-full justify-between`}>
             {/* Scrollable logs list and active inline terminal input */}
             <div
-              className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 text-[#ff0033]"
+              className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 text-[#ff0033] no-scrollbar"
             >
               {terminalLogs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap font-mono font-medium tracking-wide">
@@ -1304,11 +1503,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
                         if (isSensitive || input.length === 0) return;
 
+                      const profileCmds = ['profile', 'rename', 'about', 'addstack', 'repo', 'profpic', 'clearstack'];
                       const availableCommands = sshState === 'logged_in'
                         ? sshSessionUser?.username === 'root'
-                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
-                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue'];
+                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', ...profileCmds]
+                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', ...profileCmds]
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue', ...profileCmds];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
@@ -1356,6 +1556,28 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
                 <div ref={terminalEndRef} />
               </div>
+
+              {/* Right Side: Profile Card Matrix Panel */}
+              {showProfile && (
+                <div className="w-full lg:w-[380px] flex-shrink-0 mt-4 overflow-y-auto max-h-[calc(100vh-220px)]">
+                  <ProfileCard
+                    user={
+                      sshSessionUser
+                        ? {
+                            ...localGuestProfile,
+                            ...sshSessionUser,
+                            displayName: sshSessionUser.displayName || localGuestProfile.displayName || sshSessionUser.username,
+                            statusBubble: sshSessionUser.statusBubble || localGuestProfile.statusBubble,
+                            bioLink: sshSessionUser.bioLink || localGuestProfile.bioLink,
+                            avatarUrl: sshSessionUser.avatarUrl || localGuestProfile.avatarUrl,
+                            techStack: sshSessionUser.techStack && sshSessionUser.techStack.length > 0 ? sshSessionUser.techStack : localGuestProfile.techStack,
+                          }
+                        : localGuestProfile
+                    }
+                    onClose={() => setShowProfile(false)}
+                  />
+                </div>
+              )}
             </div>
           )}
 

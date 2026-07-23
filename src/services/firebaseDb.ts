@@ -4,6 +4,13 @@ export interface SSHUser {
   isPasswordChanged: boolean; // First login requires password reset
   is2faEnabled: boolean; // First login requires 2FA setup
   twoFactorSecret: string; // Authenticator app TOTP secret
+  displayName?: string;
+  statusBubble?: string;
+  bioLink?: string;
+  avatarUrl?: string;
+  techStack?: string[];
+  pronouns?: string;
+  uid?: string;
 }
 
 // ----------------------------------------------------
@@ -20,6 +27,13 @@ const SEED_USERS: Record<string, SSHUser> = {
     isPasswordChanged: false,
     is2faEnabled: false,
     twoFactorSecret: '',
+    displayName: 'Alex_The_Gamer',
+    statusBubble: '> Compiling kernel...',
+    bioLink: 'https://github.com/AlexTheCoder/projects',
+    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6GitQ1FgotQ3ZRvpwtA7OqLnbSM252dmUg6zl6vacllhND-FyKowiKAvD-KfIxqHPTZusmImpUcMM1zyjLPrMIu3X0Sg4K8-YMGLjSFmCf-Ydkd-Ns8lMotlwgkFYjL6eyuVEDUU86zsPW2XaTj2XG2e4kgiqwNLkcoChnDEnvzybiRiCOWTYWaY1LsW7fEv1THKeamH1MreFDxqSojSNVDIsg4I4plkwXMfGVUQ7CaVxaBXanodGmOdz642Fqw48UnHYE84PtV77',
+    techStack: ['TS', 'REACT', 'NODE', 'PY'],
+    pronouns: 'he/him',
+    uid: '25UCOMP008',
   },
 };
 
@@ -45,6 +59,7 @@ const saveLocalUsers = (users: Record<string, SSHUser>) => {
 interface FirestoreField {
   stringValue?: string;
   booleanValue?: boolean;
+  arrayValue?: { values?: FirestoreField[] };
 }
 
 function mapDocumentToUser(doc: any): SSHUser {
@@ -55,6 +70,15 @@ function mapDocumentToUser(doc: any): SSHUser {
     isPasswordChanged: fields.isPasswordChanged?.booleanValue || false,
     is2faEnabled: fields.is2faEnabled?.booleanValue || false,
     twoFactorSecret: fields.twoFactorSecret?.stringValue || '',
+    displayName: fields.displayName?.stringValue || '',
+    statusBubble: fields.statusBubble?.stringValue || '',
+    bioLink: fields.bioLink?.stringValue || '',
+    avatarUrl: fields.avatarUrl?.stringValue || '',
+    techStack: fields.techStack?.arrayValue?.values
+      ? fields.techStack.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    pronouns: fields.pronouns?.stringValue || '',
+    uid: fields.uid?.stringValue || '',
   };
 }
 
@@ -66,6 +90,17 @@ function mapUserToDocument(user: SSHUser) {
       isPasswordChanged: { booleanValue: user.isPasswordChanged },
       is2faEnabled: { booleanValue: user.is2faEnabled },
       twoFactorSecret: { stringValue: user.twoFactorSecret },
+      displayName: { stringValue: user.displayName || '' },
+      statusBubble: { stringValue: user.statusBubble || '' },
+      bioLink: { stringValue: user.bioLink || '' },
+      avatarUrl: { stringValue: user.avatarUrl || '' },
+      techStack: {
+        arrayValue: {
+          values: (user.techStack || []).map(s => ({ stringValue: s }))
+        }
+      },
+      pronouns: { stringValue: user.pronouns || '' },
+      uid: { stringValue: user.uid || '' },
     }
   };
 }
