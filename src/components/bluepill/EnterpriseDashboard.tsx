@@ -6,14 +6,16 @@ import ChallengesView from './ChallengesView';
 import CommunitiesView from './CommunitiesView';
 import EventsView from './EventsView';
 import ProfileView from './ProfileView';
+import AdminConsoleView from './AdminConsoleView';
 
 interface EnterpriseDashboardProps {
   userEmail?: string | null;
+  userRole?: 'student' | 'admin';
   onLogout?: () => void;
 }
 
-export default function EnterpriseDashboard({ userEmail, onLogout }: EnterpriseDashboardProps = {}) {
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+export default function EnterpriseDashboard({ userEmail, userRole, onLogout }: EnterpriseDashboardProps = {}) {
+  const [activeTab, setActiveTab] = useState<NavTab>(userRole === 'admin' ? 'admin' : 'dashboard');
 
   return (
     <div className="min-h-screen bg-[#0f131b] text-[#dfe2ed] font-sans antialiased flex flex-col justify-between">
@@ -23,6 +25,7 @@ export default function EnterpriseDashboard({ userEmail, onLogout }: EnterpriseD
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
           userEmail={userEmail}
+          userRole={userRole}
           onLogout={onLogout}
         />
 
@@ -34,6 +37,7 @@ export default function EnterpriseDashboard({ userEmail, onLogout }: EnterpriseD
           {activeTab === 'challenges' && <ChallengesView />}
           {activeTab === 'events' && <EventsView />}
           {activeTab === 'profile' && <ProfileView />}
+          {activeTab === 'admin' && <AdminConsoleView />}
         </main>
       </div>
 
@@ -45,9 +49,9 @@ export default function EnterpriseDashboard({ userEmail, onLogout }: EnterpriseD
               onClick={() => setActiveTab('dashboard')}
               className="text-sm font-bold text-[#dfe2ed] cursor-pointer hover:text-[#aec6ff]"
             >
-              Project X
+              Xero
             </span>
-            <span className="text-xs text-[#c3c6d4]">© 2026 Project X. All rights reserved.</span>
+            <span className="text-xs text-[#c3c6d4]">© 2026 Xero. All rights reserved.</span>
           </div>
           <div className="flex gap-6 items-center text-xs text-[#c3c6d4]">
             <a className="hover:text-[#dfe2ed] transition-colors" href="#">Terms</a>

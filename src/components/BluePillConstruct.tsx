@@ -10,20 +10,24 @@ import LoginPage from './bluepill/LoginPage';
 export default function BluePillConstruct() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<'student' | 'admin'>('student');
 
-  const handleLoginSuccess = (email: string) => {
+  const handleLoginSuccess = (email: string, role: 'student' | 'admin') => {
     setUserEmail(email);
+    setUserRole(role);
     setIsLoggedIn(true);
   };
 
   const handleContinueAsGuest = () => {
     setUserEmail('Guest Access');
+    setUserRole('student');
     setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUserEmail(null);
+    setUserRole('student');
   };
 
   if (!isLoggedIn) {
@@ -37,7 +41,8 @@ export default function BluePillConstruct() {
 
   return (
     <EnterpriseDashboard 
-      userEmail={userEmail} 
+      userEmail={userEmail}
+      userRole={userRole}
       onLogout={handleLogout} 
     />
   );

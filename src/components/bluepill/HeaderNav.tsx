@@ -1,26 +1,27 @@
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'communities' | 'courses' | 'challenges' | 'events' | 'profile';
+export type NavTab = 'dashboard' | 'communities' | 'courses' | 'challenges' | 'events' | 'profile' | 'admin';
 
 interface HeaderNavProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   userEmail?: string | null;
+  userRole?: 'student' | 'admin';
   onLogout?: () => void;
 }
 
-export default function HeaderNav({ activeTab, setActiveTab, userEmail, onLogout }: HeaderNavProps) {
+export default function HeaderNav({ activeTab, setActiveTab, userEmail, userRole, onLogout }: HeaderNavProps) {
   return (
     <header className="sticky top-0 z-50 bg-[#0f131b] border-b border-[#434752] w-full">
-      <div className="flex justify-between items-center px-6 md:px-8 h-16 max-w-[1200px] mx-auto">
+      <div className="flex justify-between items-center px-6 md:px-8 h-16 w-full">
         <div className="flex items-center gap-8">
           {/* Logo */}
           <span
             onClick={() => setActiveTab('dashboard')}
-            className="text-2xl font-bold text-[#dfe2ed] cursor-pointer hover:text-[#aec6ff] transition-colors select-none"
+            className="text-2xl font-bold text-[#dfe2ed] cursor-pointer hover:text-[#aec6ff] transition-colors select-none tracking-tight flex items-center gap-2"
           >
-            Project X
+            Xero
           </span>
 
           {/* Navigation Items */}
@@ -79,17 +80,25 @@ export default function HeaderNav({ activeTab, setActiveTab, userEmail, onLogout
             >
               Events
             </button>
+
+            {userRole === 'admin' && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`text-xs px-2.5 py-1 rounded-lg border font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'admin'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-md'
+                    : 'bg-[#181f2c] text-amber-400 border-amber-800/40 hover:bg-amber-950/40'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>ADMIN CONSOLE</span>
+              </button>
+            )}
           </nav>
         </div>
 
         {/* Header Action Items */}
         <div className="flex items-center gap-4">
-          {userEmail && (
-            <span className="hidden lg:inline-block text-xs font-mono text-[#aec6ff] bg-[#182030] px-2.5 py-1 rounded border border-[#2b3954]">
-              {userEmail}
-            </span>
-          )}
-
           <div className="relative hidden md:block">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8d909d] text-[20px]">
               search

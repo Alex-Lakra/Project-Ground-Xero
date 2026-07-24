@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface LoginPageProps {
-  onLoginSuccess: (email: string) => void;
+  onLoginSuccess: (email: string, role: 'student' | 'admin') => void;
   onContinueAsGuest: () => void;
 }
 
@@ -27,13 +27,21 @@ export default function LoginPage({ onLoginSuccess, onContinueAsGuest }: LoginPa
   const [errorMsg, setErrorMsg] = useState('');
 
   // Default test credentials
-  const DEMO_EMAIL = 'alex.rivera@projectx.io';
-  const DEMO_PASSWORD = 'matrix2026';
+  const STUDENT_EMAIL = 'alex.rivera@projectx.io';
+  const STUDENT_PASSWORD = 'matrix2026';
+  const ADMIN_EMAIL = 'admin@xero.io';
+  const ADMIN_PASSWORD = 'admin2026';
 
-  // Quick auto-fill handler
-  const handleAutoFill = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
+  // Quick auto-fill handlers
+  const handleAutoFillStudent = () => {
+    setEmail(STUDENT_EMAIL);
+    setPassword(STUDENT_PASSWORD);
+    setErrorMsg('');
+  };
+
+  const handleAutoFillAdmin = () => {
+    setEmail(ADMIN_EMAIL);
+    setPassword(ADMIN_PASSWORD);
     setErrorMsg('');
   };
 
@@ -52,10 +60,13 @@ export default function LoginPage({ onLoginSuccess, onContinueAsGuest }: LoginPa
 
     setIsSubmitting(true);
 
+    const isAdmin = email.toLowerCase().includes('admin') || email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    const role: 'student' | 'admin' = isAdmin ? 'admin' : 'student';
+
     // Simulate authentication packet processing delay
     setTimeout(() => {
       setIsSubmitting(false);
-      onLoginSuccess(email);
+      onLoginSuccess(email, role);
     }, 600);
   };
 
@@ -100,35 +111,49 @@ export default function LoginPage({ onLoginSuccess, onContinueAsGuest }: LoginPa
             </div>
 
             {/* Test Credentials Highlight Card */}
-            <div className="mb-6 bg-[#171d2b] border border-[#2b354c] rounded-xl p-4 text-xs space-y-2">
+            <div className="mb-6 bg-[#171d2b] border border-[#2b354c] rounded-xl p-4 text-xs space-y-3">
               <div className="flex items-center justify-between font-mono text-[#aec6ff] font-semibold">
                 <span className="flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-[#60a5fa]" />
-                  TEST CREDENTIALS
+                  TEST DEMO PROFILES
                 </span>
-                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-1.5 py-0.5 rounded">
-                  READY
+                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-1.5 py-0.5 rounded font-mono">
+                  STUDENT & ADMIN
                 </span>
               </div>
-              <div className="font-mono text-[#c3c6d4] space-y-1 bg-[#0c0f17] p-2.5 rounded border border-[#212738]">
-                <div className="flex justify-between">
-                  <span className="text-[#787c8e]">Email:</span>
-                  <span className="text-white font-medium">{DEMO_EMAIL}</span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+                {/* Student Profile Card */}
+                <div className="bg-[#0c0f17] p-2.5 rounded border border-[#212738] space-y-1">
+                  <div className="text-[#a8dadc] font-bold">🎓 Student Profile</div>
+                  <div className="text-[#787c8e] text-[10px]">alex.rivera@projectx.io</div>
+                  <button
+                    type="button"
+                    onClick={handleAutoFillStudent}
+                    className="w-full mt-1.5 py-1 px-2 bg-[#1d273a] hover:bg-[#273550] border border-[#3b4d70] rounded text-[#aec6ff] hover:text-white transition-all flex items-center justify-center gap-1 text-[11px] cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-300" />
+                    Auto-fill Student
+                  </button>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#787c8e]">Password:</span>
-                  <span className="text-white font-medium">{DEMO_PASSWORD}</span>
+
+                {/* Admin Profile Card */}
+                <div className="bg-[#0c0f17] p-2.5 rounded border border-amber-900/40 space-y-1">
+                  <div className="text-amber-300 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-amber-400" />
+                    Admin Profile
+                  </div>
+                  <div className="text-[#787c8e] text-[10px]">admin@xero.io</div>
+                  <button
+                    type="button"
+                    onClick={handleAutoFillAdmin}
+                    className="w-full mt-1.5 py-1 px-2 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-700/50 rounded text-amber-200 hover:text-white transition-all flex items-center justify-center gap-1 text-[11px] cursor-pointer font-bold"
+                  >
+                    <ShieldCheck className="w-3 h-3 text-amber-400" />
+                    Auto-fill Admin
+                  </button>
                 </div>
               </div>
-              
-              <button
-                type="button"
-                onClick={handleAutoFill}
-                className="w-full mt-1 py-1.5 px-3 bg-[#1d273a] hover:bg-[#273550] border border-[#3b4d70] rounded text-[#aec6ff] hover:text-white transition-all flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                Auto-fill Test Credentials
-              </button>
             </div>
 
             {/* Error Banner */}

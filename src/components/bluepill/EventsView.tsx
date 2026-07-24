@@ -1,16 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { PublishedEvent } from './AdminConsoleView';
+
+export function getFallbackEventBanner(category: string, title: string = 'Event'): string {
+  const gradients: Record<string, [string, string]> = {
+    Hackathon: ['#1e1b4b', '#4f46e5'],
+    Workshop: ['#064e3b', '#10b981'],
+    Meetup: ['#701a75', '#d946ef'],
+    Webinar: ['#1e293b', '#3b82f6'],
+  };
+  const [bg1, bg2] = gradients[category] || ['#1e293b', '#628fea'];
+  const label = (category || 'EVENT').toUpperCase();
+  const shortTitle = title.length > 20 ? title.substring(0, 20) + '...' : title;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${bg1}"/>
+        <stop offset="100%" stop-color="${bg2}"/>
+      </linearGradient>
+    </defs>
+    <rect width="300" height="200" fill="url(#g)"/>
+    <circle cx="250" cy="40" r="80" fill="#ffffff" opacity="0.08"/>
+    <circle cx="30" cy="170" r="60" fill="#ffffff" opacity="0.05"/>
+    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold">${label}</text>
+    <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11" opacity="0.8">${shortTitle}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 export default function EventsView() {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [registeredEvents, setRegisteredEvents] = useState<Record<string, boolean>>({
-    'Edge Computing Summit 2026': false,
-    'Advanced Patterns in React 19': false,
-    'DevOps & Chill: SF Chapter': false
-  });
+  const [eventsList, setEventsList] = useState<PublishedEvent[]>([]);
+  const [registeredEvents, setRegisteredEvents] = useState<Record<string, boolean>>({});
 
-  const toggleRegister = (title: string) => {
-    setRegisteredEvents(prev => ({ ...prev, [title]: !prev[title] }));
+  useEffect(() => {
+    try {
+      const storedEvents = localStorage.getItem('xero_events');
+      if (storedEvents) {
+        setEventsList(JSON.parse(storedEvents));
+      } else {
+        setEventsList([]);
+      }
+    } catch (e) {
+      setEventsList([]);
+    }
+  }, []);
+
+  const toggleRegister = (id: string) => {
+    setRegisteredEvents(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  const filteredEvents = eventsList.filter(ev => {
+    if (activeFilter === 'All') return true;
+    return ev.category === activeFilter || (ev.category + 's') === activeFilter;
+  });
 
   return (
     <div className="py-8 px-6 md:px-8 max-w-[1200px] mx-auto text-[#dfe2ed]">
@@ -20,25 +63,23 @@ export default function EventsView() {
           {/* My Events Card */}
           <section className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-6">
             <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#8d909d]">My Events</h2>
-            <div className="space-y-6">
-              <div className="group cursor-pointer">
-                <p className="text-[11px] text-[#aec6ff] font-mono font-bold mb-1">OCT 24, 2026</p>
-                <h3 className="text-sm font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                  Global AI Hackathon
-                </h3>
-                <p className="text-xs text-[#8d909d]">Virtual • 10:00 AM</p>
-              </div>
-
-              <div className="group cursor-pointer">
-                <p className="text-[11px] text-[#aec6ff] font-mono font-bold mb-1">OCT 28, 2026</p>
-                <h3 className="text-sm font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                  React 19 Workshop
-                </h3>
-                <p className="text-xs text-[#8d909d]">Tech Hub 4 • 2:00 PM</p>
-              </div>
+            <div className="space-y-4">
+              {eventsList.filter(e => registeredEvents[e.id]).length === 0 ? (
+                <p className="text-xs text-[#8d909d] italic">No registered events yet.</p>
+              ) : (
+                eventsList.filter(e => registeredEvents[e.id]).map(ev => (
+                  <div key={ev.id} className="group cursor-pointer">
+                    <p className="text-[11px] text-[#aec6ff] font-mono font-bold mb-0.5">{ev.date}</p>
+                    <h3 className="text-sm font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
+                      {ev.title}
+                    </h3>
+                    <p className="text-xs text-[#8d909d]">{ev.location}</p>
+                  </div>
+                ))
+              )}
             </div>
 
-            <button className="w-full mt-4 py-2 border border-[#434752] rounded-lg text-xs font-bold text-[#dfe2ed] hover:bg-[#262a32] transition-all cursor-pointer">
+            <button className="w-full mt-2 py-2 border border-[#434752] rounded-lg text-xs font-bold text-[#dfe2ed] hover:bg-[#262a32] transition-all cursor-pointer">
               View All Registered
             </button>
           </section>
@@ -116,7 +157,7 @@ export default function EventsView() {
         {/* CENTER COLUMN: Upcoming Events Feed */}
         <article className="lg:col-span-6 space-y-6">
           <header className="flex gap-2">
-            {['All', 'Hackathons', 'Workshops'].map(type => (
+            {['All', 'Hackathons', 'Workshops', 'Meetups'].map(type => (
               <button
                 key={type}
                 onClick={() => setActiveFilter(type)}
@@ -132,116 +173,63 @@ export default function EventsView() {
           </header>
 
           <div className="space-y-6">
-            {/* Event 1 */}
-            <div className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-all">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#434752] flex-shrink-0">
-                    <img
-                      className="w-full h-full object-cover"
-                      src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=300&q=80"
-                      alt="Edge Computing Summit"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#dfe2ed]">Edge Computing Summit 2026</h3>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d909d] mt-1 font-mono">
-                      <span>📅 Nov 12–14</span>
-                      <span>📍 Tech Hub 4, SF</span>
-                    </div>
-                  </div>
+            {filteredEvents.length === 0 ? (
+              <div className="bg-[#181c24] border border-[#434752] rounded-2xl p-10 text-center space-y-4 shadow-xl">
+                <div className="w-14 h-14 rounded-2xl bg-[#262e3d] text-[#aec6ff] border border-[#3b4963] flex items-center justify-center mx-auto shadow-inner">
+                  <span className="material-symbols-outlined text-3xl">event_busy</span>
                 </div>
-
-                <button
-                  onClick={() => toggleRegister('Edge Computing Summit 2026')}
-                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    registeredEvents['Edge Computing Summit 2026']
-                      ? 'bg-[#005e06] border border-[#82d672] text-white'
-                      : 'bg-[#181c24] border border-[#434752] text-[#dfe2ed] hover:bg-[#262a32]'
-                  }`}
-                >
-                  {registeredEvents['Edge Computing Summit 2026'] ? 'Registered ✓' : 'Register'}
-                </button>
-              </div>
-
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                Join 500+ developers for 48 hours of intense building focused on low-latency edge architectures.
-              </p>
-            </div>
-
-            {/* Event 2 */}
-            <div className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-all">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#434752] flex-shrink-0">
-                    <img
-                      className="w-full h-full object-cover"
-                      src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=300&q=80"
-                      alt="React 19 Workshop"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#dfe2ed]">Advanced Patterns in React 19</h3>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d909d] mt-1 font-mono">
-                      <span>📅 Nov 18, 2026</span>
-                      <span>💻 Virtual Workshop</span>
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-xl font-bold text-[#dfe2ed]">No Upcoming Events Available</h3>
+                  <p className="text-xs text-[#c3c6d4] max-w-md mx-auto leading-relaxed mt-1">
+                    There are currently no scheduled events available. Check back soon or log in as Admin to post new hackathons, workshops, and webinars!
+                  </p>
                 </div>
-
-                <button
-                  onClick={() => toggleRegister('Advanced Patterns in React 19')}
-                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    registeredEvents['Advanced Patterns in React 19']
-                      ? 'bg-[#005e06] border border-[#82d672] text-white'
-                      : 'bg-[#181c24] border border-[#434752] text-[#dfe2ed] hover:bg-[#262a32]'
-                  }`}
-                >
-                  {registeredEvents['Advanced Patterns in React 19'] ? 'Registered ✓' : 'Register'}
-                </button>
               </div>
-
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                A deep dive into the new Compiler, Server Actions, and architectural shifts in React 19.
-              </p>
-            </div>
-
-            {/* Event 3 */}
-            <div className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-all">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#434752] flex-shrink-0">
-                    <img
-                      className="w-full h-full object-cover"
-                      src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=300&q=80"
-                      alt="DevOps & Chill"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#dfe2ed]">DevOps & Chill: SF Chapter</h3>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d909d] mt-1 font-mono">
-                      <span>📅 Dec 01, 2026</span>
-                      <span>📍 Sky Lounge, SF</span>
+            ) : (
+              filteredEvents.map(ev => (
+                <div key={ev.id} className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-all shadow-md">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex gap-4 items-center">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#434752] flex-shrink-0">
+                        <img
+                          className="w-full h-full object-cover"
+                          src={ev.imageUrl || getFallbackEventBanner(ev.category, ev.title)}
+                          alt={ev.title}
+                          onError={(e) => {
+                            e.currentTarget.src = getFallbackEventBanner(ev.category, ev.title);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-mono text-[#a8dadc] bg-[#1d3557] px-2 py-0.5 rounded font-bold uppercase">
+                          {ev.category}
+                        </span>
+                        <h3 className="text-base font-bold text-[#dfe2ed] mt-1">{ev.title}</h3>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d909d] mt-0.5 font-mono">
+                          <span>📅 {ev.date}</span>
+                          <span>📍 {ev.location}</span>
+                        </div>
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => toggleRegister(ev.id)}
+                      className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        registeredEvents[ev.id]
+                          ? 'bg-[#005e06] border border-[#82d672] text-white'
+                          : 'bg-[#181c24] border border-[#434752] text-[#dfe2ed] hover:bg-[#262a32]'
+                      }`}
+                    >
+                      {registeredEvents[ev.id] ? 'Registered ✓' : 'Register'}
+                    </button>
                   </div>
+
+                  <p className="text-xs text-[#c3c6d4] leading-relaxed">
+                    {ev.description}
+                  </p>
                 </div>
-
-                <button
-                  onClick={() => toggleRegister('DevOps & Chill: SF Chapter')}
-                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    registeredEvents['DevOps & Chill: SF Chapter']
-                      ? 'bg-[#005e06] border border-[#82d672] text-white'
-                      : 'bg-[#181c24] border border-[#434752] text-[#dfe2ed] hover:bg-[#262a32]'
-                  }`}
-                >
-                  {registeredEvents['DevOps & Chill: SF Chapter'] ? 'Registered ✓' : 'Register'}
-                </button>
-              </div>
-
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                Monthly informal gathering for DevOps engineers and SREs. No talks, just networking and drinks.
-              </p>
-            </div>
+              ))
+            )}
           </div>
         </article>
 

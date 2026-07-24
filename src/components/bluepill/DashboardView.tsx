@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavTab } from './HeaderNav';
 import leetCodeLogo from '../../assets/LeetCode_logo.png';
+import { PublishedEvent } from './AdminConsoleView';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
@@ -44,6 +45,18 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   const [dailyQuestion, setDailyQuestion] = useState<LeetCodeDailyQuestion>(INSTANT_LEETCODE_DAILY);
   const [isLoadingDaily, setIsLoadingDaily] = useState(false);
   const [showReadMoreModal, setShowReadMoreModal] = useState(false);
+  const [dashboardEvents, setDashboardEvents] = useState<PublishedEvent[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('xero_events');
+      if (stored) {
+        setDashboardEvents(JSON.parse(stored));
+      }
+    } catch (e) {
+      setDashboardEvents([]);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchDailyQuestion() {
@@ -423,31 +436,44 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
         <div className="lg:col-span-3 space-y-6">
           {/* Upcoming Events */}
           <div className="bg-[#181c24] border border-[#434752] rounded-2xl p-6 space-y-4">
-            <h3 className="text-xl font-bold text-[#dfe2ed]">Upcoming Events</h3>
-            <div className="space-y-3">
-              <div className="p-3 border border-[#434752] rounded-xl bg-[#1c2028] hover:bg-[#262a32] transition-all group cursor-pointer" onClick={() => onNavigate('events')}>
-                <div className="flex justify-between items-start mb-2">
-                  <span className="bg-[#85da76]/10 text-[#85da76] text-[10px] font-bold px-2 py-0.5 rounded uppercase">Hackathon</span>
-                  <span className="material-symbols-outlined text-[#8d909d] group-hover:text-[#aec6ff]">arrow_forward</span>
-                </div>
-                <h5 className="text-sm font-bold text-[#dfe2ed]">Global Algo-Trade '26</h5>
-                <p className="text-xs text-[#c3c6d4]">Oct 14 • Tech Hub 4</p>
-              </div>
-
-              <div className="p-3 border border-[#434752] rounded-xl bg-[#1c2028] hover:bg-[#262a32] transition-all group cursor-pointer" onClick={() => onNavigate('events')}>
-                <div className="flex justify-between items-start mb-2">
-                  <span className="bg-[#ffb86a]/10 text-[#ffb86a] text-[10px] font-bold px-2 py-0.5 rounded uppercase">Workshop</span>
-                  <span className="material-symbols-outlined text-[#8d909d] group-hover:text-[#aec6ff]">arrow_forward</span>
-                </div>
-                <h5 className="text-sm font-bold text-[#dfe2ed]">Advanced Rust Internals</h5>
-                <p className="text-xs text-[#c3c6d4]">Oct 21 • Virtual (Zoom)</p>
-              </div>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-[#dfe2ed]">Upcoming Events</h3>
+              <button
+                onClick={() => onNavigate('events')}
+                className="text-xs text-[#aec6ff] hover:underline font-medium cursor-pointer"
+              >
+                View All
+              </button>
             </div>
+
+            {dashboardEvents.length === 0 ? (
+              <div className="p-4 border border-[#313745] rounded-xl bg-[#141822] text-center space-y-2">
+                <span className="material-symbols-outlined text-[#737b8e] text-2xl">event_busy</span>
+                <p className="text-xs text-[#8d909d]">No upcoming events scheduled right now.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dashboardEvents.slice(0, 3).map(ev => (
+                  <div key={ev.id} className="p-3 border border-[#434752] rounded-xl bg-[#1c2028] hover:bg-[#262a32] transition-all group cursor-pointer" onClick={() => onNavigate('events')}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                        ev.category === 'Hackathon' ? 'bg-[#85da76]/10 text-[#85da76]' :
+                        ev.category === 'Workshop' ? 'bg-[#ffb86a]/10 text-[#ffb86a]' :
+                        'bg-[#aec6ff]/10 text-[#aec6ff]'
+                      }`}>{ev.category}</span>
+                      <span className="material-symbols-outlined text-[#8d909d] group-hover:text-[#aec6ff]">arrow_forward</span>
+                    </div>
+                    <h5 className="text-sm font-bold text-[#dfe2ed]">{ev.title}</h5>
+                    <p className="text-xs text-[#c3c6d4]">{ev.date} • {ev.location}</p>
+                  </div>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => onNavigate('events')}
               className="w-full py-2 border border-[#434752] rounded-lg text-xs font-bold text-[#dfe2ed] hover:bg-[#1c2028] transition-colors cursor-pointer"
             >
-              View All Events
+              Go to Events Hub
             </button>
           </div>
 
