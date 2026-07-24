@@ -208,3 +208,74 @@
   padding: 12px;
 }
 
+/* ==========================================
+   Matrix Profile Animations & Hologram Effects
+   ========================================== */
+
+/* Profile Card Entrance Slide & Glow */
+@keyframes cyber-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(45px) scale(0.95);
+    box-shadow: 0 0 0 rgba(255, 0, 0, 0);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translateX(-4px) scale(1.01);
+    box-shadow: 0 0 35px rgba(255, 0, 0, 0.8), 0 0 10px rgba(255, 0, 0, 0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.35);
+  }
+}
+.animate-cyber-card-enter {
+  animation: cyber-card-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Laser Scanline Beam across Banner */
+@keyframes laser-scan {
+  0% { top: 0%; opacity: 0; }
+  20% { opacity: 0.8; }
+  50% { top: 100%; opacity: 0.3; }
+  80% { opacity: 0.8; }
+  100% { top: 0%; opacity: 0; }
+}
+.animate-laser-scan {
+  animation: laser-scan 4s linear infinite;
+}
+
+/* Status Indicator Beacon Glow Pulse */
+@keyframes status-beacon {
+  0%, 100% {
+    box-shadow: 0 0 6px #ff0000, 0 0 12px #ff0000;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 14px #ff0000, 0 0 24px #ff0000, inset 0 0 6px #ffffff;
+    transform: scale(1.2);
+  }
+}
+.animate-status-beacon {
+  animation: status-beacon 2s infinite ease-in-out;
+}
+
+/* Floating Status Bubble Motion */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+.animate-float-slow {
+  animation: float-slow 3.5s ease-in-out infinite;
+}
+
+/* Matrix Radar Line Pulse */
+@keyframes radar-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.animate-radar-pulse {
+  animation: radar-pulse 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+}
+

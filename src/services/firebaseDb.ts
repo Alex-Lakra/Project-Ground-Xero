@@ -13,6 +13,27 @@ export interface SSHUser {
   uid?: string;
 }
 
+export const DEFAULT_GHOST_AVATAR = 'https://lh3.googleusercontent.com/d/1j0nNw_HFwqT3bm1I24g96UF7hsvhn9Xr';
+
+/**
+ * Formats user input URLs to direct image CDN links (e.g. converting Google Drive share links)
+ */
+export function formatImageUrl(url?: string): string {
+  if (!url) return DEFAULT_GHOST_AVATAR;
+  const cleanUrl = url.trim();
+  if (!cleanUrl) return DEFAULT_GHOST_AVATAR;
+
+  // Transform Google Drive viewer URLs into direct CDN image URLs
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('drive.usercontent.google.com')) {
+    const fileIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
+    }
+  }
+
+  return cleanUrl;
+}
+
 // ----------------------------------------------------
 // DB Provider Configurations
 // ----------------------------------------------------
@@ -30,7 +51,7 @@ const SEED_USERS: Record<string, SSHUser> = {
     displayName: 'Alex_The_Gamer',
     statusBubble: '> Compiling kernel...',
     bioLink: 'https://github.com/AlexTheCoder/projects',
-    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6GitQ1FgotQ3ZRvpwtA7OqLnbSM252dmUg6zl6vacllhND-FyKowiKAvD-KfIxqHPTZusmImpUcMM1zyjLPrMIu3X0Sg4K8-YMGLjSFmCf-Ydkd-Ns8lMotlwgkFYjL6eyuVEDUU86zsPW2XaTj2XG2e4kgiqwNLkcoChnDEnvzybiRiCOWTYWaY1LsW7fEv1THKeamH1MreFDxqSojSNVDIsg4I4plkwXMfGVUQ7CaVxaBXanodGmOdz642Fqw48UnHYE84PtV77',
+    avatarUrl: DEFAULT_GHOST_AVATAR,
     techStack: ['TS', 'REACT', 'NODE', 'PY'],
     pronouns: 'he/him',
     uid: '25UCOMP008',
@@ -73,7 +94,7 @@ function mapDocumentToUser(doc: any): SSHUser {
     displayName: fields.displayName?.stringValue || '',
     statusBubble: fields.statusBubble?.stringValue || '',
     bioLink: fields.bioLink?.stringValue || '',
-    avatarUrl: fields.avatarUrl?.stringValue || '',
+    avatarUrl: formatImageUrl(fields.avatarUrl?.stringValue),
     techStack: fields.techStack?.arrayValue?.values
       ? fields.techStack.arrayValue.values.map((v: any) => v.stringValue || '')
       : [],

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal as TermIcon, Eye, Settings } from 'lucide-react';
 import DigitalRain from './DigitalRain';
-import { firebaseDb, SSHUser } from '../services/firebaseDb';
+import { firebaseDb, SSHUser, DEFAULT_GHOST_AVATAR, formatImageUrl } from '../services/firebaseDb';
 import { QRCodeSVG } from 'qrcode.react';
 import ProfileCard from './ProfileCard';
 
@@ -47,7 +47,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       displayName: 'Alex_The_Gamer',
       statusBubble: '> Compiling kernel...',
       bioLink: 'https://github.com/AlexTheCoder/projects',
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6GitQ1FgotQ3ZRvpwtA7OqLnbSM252dmUg6zl6vacllhND-FyKowiKAvD-KfIxqHPTZusmImpUcMM1zyjLPrMIu3X0Sg4K8-YMGLjSFmCf-Ydkd-Ns8lMotlwgkFYjL6eyuVEDUU86zsPW2XaTj2XG2e4kgiqwNLkcoChnDEnvzybiRiCOWTYWaY1LsW7fEv1THKeamH1MreFDxqSojSNVDIsg4I4plkwXMfGVUQ7CaVxaBXanodGmOdz642Fqw48UnHYE84PtV77',
+      avatarUrl: DEFAULT_GHOST_AVATAR,
       techStack: ['TS', 'REACT', 'NODE'],
       pronouns: 'he/him',
       uid: '25UCOMP008',
@@ -58,9 +58,11 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [rainDensity, setRainDensity] = useState(1.2);
   const [cmatrixConfig, setCmatrixConfig] = useState<{ active: boolean, color: string }>({ active: false, color: '#00ff00' });
 
-  // References for UI focus & scroll alignment
+  // References for UI focus & scroll alignment & stats caching
   const cliInputRef = useRef<HTMLInputElement | null>(null);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
+  const leetcodeCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
+  const codeforcesCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
 
   // Command history for up/down arrow navigation
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -325,6 +327,26 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Fetch stats and print to terminal logs
   const fetchStatsAndPrint = async (username: string) => {
+    // 1. Instant Cache hit check (valid for 2 minutes)
+    const cached = leetcodeCacheRef.current[username];
+    if (cached && Date.now() - cached.timestamp < 120000) {
+      setTerminalLogs(prev => [
+        ...prev,
+        ` `,
+        `--- Problem Solved Stats for ${username} [INSTANT CACHE] ---`,
+        `Easy:   ${cached.stats.easy}`,
+        `Medium: ${cached.stats.medium}`,
+        `Hard:   ${cached.stats.hard}`,
+        ` `,
+        `--- Top Recent Accepted Submissions ---`,
+        ...(cached.recent.length === 0 
+          ? ['No recent submissions found.']
+          : cached.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
+        ` `
+      ]);
+      return;
+    }
+
     try {
       const response = await fetch('/api/scrape', {
         method: 'POST',
@@ -339,6 +361,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
       const data = await response.json();
       if (data.success) {
+        // Save to in-memory cache
+        leetcodeCacheRef.current[username] = {
+          stats: data.stats,
+          recent: data.recent,
+          timestamp: Date.now()
+        };
+
         setTerminalLogs(prev => [
           ...prev,
           ` `,
@@ -349,7 +378,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           ` `,
           `--- Top Recent Accepted Submissions ---`,
           ...(data.recent.length === 0 
-            ? ['No recent submissions found. (Profile might be private or DOM structure changed)']
+            ? ['No recent submissions found.']
             : data.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
           ` `
         ]);
@@ -366,6 +395,24 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Fetch Codeforces stats and print to terminal logs
   const fetchCodeforcesStatsAndPrint = async (username: string) => {
+    // 1. Instant Cache hit check (valid for 2 minutes)
+    const cached = codeforcesCacheRef.current[username];
+    if (cached && Date.now() - cached.timestamp < 120000) {
+      setTerminalLogs(prev => [
+        ...prev,
+        ` `,
+        `--- Codeforces Stats for ${username} [INSTANT CACHE] ---`,
+        `Problems Solved: ${cached.stats.solved}`,
+        ` `,
+        `--- Top Recent Accepted Submissions ---`,
+        ...(cached.recent.length === 0 
+          ? ['No recent submissions found.']
+          : cached.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
+        ` `
+      ]);
+      return;
+    }
+
     try {
       const response = await fetch('/api/scrape-codeforces', {
         method: 'POST',
@@ -380,6 +427,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
       const data = await response.json();
       if (data.success) {
+        // Save to in-memory cache
+        codeforcesCacheRef.current[username] = {
+          stats: data.stats,
+          recent: data.recent,
+          timestamp: Date.now()
+        };
+
         setTerminalLogs(prev => [
           ...prev,
           ` `,
@@ -446,8 +500,20 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       return;
     }
 
-    // Global Profile Commands (Work in local shell or SSH session)
+    // Profile Commands (Restricted to authenticated SSH users)
     if (base === 'profile' || base === 'rename' || base === 'about' || base === 'addstack' || base === 'repo' || base === 'profpic' || base === 'clearstack') {
+      if (sshState !== 'logged_in' || !sshSessionUser) {
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          '[ERROR] ACCESS DENIED: Profile features are only available to logged in users.',
+          `Please authenticate via SSH first (e.g., run 'ssh root@zero').`,
+          ' '
+        ]);
+        setShowProfile(false);
+        return;
+      }
+
       if (base === 'profile') {
         setShowProfile(prev => !prev);
         setTerminalLogs(prev => [
@@ -456,15 +522,15 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           '======================================================',
           '[SYSTEM]: OPERATOR MAINFRAME PROFILE PANEL TOGGLED',
           '======================================================',
-          'Profile matrix displayed on the right viewport panel.',
+          `Profile matrix for [${sshSessionUser.username}] displayed on the right viewport.`,
           ' ',
           'Available Profile Customization Commands:',
           '  rename <display_name>   - Update operator display name.',
           '  about <status>          - Update status bubble / bio message.',
-          '  addstack <tech>         - Add tech stack tag (e.g. TS, REACT, NODE, PY).',
+          '  addstack <tech>         - Add skill/tech stack tag (e.g. TS, REACT, RUST).',
           '  repo <url>              - Update repository / GitHub URL.',
           '  profpic <url>           - Update avatar profile picture URL.',
-          '  clearstack              - Clear all tech stack tags.',
+          '  clearstack              - Clear all skill tags.',
           ' '
         ]);
         return;
@@ -477,19 +543,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        if (sshSessionUser) {
-          const updated = { ...sshSessionUser, displayName: newName };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const updated = { ...prev, displayName: newName };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const updated = { ...sshSessionUser, displayName: newName };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile display name updated to "${newName}" (Synced with Database).`]);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile display name updated to "${newName}" for user [${sshSessionUser.username}].`]);
         return;
       }
 
@@ -500,19 +559,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        if (sshSessionUser) {
-          const updated = { ...sshSessionUser, statusBubble: newStatus };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const updated = { ...prev, statusBubble: newStatus };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const updated = { ...sshSessionUser, statusBubble: newStatus };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile status bubble updated to "> ${newStatus}" (Synced with Database).`]);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile about status updated to "> ${newStatus}" for user [${sshSessionUser.username}].`]);
         return;
       }
 
@@ -523,23 +575,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        if (sshSessionUser) {
-          const currentStack = sshSessionUser.techStack || [];
-          const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
-          const updated = { ...sshSessionUser, techStack: updatedStack };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const currentStack = prev.techStack || [];
-          const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
-          const updated = { ...prev, techStack: updatedStack };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const currentStack = sshSessionUser.techStack || [];
+        const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
+        const updated = { ...sshSessionUser, techStack: updatedStack };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Added '${tech}' to profile tech stack (Synced with Database).`]);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Added skill '${tech}' to profile for user [${sshSessionUser.username}].`]);
         return;
       }
 
@@ -550,59 +593,43 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        if (sshSessionUser) {
-          const updated = { ...sshSessionUser, bioLink: newRepo };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const updated = { ...prev, bioLink: newRepo };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const updated = { ...sshSessionUser, bioLink: newRepo };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile repository URL set to ${newRepo} (Synced with Database).`]);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile repository URL updated to ${newRepo} for user [${sshSessionUser.username}].`]);
         return;
       }
 
       if (base === 'profpic') {
-        const newPic = cmd.slice(7).trim();
-        if (!newPic) {
+        const rawPic = cmd.slice(7).trim();
+        if (!rawPic) {
           setTerminalLogs(prev => [...prev, 'Usage: profpic <image_url>']);
           return;
         }
 
-        if (sshSessionUser) {
-          const updated = { ...sshSessionUser, avatarUrl: newPic };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const updated = { ...prev, avatarUrl: newPic };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const newPic = formatImageUrl(rawPic);
+        const updated = { ...sshSessionUser, avatarUrl: newPic };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile picture URL updated (Synced with Database).`]);
+        const logs = [`[SUCCESS] Profile picture URL updated for user [${sshSessionUser.username}].`];
+        if (rawPic !== newPic) {
+          logs.push(`[INFO] Processed Google Drive URL into direct CDN stream.`);
+        }
+        setTerminalLogs(prev => [...prev, ...logs]);
         return;
       }
 
       if (base === 'clearstack') {
-        if (sshSessionUser) {
-          const updated = { ...sshSessionUser, techStack: [] };
-          setSshSessionUser(updated);
-          await firebaseDb.saveUser(updated);
-        }
-        setLocalGuestProfile(prev => {
-          const updated = { ...prev, techStack: [] };
-          localStorage.setItem('ground_xero_guest_profile', JSON.stringify(updated));
-          return updated;
-        });
+        const updated = { ...sshSessionUser, techStack: [] };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
 
         setShowProfile(true);
-        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile tech stack cleared (Synced with Database).`]);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile tech stack cleared for user [${sshSessionUser.username}].`]);
         return;
       }
     }
@@ -1253,6 +1280,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           setSshState('none');
           setSshUser('');
           setSshSessionUser(null);
+          setShowProfile(false);
           return;
         }
 
@@ -1283,6 +1311,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             isPasswordChanged: false,
             is2faEnabled: false,
             twoFactorSecret: '',
+            displayName: newUsername,
+            statusBubble: '',
+            techStack: [],
+            bioLink: '',
+            avatarUrl: DEFAULT_GHOST_AVATAR,
+            uid: `UID_${newUsername.toUpperCase()}`,
+            pronouns: 'he/him',
           });
 
           setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${newUsername}' registered successfully.`]);
@@ -1558,22 +1593,10 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
               </div>
 
               {/* Right Side: Profile Card Matrix Panel */}
-              {showProfile && (
+              {showProfile && sshState === 'logged_in' && sshSessionUser && (
                 <div className="w-full lg:w-[380px] flex-shrink-0 mt-4 overflow-y-auto max-h-[calc(100vh-220px)]">
                   <ProfileCard
-                    user={
-                      sshSessionUser
-                        ? {
-                            ...localGuestProfile,
-                            ...sshSessionUser,
-                            displayName: sshSessionUser.displayName || localGuestProfile.displayName || sshSessionUser.username,
-                            statusBubble: sshSessionUser.statusBubble || localGuestProfile.statusBubble,
-                            bioLink: sshSessionUser.bioLink || localGuestProfile.bioLink,
-                            avatarUrl: sshSessionUser.avatarUrl || localGuestProfile.avatarUrl,
-                            techStack: sshSessionUser.techStack && sshSessionUser.techStack.length > 0 ? sshSessionUser.techStack : localGuestProfile.techStack,
-                          }
-                        : localGuestProfile
-                    }
+                    user={sshSessionUser}
                     onClose={() => setShowProfile(false)}
                   />
                 </div>
