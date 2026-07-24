@@ -1,0 +1,375 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#0f131b",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#005e06",
+                        "on-error": "#690005",
+                        "surface-variant": "#31353d",
+                        "on-primary": "#002e6b",
+                        "surface-container-high": "#262a32",
+                        "outline-variant": "#434752",
+                        "on-surface-variant": "#c3c6d4",
+                        "secondary-fixed-dim": "#85da76",
+                        "on-tertiary-fixed-variant": "#683d00",
+                        "inverse-surface": "#dfe2ed",
+                        "background": "#0f131b",
+                        "secondary-fixed": "#a0f78f",
+                        "tertiary": "#ffb86a",
+                        "tertiary-fixed-dim": "#ffb86a",
+                        "outline": "#8d909d",
+                        "inverse-on-surface": "#2c3039",
+                        "on-secondary-fixed": "#002201",
+                        "on-primary-fixed-variant": "#004397",
+                        "secondary": "#85da76",
+                        "on-secondary-container": "#82d672",
+                        "primary-fixed-dim": "#aec6ff",
+                        "on-surface": "#dfe2ed",
+                        "on-primary-fixed": "#001a43",
+                        "inverse-primary": "#295bb3",
+                        "primary": "#aec6ff",
+                        "on-tertiary": "#492900",
+                        "surface-container-lowest": "#0a0e16",
+                        "on-primary-container": "#00275e",
+                        "on-tertiary-container": "#3f2300",
+                        "on-background": "#dfe2ed",
+                        "surface-container-low": "#181c24",
+                        "tertiary-container": "#ca801f",
+                        "error-container": "#93000a",
+                        "primary-container": "#628fea",
+                        "surface-container": "#1c2028"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Geist"],
+                        "headline-xl": ["Inter"],
+                        "mono-code": ["Geist"],
+                        "label-sm": ["Geist"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "mono-code": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-background text-on-background font-body-md min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky z-50 bg-surface-dim border-b border-surface-variant">
+<div class="flex justify-between items-center h-16 px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-headline-md font-headline-md font-bold text-primary cursor-pointer">Project X</span>
+<nav class="hidden md:flex gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="#">Communities</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="#">Courses</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="#">Challenges</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="#">Events</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-low border border-surface-variant rounded-full px-4 py-1.5 focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-48 text-on-surface" placeholder="Search resources..." type="text">
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-original-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a young male developer with a friendly expression. He is wearing a dark tech hoodie and has modern glasses. The lighting is soft and cinematic, with a cool blue and charcoal color grade that matches the Project X interface style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB01X9e8kyZbsJVgprdwI7gAA_sYDF9VxgdEhy5wmX3F9FHKasolnDEgM8yi9lUebkfvlPKJ-4i9Vn6AeycPSCUnZUkq-OCien6yzQthz1L3eeUocsnIifPh9B4wLUqFFUW92s_LXAgCs2yfLSdVgj4Noet1k0ib3A1HYHbbSeBLR8u2Xi8iH5S0bCyH0CMK_HIg3LOAV4s_zs4jt7YuHrtRZqU65v3hbghsQ0h4FQ70y2uR9xe1HzfPd84hMgQ3KC1ldQo3s_X2Lc">
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-desktop py-12">
+<!-- User Header Section -->
+<section class="flex flex-col md:flex-row items-start gap-gutter mb-12">
+<div class="relative group">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-xl overflow-hidden border-2 border-surface-variant bg-surface-container shadow-xl">
+<img class="w-full h-full object-cover" data-alt="A close-up high-resolution avatar of Alex Rivera, a tech-savvy professional with a focused gaze. The aesthetic is clean and minimalist, featuring deep charcoal tones and a hint of electric blue backlighting. The composition is centered, highlighting a modern professional look in a developer environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNJjdAcaD3_vXCJSBAanE4ZJmI3q49pSCANdVk8Pqg5TovP-ZnN8Upbs_5gLPDcVDM16V3QVI-Irwem3lHDT-6GbMWLRzevE-Azi7o1B2BQcofXjcwfGjIkOJ76GRcVpPuvSam-xv0oYl-tYDR8ImZ0KsyKzE_NtcG1NdQN5ycDrdjYglpmhPuV4QzspdYk66V2y9rg3_FXufZPn4VOZiX1ElFyDkzLAlEdnQfC65svlUfDBENg82HHF6p4eitxKkWMairpDsYUzI">
+</div>
+<div class="absolute -bottom-2 -right-2 bg-secondary p-1.5 rounded-lg border-4 border-background shadow-lg">
+<span class="material-symbols-outlined text-on-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div class="flex-1 space-y-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Alex Rivera</h1>
+<p class="font-label-md text-label-md text-primary">@rivera_codes</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 mt-2">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Full Name</span>
+<span class="font-label-md text-label-md text-on-surface">Alex Rivera</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Gender</span>
+<span class="font-label-md text-label-md text-on-surface">Male</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Current CGPA</span>
+<span class="font-label-md text-label-md text-secondary">3.85 / 4.0</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Semester</span>
+<span class="font-label-md text-label-md text-on-surface">6th Semester</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Academic Year</span>
+<span class="font-label-md text-label-md text-on-surface">Junior Year</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-50">Email</span>
+<span class="font-label-md text-label-md text-on-surface">alex.rivera@stanford.edu</span>
+</div></div>
+</div>
+<button class="px-6 py-2 border border-surface-variant rounded-xl font-label-md text-on-surface hover:bg-surface-container-high hover:border-outline transition-all">
+                        Edit Profile
+                    </button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                    Junior Developer @ Stanford | Building open-source tools. Passionate about low-level optimization and distributed systems. Currently exploring the intersection of Rust and WebAssembly.
+                </p>
+<div class="flex flex-wrap gap-4 pt-2">
+<a class="flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-surface-variant rounded-full text-on-surface-variant hover:text-primary hover:border-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span class="text-label-sm">GitHub</span>
+</a>
+<a class="flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-surface-variant rounded-full text-on-surface-variant hover:text-primary hover:border-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" data-original-icon="chat_bubble">chat_bubble</span>
+<span class="text-label-sm">Twitter</span>
+</a>
+<a class="flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-surface-variant rounded-full text-on-surface-variant hover:text-primary hover:border-primary transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span class="text-label-sm">LinkedIn</span>
+</a>
+</div>
+</div>
+</section>
+<!-- Stats Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-12">
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Total XP</p>
+<h3 class="font-headline-md text-headline-md text-primary">12.4k</h3>
+<div class="mt-2 h-1 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Challenges Solved</p>
+<h3 class="font-headline-md text-headline-md text-secondary">342</h3>
+<p class="text-label-sm text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-original-icon="trending_up">trending_up</span> Top 5% this month
+                </p>
+</div>
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">7-Day Streak</p>
+<h3 class="font-headline-md text-headline-md text-tertiary">Active</h3>
+<div class="flex gap-1 mt-2">
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary rounded-full"></div>
+<div class="w-full h-1.5 bg-tertiary-container rounded-full opacity-50"></div>
+</div>
+</div>
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Rank</p>
+<h3 class="font-headline-md text-headline-md text-on-surface">#1,204</h3>
+<p class="text-label-sm text-on-surface-variant mt-1">out of 45k+ members</p>
+</div>
+</section>
+<!-- Main Content Area: Bento Style -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Left Column: Activity & Tech Stack -->
+<div class="lg:col-span-2 space-y-gutter">
+<!-- Activity Heatmap -->
+<!-- Recent Projects -->
+<div class="space-y-4">
+<h2 class="font-body-lg text-body-lg text-on-surface">Recent Projects</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Project Card 1 -->
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl hover:border-primary transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-primary-container/20 rounded-lg">
+<span class="material-symbols-outlined text-primary">source</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer" data-original-icon="open_in_new">open_in_new</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-2">Hermes Queue</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">A lightweight, distributed message broker written in Rust for high-throughput microservices.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] uppercase font-bold text-on-surface-variant">Rust</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] uppercase font-bold text-on-surface-variant">gRPC</span>
+</div>
+</div>
+<!-- Project Card 2 -->
+<div class="bg-surface-container-low border border-surface-variant p-6 rounded-xl hover:border-secondary transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-secondary-container/20 rounded-lg">
+<span class="material-symbols-outlined text-secondary">analytics</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary transition-colors cursor-pointer" data-original-icon="open_in_new">open_in_new</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-2">DevMetrics Dashboard</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Real-time developer productivity visualization with TypeScript and D3.js integration.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] uppercase font-bold text-on-surface-variant">TypeScript</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] uppercase font-bold text-on-surface-variant">React</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Tech Stack & Achievements -->
+<div class="space-y-gutter">
+<!-- Tech Stack Section -->
+<div class="bg-surface-container-low border border-surface-variant p-gutter rounded-xl">
+<h2 class="font-body-lg text-body-lg text-on-surface mb-6">Tech Stack</h2>
+<div class="grid grid-cols-3 gap-4">
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#61DAFB]">
+<span class="material-symbols-outlined text-[32px]" data-original-icon="deployed_code">deployed_code</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">React</span>
+</div>
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#3178C6]">
+<span class="material-symbols-outlined text-[32px]">code</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">TS</span>
+</div>
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#00ADD8]">
+<span class="material-symbols-outlined text-[32px]">api</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">Go</span>
+</div>
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#DEA584]">
+<span class="material-symbols-outlined text-[32px]" data-original-icon="settings_slow_motion">settings_slow_motion</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">Rust</span>
+</div>
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#336791]">
+<span class="material-symbols-outlined text-[32px]">database</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">Postgre</span>
+</div>
+<div class="flex flex-col items-center gap-2 p-3 bg-surface-dim border border-surface-variant rounded-xl group hover:border-primary transition-all">
+<div class="w-10 h-10 flex items-center justify-center text-[#2496ED]">
+<span class="material-symbols-outlined text-[32px]" data-original-icon="container">circle</span>
+</div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">Docker</span>
+</div>
+</div>
+</div>
+<!-- Achievements Section -->
+<div class="bg-surface-container-low border border-surface-variant p-gutter rounded-xl">
+<h2 class="font-body-lg text-body-lg text-on-surface mb-6">Achievements</h2>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-3 bg-surface-container rounded-lg border border-surface-variant">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div>
+<h4 class="text-label-md text-on-surface">Top Contributor</h4>
+<p class="text-[10px] text-on-surface-variant">Awarded June 2024</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-3 bg-surface-container rounded-lg border border-surface-variant">
+<div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">bug_report</span>
+</div>
+<div>
+<h4 class="text-label-md text-on-surface">Beta Tester</h4>
+<p class="text-[10px] text-on-surface-variant">Project X Core Team</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-3 bg-surface-container rounded-lg border border-surface-variant">
+<div class="w-12 h-12 bg-tertiary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<h4 class="text-label-md text-on-surface">7 Day Streak</h4>
+<p class="text-[10px] text-on-surface-variant">Daily Coding Habits</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2 text-label-sm text-primary hover:underline underline-offset-4">View All 12 Badges</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 mt-24 bg-surface-dim border-t border-surface-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto gap-4">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-on-surface">Project X</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Project X. For developers by developers.</span>
+</div>
+<nav class="flex gap-6">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Documentation</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Support</a>
+</nav>
+</div>
+</footer>
+<script class="">
+        // Heatmap generation script
+        const grid = document.getElementById('heatmap-grid');
+        const months = 3;
+        const weeksPerMonth = 4;
+        const daysPerWeek = 7;
+        
+        for (let i = 0; i < months * weeksPerMonth * daysPerWeek; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell w-3 h-3';
+            
+            // Random activity simulation
+            const level = Math.floor(Math.random() * 4);
+            if (level === 0) cell.classList.add('bg-surface-variant');
+            else if (level === 1) cell.classList.add('bg-primary/30');
+            else if (level === 2) cell.classList.add('bg-primary/60');
+            else cell.classList.add('bg-primary');
+            
+            grid.appendChild(cell);
+        }
+    </script>
+
+
+
+
+
+
+</body></html>

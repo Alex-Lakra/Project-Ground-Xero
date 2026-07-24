@@ -1,0 +1,354 @@
+<!DOCTYPE html><html lang="en" class="dark" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Geist:wght@300;400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#ca801f",
+                        "on-primary-container": "#00275e",
+                        "primary-fixed-dim": "#aec6ff",
+                        "on-tertiary": "#492900",
+                        "surface-container-lowest": "#0a0e16",
+                        "on-background": "#dfe2ed",
+                        "surface-bright": "#353942",
+                        "error": "#ffb4ab",
+                        "primary": "#aec6ff",
+                        "inverse-on-surface": "#2c3039",
+                        "on-primary": "#002e6b",
+                        "on-tertiary-fixed": "#2c1700",
+                        "secondary-container": "#005e06",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-variant": "#31353d",
+                        "on-secondary": "#003a02",
+                        "on-secondary-fixed": "#002201",
+                        "on-surface-variant": "#c3c6d4",
+                        "surface": "#0f131b",
+                        "surface-dim": "#0f131b",
+                        "surface-container-low": "#181c24",
+                        "tertiary": "#ffb86a",
+                        "surface-container": "#1c2028",
+                        "secondary-fixed-dim": "#85da76",
+                        "secondary-fixed": "#a0f78f",
+                        "on-surface": "#dfe2ed",
+                        "on-secondary-fixed-variant": "#005305",
+                        "background": "#0f131b",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-container": "#3f2300",
+                        "on-error": "#690005",
+                        "secondary": "#85da76",
+                        "surface-container-highest": "#31353d",
+                        "inverse-primary": "#295bb3",
+                        "tertiary-fixed-dim": "#ffb86a",
+                        "on-primary-fixed": "#001a43",
+                        "outline-variant": "#434752",
+                        "surface-container-high": "#262a32",
+                        "on-primary-fixed-variant": "#004397",
+                        "on-tertiary-fixed-variant": "#683d00",
+                        "inverse-surface": "#dfe2ed",
+                        "tertiary-fixed": "#ffdcbc",
+                        "surface-tint": "#aec6ff",
+                        "error-container": "#93000a",
+                        "primary-container": "#628fea",
+                        "outline": "#8d909d",
+                        "on-secondary-container": "#82d672"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Geist"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "mono-code": ["Geist"],
+                        "label-md": ["Geist"],
+                        "headline-md": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "mono-code": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-background text-on-background font-body-md selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant w-full">
+<div class="flex justify-between items-center px-margin-desktop h-16 max-w-container-max mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-headline-md font-headline-md text-primary cursor-pointer">Project X</span>
+<nav class="hidden md:flex items-center gap-6">
+<a href="#" class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Dashboard</a>
+<a href="#" class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Communities</a>
+<a href="#" class="text-primary border-b-2 border-primary pb-1 cursor-pointer">Courses</a>
+<a href="#" class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Challenges</a>
+<a href="#" class="text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Events</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input type="text" placeholder="Search courses..." class="bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-1.5 text-body-sm focus:outline-none focus:border-primary transition-all w-64">
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a software engineer with glasses, looking confidently into the camera, set against a dark, minimalist studio background with soft blue secondary lighting. The aesthetic is clean, high-end, and corporate tech-focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDi0mvJoF3WFwWXAZU2EsnW5YdEXUUpFoe4gnOGpl5QyxcGk4a-XzH-igATckAdlRruDshMUKWhIYqXx3eUnBC3T1RwM6gvhdlDbqZbtxbN-LwULiwsDGRfIL43x_pk0jtwyC2KdbLc9_aqJYsYY0PKIeIqGHabKNeBftuuL7HMEsYbnHkY5mRAdZ56SfjsvZPkKlOJ6C6_d1m5LahAJYieubPoZ2SFEQxj1C5_ioqCq55M-s8-9aGTuX01cc1WWwaC7WIav5aHCJc">
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-desktop py-8">
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Sidebar: My Learning -->
+<aside class="col-span-3 hidden xl:block space-y-gutter">
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-6 sticky top-24">
+<h3 class="text-[18px] mb-6 text-on-surface">My Learning</h3>
+<div class="space-y-6">
+<div>
+<p class="text-label-sm text-on-surface-variant uppercase mb-3">Continue Watching</p>
+<div class="group cursor-pointer">
+<div class="relative aspect-video rounded-lg overflow-hidden mb-3 border border-outline-variant">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A high-fidelity conceptual image representing cloud microservices and the Go programming language. It features glowing cyan gopher mascots and interconnected geometric 3D nodes representing a distributed system in a dark, atmospheric technical environment with deep shadows and neon highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNTOXH-i9DtcBV-SOjMYVtU3BouSJQgl21ASZbUF_21LxkJqKoql3PbQnX0j1OjZ1ix2by4pLpSqRgmi-iL4owFsW0z7gItkAW2hLZq2P8R1rmZiEq3CjVB9CacHUPNjjigugSiSiwIJGGEUlZVGi3t0rHhMsrPXTGZijwhlBCS2fgMGcwAOhb79Wm-7BTYHC6jASXS_H0x2tjhrS7kHnLGgjAkBDLrfFv3XUFvFbvkSmn6nN9uIkhcswW4vfdSm-z6claHwqgKJE">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-4xl">play_circle</span>
+</div>
+</div>
+<h4 class="text-body-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Microservices with Go</h4>
+<div class="mt-3">
+<div class="flex justify-between text-[11px] text-on-surface-variant mb-1">
+<span class="">45% Complete</span>
+<span class="">12/28 Lessons</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant">
+<ul class="space-y-4">
+<li class="flex items-center gap-3 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">bookmark</span>
+<span class="text-body-sm font-medium">Saved Courses</span>
+</li>
+<li class="flex items-center gap-3 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="text-body-sm font-medium">Learning History</span>
+</li>
+<li class="flex items-center gap-3 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+<span class="text-body-sm font-medium">Certifications</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="mt-8 bg-primary-container/10 p-4 rounded-lg border border-primary/20">
+<p class="text-label-sm text-primary mb-2">PRO TIP</p>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">Complete your weekly goal of 5 hours to unlock the 'Systems Architect' badge.</p>
+</div>
+</div>
+</aside>
+<!-- Center Column: Course Discovery -->
+<section class="col-span-12 xl:col-span-6 space-y-8">
+<!-- Featured Course -->
+
+<!-- Course Grid -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-6 mb-8">
+  <div class="flex items-center justify-between mb-4"><h3 class="text-label-md font-semibold text-on-surface uppercase tracking-wider">Explore Disciplines</h3><a href="#" class="text-primary text-label-sm font-medium hover:underline">View All</a></div>
+  <div class="grid grid-cols-4 gap-2"><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#3b82f6] mb-1 text-[20px]">language</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">Web</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#a855f7] mb-1 text-[20px]">psychology</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">AI/ML</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#f97316] mb-1 text-[20px]">code_blocks</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">CP</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#22c55e] mb-1 text-[20px]">smartphone</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">Mobile</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#ef4444] mb-1 text-[20px]">shield</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">Cyber</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#ec4899] mb-1 text-[20px]">palette</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">UI/UX</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#0ea5e9] mb-1 text-[20px]">database</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">Data Science</span></div><div class="flex flex-col items-center justify-center aspect-square rounded-lg bg-surface-container-highest hover:bg-primary/10 transition-colors cursor-pointer group border border-outline-variant/50 p-2 w-full mx-auto"><span class="material-symbols-outlined text-[#10b981] mb-1 text-[20px]">terminal</span><span class="text-[11px] font-medium text-on-surface-variant group-hover:text-primary">DevOps</span></div></div>
+</div><div class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-headline-md text-on-surface">Latest for You</h3>
+<a class="text-primary text-label-md font-medium hover:underline" href="#">View all</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6"><!-- Course Card 1 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-primary/50" style="transform: translateY(0px); transition: transform 0.3s;">
+  <div class="aspect-video relative overflow-hidden">
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="React">
+    <div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-medium">18 Lessons</div>
+  </div>
+  <div class="p-5">
+    <h4 class="text-body-md font-medium text-on-surface mb-2 group-hover:text-primary transition-colors">React 19 Deep Dive</h4>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-[16px]">schedule</span>
+        <span class="text-label-sm">12h 45m</span>
+      </div>
+      <span class="text-primary font-bold text-label-md">$89.00</span>
+    </div>
+  </div>
+</div>
+<!-- Course Card 2 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-primary/50" style="transform: translateY(0px); transition: transform 0.3s;">
+  <div class="aspect-video relative overflow-hidden">
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="SQL">
+    <div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-medium">24 Lessons</div>
+  </div>
+  <div class="p-5">
+    <h4 class="text-body-md font-medium text-on-surface mb-2 group-hover:text-primary transition-colors">Advanced SQL Performance</h4>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-[16px]">schedule</span>
+        <span class="text-label-sm">15h 20m</span>
+      </div>
+      <span class="text-primary font-bold text-label-md">$75.00</span>
+    </div>
+  </div>
+</div>
+<!-- Course Card 3 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-primary/50" style="transform: translateY(0px); transition: transform 0.3s;">
+  <div class="aspect-video relative overflow-hidden">
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="Cloud">
+    <div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-medium">32 Lessons</div>
+  </div>
+  <div class="p-5">
+    <h4 class="text-body-md font-medium text-on-surface mb-2 group-hover:text-primary transition-colors">Cloud Native Architecture</h4>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-[16px]">schedule</span>
+        <span class="text-label-sm">22h 10m</span>
+      </div>
+      <span class="text-primary font-bold text-label-md">$120.00</span>
+    </div>
+  </div>
+</div>
+<!-- Course Card 4 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-primary/50" style="transform: translateY(0px); transition: transform 0.3s;">
+  <div class="aspect-video relative overflow-hidden">
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="Security">
+    <div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-medium">14 Lessons</div>
+  </div>
+  <div class="p-5">
+    <h4 class="text-body-md font-medium text-on-surface mb-2 group-hover:text-primary transition-colors">Security-First Development</h4>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-[16px]">schedule</span>
+        <span class="text-label-sm">10h 30m</span>
+      </div>
+      <span class="text-primary font-bold text-label-md">$99.00</span>
+    </div>
+  </div>
+</div></div>
+</div>
+</section>
+<!-- Right Sidebar: Categories & Instructors -->
+<aside class="col-span-3 hidden lg:block space-y-gutter">
+<!-- Categories -->
+
+<!-- Top Instructors -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-6"><h3 class="text-label-md font-semibold mb-4 text-on-surface uppercase tracking-wider">Mentors</h3>
+<div class="space-y-4">
+  <div class="flex items-center justify-between group cursor-pointer" style="transform: translateY(0px); transition: transform 0.3s;">
+    <div class="flex items-center gap-3">
+      <img class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRX2JhuTYZPRRIGmy1hEg6P9faNRSLGzv66IInrDcb2IZXzR7Eeu6IzGFbuYc40jNZ6gRnqX3eT6d0ebVeBH-wVadSRfH4nPh1KcypYUOdKHjGErZ91A87sgPn01Q3WE2sP8c2VMgF3PMos1v0OB06OgIsX2dKVSF57PZ1A0j0t3ABL2aZOsnJIC6oeSPyCpCCTJHpUOPwq3ZrvduLDdzb_LHwBnfN58cdJb-iEK2-WB3F6WEKT19IdDLTzpn-nuZyjalM_lfjmuc" alt="Sarah">
+      <span class="text-body-sm text-on-surface-variant group-hover:text-primary transition-colors">Sarah Drasner</span>
+    </div>
+    <span class="text-primary text-[11px] font-bold">4.98</span>
+  </div>
+  <div class="flex items-center justify-between group cursor-pointer" style="transform: translateY(0px); transition: transform 0.3s;">
+    <div class="flex items-center gap-3">
+      <img class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsIm8zQUcnZvFyWoTS2tOHj356JHIeW1JgDDscLLRhv82BlAHh1wNMqQyw5HDxNfm8EinsiQ4kPSf4m8R2NA4jfpf--TrL8XAugnXqdBTLdTd2SVTaKeKqUtsINe4Kr00V7Eq7q9yIODpo8S4_J1YR2l2GcPeSHUSc33_nnBqKRAHZaCe9VRm3OlzzfPxj-mxRoEkrlFyuLyTBb2iTtIM4Ico-pGypeyYpItNROsPWxRSbLGzUZP0eX5VcsVKvHoqaLzhL1PLVs1A" alt="Hitesh">
+      <span class="text-body-sm text-on-surface-variant group-hover:text-primary transition-colors">Hitesh Choudhary</span>
+    </div>
+    <span class="text-primary text-[11px] font-bold">4.95</span>
+  </div>
+  <div class="flex items-center justify-between group cursor-pointer" style="transform: translateY(0px); transition: transform 0.3s;">
+    <div class="flex items-center gap-3">
+      <img class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeb8P8_iz7PlatQEhuq1kwAnev_qQXtr-SwCfNDeZNOefR6kTDBpgGCqw66PCnqACLw1m56nqw-3nQURLOQHN9Z-SUmcjGGX9GaHAZ44k2Xw-j3HVM4b08bpARfLaYhUBp4VckKzccc_EEC_2WgSsNKDn-cM88paTUrrf9bA464wTt1lvAzbw2lolLpkzSKa8a1E25n37QGRuoeZpXM2kPRBe3uvC56qRf8-HrgDRAK6nz8fFIGJ8NWvJUrVRlZu6U96PIv0wrs0U" alt="Kelsey">
+      <span class="text-body-sm text-on-surface-variant group-hover:text-primary transition-colors">Kelsey Hightower</span>
+    </div>
+    <span class="text-primary text-[11px] font-bold">4.92</span>
+  </div>
+</div>
+<button class="w-full mt-6 py-2 border border-outline-variant rounded-lg text-label-sm font-medium text-on-surface-variant hover:bg-surface-variant transition-colors">View Directory</button></div>
+<!-- Learning Progress Micro-Widget-->
+
+</aside>
+</div>
+</main>
+<!-- Floating Mobile Nav (Visible only on mobile) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-outline-variant px-6 py-3 z-50">
+<div class="flex justify-between items-center">
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px]">Home</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined">school</span>
+<span class="text-[10px]">Courses</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[10px]">Groups</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px]">Profile</span>
+</div>
+</div>
+</div>
+<script>
+        // Micro-interactions for course cards
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+                card.style.transition = 'transform 0.3s ease';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        if(searchInput) {
+            searchInput.addEventListener('focus', () => {
+                searchInput.parentElement.classList.add('ring-1', 'ring-primary');
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.parentElement.classList.remove('ring-1', 'ring-primary');
+            });
+        }
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

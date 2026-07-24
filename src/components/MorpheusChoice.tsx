@@ -10,7 +10,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
   // ==========================================
   // State Definitions
   // ==========================================
-  
+
   // Tracks which pill is currently hovered ('none', 'red', or 'blue') for overlays
   const [hoveredPill, setHoveredPill] = useState<'none' | 'red' | 'blue'>('none');
 
@@ -19,7 +19,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
   // ==========================================
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8 md:py-12 select-none relative z-10">
-      
+
       {/* 1. Narrative Intro */}
       <div className="max-w-2xl text-center mb-8 space-y-3">
         <p className="font-sans text-xs tracking-[0.2em] text-outline uppercase font-semibold">
@@ -29,7 +29,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
           MAKE YOUR CHOICE
         </h2>
         <p className="font-mono text-sm text-on-surface-variant max-w-xl mx-auto leading-relaxed">
-          "This is your last chance. After this, there is no turning back. 
+          "This is your last chance. After this, there is no turning back.
           Choose wisely, for your consciousness will adapt to the reality you select."
         </p>
       </div>
@@ -52,7 +52,7 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
           />
 
           {/* Interactive Pills Hover & Overlay Hotspots */}
-          
+
           {/* Red Pill Hotspot (Morpheus's Right Hand - Left side of image) */}
           <button
             onClick={() => onChoose('red')}
@@ -63,15 +63,13 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
             aria-label="Choose Red Pill"
           >
             {/* Pulsing indicator */}
-            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-red/20 animate-ping duration-1000 ${
-              hoveredPill === 'red' ? 'opacity-100' : 'opacity-40'
-            }`} />
-            
+            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-red/20 animate-ping duration-1000 ${hoveredPill === 'red' ? 'opacity-100' : 'opacity-40'
+              }`} />
+
             {/* Pill capsule representation */}
-            <div 
-              className={`w-7 h-3.5 bg-matrix-red rounded-full -rotate-[25deg] transition-all duration-300 shadow-[0_0_15px_#ff0033] ${
-                hoveredPill === 'red' ? 'scale-135 shadow-[0_0_25px_#ff0033]' : 'scale-100'
-              }`}
+            <div
+              className={`w-7 h-3.5 bg-matrix-red rounded-full -rotate-[25deg] transition-all duration-300 shadow-[0_0_15px_#ff0033] ${hoveredPill === 'red' ? 'scale-135 shadow-[0_0_25px_#ff0033]' : 'scale-100'
+                }`}
             />
           </button>
 
@@ -85,15 +83,13 @@ export default function MorpheusChoice({ onChoose }: MorpheusChoiceProps) {
             aria-label="Choose Blue Pill"
           >
             {/* Pulsing indicator */}
-            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-blue/20 animate-ping duration-1000 ${
-              hoveredPill === 'blue' ? 'opacity-100' : 'opacity-40'
-            }`} />
-            
+            <span className={`absolute inline-flex h-full w-full rounded-full bg-matrix-blue/20 animate-ping duration-1000 ${hoveredPill === 'blue' ? 'opacity-100' : 'opacity-40'
+              }`} />
+
             {/* Pill capsule representation */}
-            <div 
-              className={`w-7 h-3.5 bg-matrix-blue rounded-full rotate-[45deg] transition-all duration-300 shadow-[0_0_15px_#0070ff] ${
-                hoveredPill === 'blue' ? 'scale-135 shadow-[0_0_25px_#0070ff]' : 'scale-100'
-              }`}
+            <div
+              className={`w-7 h-3.5 bg-matrix-blue rounded-full rotate-[45deg] transition-all duration-300 shadow-[0_0_15px_#0070ff] ${hoveredPill === 'blue' ? 'scale-135 shadow-[0_0_25px_#0070ff]' : 'scale-100'
+                }`}
             />
           </button>
 

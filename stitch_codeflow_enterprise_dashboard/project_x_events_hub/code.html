@@ -1,0 +1,315 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Events | Project X</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Geist:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0F1117;
+            color: #dfe2ed;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F1117; }
+        ::-webkit-scrollbar-thumb { background: #2A2F3A; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3A4150; }
+
+        .glass-card {
+            background: #181C24;
+            border: 1px solid #2A2F3A;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .glass-card:hover {
+            border-color: #4A78D1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface-variant": "#c3c6d4",
+                        "surface-dim": "#0f131b",
+                        "surface-container-high": "#262a32",
+                        "primary": "#aec6ff",
+                        "secondary": "#85da76",
+                        "secondary-container": "#005e06",
+                        "on-secondary-container": "#82d672",
+                        "on-surface": "#dfe2ed",
+                        "outline-variant": "#434752",
+                        "surface-container": "#1c2028",
+                        "background": "#0f131b",
+                        "surface": "#0f131b",
+                        "surface-container-lowest": "#0a0e16",
+                        "outline": "#8d909d",
+                        "accent-blue": "#4A78D1"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "container-max": "1200px",
+                        "margin-mobile": "16px"
+                    },
+                    fontFamily: {
+                        "mono-code": ["Geist"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Geist"],
+                        "body-sm": ["Inter"],
+                        "label-sm": ["Geist"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-body-md bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 max-w-full mx-auto bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex items-center gap-8">
+<span class="text-headline-md font-bold text-primary tracking-tight">Project X</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 text-label-md font-label-md" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 text-label-md font-label-md" href="#">Communities</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 text-label-md font-label-md" href="#">Courses</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 text-label-md font-label-md" href="#">Challenges</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 text-label-md font-label-md" href="#">Events</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg pl-10 pr-4 py-1.5 text-body-sm focus:outline-none focus:border-accent-blue w-64 transition-all" placeholder="Search events..." type="text">
+</div>
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional user profile avatar for a tech-focused developer portal. The lighting is crisp and cool-toned, with the character wearing high-tech minimalist clothing against a dark charcoal architectural background. The overall aesthetic is clean, modern, and high-utility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPqktgjsTTjH2mUSHu0vDiqNyxDEHhqD1zUyVecisz2L-mJudxIE11Rs8ZWuBNVL8MGY2L1hGpkpDbHZ1K-E-dkP8SPXudNgQmQIv3DP5G4Od5nQ79-sB4rIiZx8SCjgBaBMKAZR8zzeRG6dZIK5ltCL_IqgE4qke9KISZ35vbWXDKX334oOaFRd8AK2RUFy3i0zcx4WbBJQXG71hyTOHtLVm3hUHL7BLP3R3gtDByeRbtfvu2qtn2-w4MP3p9SM2NY8GPYY0kh5I">
+</div>
+</div>
+</nav>
+<!-- Main Content Layout -->
+<main class="pt-24 pb-12 px-8 max-w-[1440px] mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- LEFT COLUMN: My Events & Calendar -->
+<aside class="lg:col-span-3 space-y-6">
+<!-- My Events Card -->
+
+<!-- Calendar View -->
+<section class="glass-card rounded-[14px] p-6" style="transform: scale(1);"><h2 class="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">My Events</h2>
+<div class="space-y-6">
+<div class="group cursor-pointer">
+<p class="text-[11px] text-primary font-bold mb-1">OCT 24, 2024</p>
+<h3 class="text-body-md font-medium group-hover:text-primary transition-colors">Global AI Hackathon</h3>
+<p class="text-label-sm text-on-surface-variant">Virtual • 10:00 AM</p>
+</div>
+<div class="group cursor-pointer">
+<p class="text-[11px] text-primary font-bold mb-1">OCT 28, 2024</p>
+<h3 class="text-body-md font-medium group-hover:text-primary transition-colors">React 19 Workshop</h3>
+<p class="text-label-sm text-on-surface-variant">Tech Hub 4 • 2:00 PM</p>
+</div>
+</div>
+<button class="w-full mt-8 py-2 border border-outline-variant rounded-lg text-label-sm font-bold hover:bg-surface-container-high transition-all">View All Registered</button></section><section class="glass-card rounded-[14px] p-6 mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant">October 2024</h2>
+    <div class="flex gap-2">
+      <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary text-[18px]">chevron_left</span>
+      <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary text-[18px]">chevron_right</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-7 gap-1 text-center">
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">S</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">M</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">T</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">W</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">T</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">F</div>
+    <div class="text-[10px] font-bold text-on-surface-variant/50 pb-2">S</div>
+    <div class="text-label-sm py-1 text-on-surface-variant/30">29</div>
+    <div class="text-label-sm py-1 text-on-surface-variant/30">30</div>
+    <div class="text-label-sm py-1">1</div>
+    <div class="text-label-sm py-1">2</div>
+    <div class="text-label-sm py-1">3</div>
+    <div class="text-label-sm py-1">4</div>
+    <div class="text-label-sm py-1">5</div>
+    <div class="text-label-sm py-1">6</div>
+    <div class="text-label-sm py-1">7</div>
+    <div class="text-label-sm py-1">8</div>
+    <div class="text-label-sm py-1">9</div>
+    <div class="text-label-sm py-1">10</div>
+    <div class="text-label-sm py-1">11</div>
+    <div class="text-label-sm py-1">12</div>
+    <div class="text-label-sm py-1">13</div>
+    <div class="text-label-sm py-1">14</div>
+    <div class="text-label-sm py-1">15</div>
+    <div class="text-label-sm py-1">16</div>
+    <div class="text-label-sm py-1">17</div>
+    <div class="text-label-sm py-1">18</div>
+    <div class="text-label-sm py-1">19</div>
+    <div class="text-label-sm py-1">20</div>
+    <div class="text-label-sm py-1">21</div>
+    <div class="text-label-sm py-1">22</div>
+    <div class="text-label-sm py-1">23</div>
+    <div class="relative text-label-sm py-1 font-bold text-primary">
+      <span class="absolute inset-0 flex items-center justify-center">
+        <span class="w-6 h-6 border border-primary/40 rounded-full"></span>
+      </span>
+      24
+    </div>
+    <div class="text-label-sm py-1">25</div>
+    <div class="text-label-sm py-1">26</div>
+    <div class="text-label-sm py-1">27</div>
+    <div class="relative text-label-sm py-1 font-bold text-primary">
+      <span class="absolute inset-0 flex items-center justify-center">
+        <span class="w-6 h-6 border border-primary/40 rounded-full"></span>
+      </span>
+      28
+    </div>
+    <div class="text-label-sm py-1">29</div>
+    <div class="text-label-sm py-1">30</div>
+    <div class="text-label-sm py-1">31</div>
+  </div>
+</section>
+</aside>
+<!-- CENTER COLUMN: Upcoming Events Feed -->
+<article class="lg:col-span-6 space-y-6">
+<header class="flex justify-between items-end mb-2">
+<div class="flex gap-2">
+<button class="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container text-label-sm font-bold transition-all">All</button>
+<button class="px-4 py-1.5 rounded-lg text-on-surface-variant text-label-sm border border-outline-variant hover:border-primary transition-all">Hackathons</button>
+<button class="px-4 py-1.5 rounded-lg text-on-surface-variant text-label-sm border border-outline-variant hover:border-primary transition-all">Workshops</button>
+</div></header>
+<!-- Event Card 1 -->
+<div class="glass-card rounded-[14px] overflow-hidden group border-b" style="transform: scale(1);">
+<div class="p-6">
+<div class="flex justify-between items-start gap-4"><div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant"><img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&amp;w=200&amp;h=200&amp;auto=format&amp;fit=crop" alt="Event thumbnail" class="w-full h-full object-cover opacity-60"></div>
+<div class="space-y-1">
+<h2 class="text-headline-md font-bold">Edge Computing Summit 2024</h2>
+<div class="flex items-center gap-4 text-on-surface-variant text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">calendar_today</span> Nov 12-14</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span> Tech Hub 4, SF</span>
+</div>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 border border-primary/40 rounded font-bold text-label-sm transition-all active:scale-95 flex items-center justify-center text-center min-w-[100px]">Register</button>
+</div>
+<p class="mt-3 text-on-surface-variant text-body-sm">Join 500+ developers for 48 hours of intense building focused on low-latency edge architectures.</p>
+</div></div>
+<!-- Event Card 2 -->
+<div class="glass-card rounded-[14px] overflow-hidden group border-b" style="transform: scale(1);">
+<div class="p-6">
+<div class="flex justify-between items-start gap-4"><div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant"><img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&amp;w=200&amp;h=200&amp;auto=format&amp;fit=crop" alt="Event thumbnail" class="w-full h-full object-cover opacity-60"></div>
+<div class="space-y-1">
+<h2 class="text-headline-md font-bold">Advanced Patterns in React 19</h2>
+<div class="flex items-center gap-4 text-on-surface-variant text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">calendar_today</span> Nov 18, 2024</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">videocam</span> Virtual Workshop</span>
+</div>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 border border-primary/40 rounded font-bold text-label-sm transition-all active:scale-95 flex items-center justify-center text-center min-w-[100px]">Register</button>
+</div>
+<p class="mt-3 text-on-surface-variant text-body-sm">A deep dive into the new Compiler, Server Actions, and architectural shifts in React 19.</p>
+</div></div>
+<!-- Event Card 3 -->
+<div class="glass-card rounded-[14px] overflow-hidden group" style="transform: scale(1);">
+<div class="p-6">
+<div class="flex justify-between items-start gap-4"><div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant"><img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&amp;w=200&amp;h=200&amp;auto=format&amp;fit=crop" alt="Event thumbnail" class="w-full h-full object-cover opacity-60"></div>
+<div class="space-y-1">
+<h2 class="text-headline-md font-bold">DevOps &amp; Chill: SF Chapter</h2>
+<div class="flex items-center gap-4 text-on-surface-variant text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">calendar_today</span> Dec 01, 2024</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span> Sky Lounge, SF</span>
+</div>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 border border-primary/40 rounded font-bold text-label-sm transition-all active:scale-95 flex items-center justify-center text-center min-w-[100px]">Register</button>
+</div>
+<p class="mt-3 text-on-surface-variant text-body-sm">Monthly informal gathering for DevOps engineers and SREs. No talks, just networking and drinks.</p>
+</div></div>
+</article>
+<!-- RIGHT COLUMN: Trending & Highlights -->
+<aside class="lg:col-span-3 space-y-6">
+<!-- Trending Events -->
+
+<!-- Event Highlights/Speakers -->
+
+<!-- Small Promo Card -->
+<div class="p-6 rounded-[14px] bg-surface-container border border-outline-variant group cursor-pointer transition-all hover:border-primary">
+<h3 class="text-on-surface font-bold text-headline-sm">Host your own event?</h3>
+<p class="text-on-surface-variant text-label-md mt-2">Get access to our community of 50k+ devs.</p>
+<button class="mt-4 border border-primary text-primary px-4 py-2 rounded-lg font-bold text-label-md active:scale-95 transition-all hover:bg-primary/10">Apply Now</button>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-8 flex justify-between items-center mt-12 border-t border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-6">
+<span class="text-label-sm font-label-sm text-on-surface-variant">© 2024 Project X Dev Portal</span>
+<div class="flex gap-4">
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">API Docs</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Status</a>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">public</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">rss_feed</span>
+</button>
+</div>
+</footer>
+<script>
+        // Simple micro-interactions
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.995)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-105');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-105');
+        });
+    </script>
+
+
+
+
+
+
+
+
+
+
+</body></html>

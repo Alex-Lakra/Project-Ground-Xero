@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { scrapeLeetCodeProfile, scrapeCodeforcesProfile } from "./Scrapper.tsx";
+import { scrapeLeetCodeProfile, scrapeCodeforcesProfile, scrapeLeetCodeDailyQuestion } from "./Scrapper.tsx";
 
 dotenv.config();
 
@@ -14,6 +14,16 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  app.get("/api/leetcode-daily", async (req, res) => {
+    try {
+      const force = req.query.force === 'true';
+      const data = await scrapeLeetCodeDailyQuestion(force);
+      return res.json({ success: true, question: data });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || "Failed to scrape LeetCode daily question" });
+    }
+  });
 
   app.post("/api/scrape", async (req, res) => {
     const { username } = req.body;

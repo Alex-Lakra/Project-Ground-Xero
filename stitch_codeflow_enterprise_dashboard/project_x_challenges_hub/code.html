@@ -1,0 +1,288 @@
+<!DOCTYPE html><html lang="en" class="dark" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Geist:wght@400;500;600;900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#492900",
+                        "surface-bright": "#353942",
+                        "tertiary-fixed": "#ffdcbc",
+                        "inverse-on-surface": "#2c3039",
+                        "surface-container-lowest": "#0a0e16",
+                        "surface-container-low": "#181c24",
+                        "on-surface-variant": "#c3c6d4",
+                        "tertiary": "#ffb86a",
+                        "surface-container-highest": "#31353d",
+                        "secondary": "#85da76",
+                        "primary-container": "#628fea",
+                        "on-primary-fixed": "#001a43",
+                        "on-primary": "#002e6b",
+                        "surface": "#0f131b",
+                        "on-surface": "#dfe2ed",
+                        "background": "#0f131b",
+                        "on-tertiary-container": "#3f2300",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#85da76",
+                        "secondary-container": "#005e06",
+                        "tertiary-container": "#ca801f",
+                        "inverse-primary": "#295bb3",
+                        "error-container": "#93000a",
+                        "surface-variant": "#31353d",
+                        "on-secondary-fixed": "#002201",
+                        "primary-fixed": "#d8e2ff",
+                        "on-secondary-fixed-variant": "#005305",
+                        "outline": "#8d909d",
+                        "inverse-surface": "#dfe2ed",
+                        "primary": "#aec6ff",
+                        "on-primary-container": "#00275e",
+                        "surface-container": "#1c2028",
+                        "secondary-fixed": "#a0f78f",
+                        "outline-variant": "#434752",
+                        "on-tertiary-fixed-variant": "#683d00",
+                        "surface-dim": "#0f131b",
+                        "surface-container-high": "#262a32",
+                        "primary-fixed-dim": "#aec6ff",
+                        "on-secondary-container": "#82d672",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#dfe2ed",
+                        "tertiary-fixed-dim": "#ffb86a",
+                        "on-secondary": "#003a02",
+                        "on-error": "#690005",
+                        "surface-tint": "#aec6ff",
+                        "on-tertiary-fixed": "#2c1700",
+                        "on-primary-fixed-variant": "#004397"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "label-md": ["Geist"],
+                        "body-lg": ["Inter"],
+                        "mono-code": ["Geist"],
+                        "body-sm": ["Inter"],
+                        "label-sm": ["Geist"],
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "mono-code": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="w-full h-16 bg-surface dark:bg-surface border-b border-outline-variant flex justify-between items-center px-margin-desktop sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-md text-headline-md text-primary">Project X</h1>
+<nav class="hidden md:flex gap-6 items-center">
+<a href="#" class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200">Dashboard</a>
+<a href="#" class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200">Communities</a>
+<a href="#" class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200">Courses</a>
+<a href="#" class="text-primary border-b-2 border-primary pb-1 transition-colors duration-200">Challenges</a>
+<a href="#" class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200">Events</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input type="text" placeholder="Search challenges..." class="bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-1.5 text-body-sm w-64 focus:outline-none focus:border-primary transition-all">
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary active:scale-95 transition-all">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary active:scale-95 transition-all">settings</button>
+<div class="h-8 w-8 rounded-full bg-primary-container overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional close-up studio portrait of a software engineer with a minimalist aesthetic, softly lit with cool blue tones, set against a dark charcoal background that matches the Project X interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGye4i23JlQbvyILANRvbFZbm3R3omfIN_Xl01ZA05n-wKzdPCOm3NxElTcL5xwzkSe81w1dXFwQMjKLKZDU4sUghfUpN1hm9Ai-2lwneqcvV9k9W2LNxLYtqaQjWF4L0JL21Kkqa9RlnI8uksfa9_StI1vCTsCdaeO7-0QlVO5E2OS73GOR4CxiPqrGS1L8MNpz_2UTiO7hPzxm6UrIuUbmZoQ6cgHdyrA1x1j6R-0yL5XKsBJeJHuwD_TKlcAjHYpPtO-_aF5wQ">
+</div>
+<button class="text-on-surface-variant hover:text-primary font-label-md text-label-md active:scale-95 transition-all">Sign Out</button>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-desktop py-8">
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column: My Progress -->
+<aside class="col-span-12 lg:col-span-3 space-y-6">
+<section class="bg-surface-container-low border border-outline-variant rounded-xl p-6"><div class="flex justify-between items-center mb-6"><h2 class="font-headline-md text-headline-md text-on-surface">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Progress</h2><div class="flex bg-surface-container-highest rounded-full p-1 gap-1"></div></div><div class="flex flex-col items-center mb-6"><div class="relative w-40 h-40 flex items-center justify-center"><svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="transparent" stroke="#31353d" stroke-width="6"></circle><circle cx="50" cy="50" r="40" fill="transparent" stroke="#85da76" stroke-width="6" stroke-dasharray="251.2" stroke-dashoffset="212" stroke-linecap="round"></circle><circle cx="50" cy="50" r="40" fill="transparent" stroke="#ffb86a" stroke-width="6" stroke-dasharray="251.2" stroke-dashoffset="240" stroke-linecap="round" class="rotate-45 origin-center"></circle><circle cx="50" cy="50" r="40" fill="transparent" stroke="#ffb4ab" stroke-width="6" stroke-dasharray="251.2" stroke-dashoffset="250" stroke-linecap="round" class="rotate-90 origin-center"></circle></svg><div class="absolute flex flex-col items-center"><span class="text-headline-lg text-on-surface leading-none">76</span><div class="w-12 h-px bg-outline-variant my-1"></div><span class="text-label-md text-outline">1121</span></div></div></div><div class="flex flex-wrap justify-center gap-4"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-secondary"></div><span class="text-label-sm text-on-surface-variant">Easy <span class="text-on-surface">58/374</span></span></div><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div><span class="text-label-sm text-on-surface-variant">Medium <span class="text-on-surface">17/477</span></span></div><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-error"></div><span class="text-label-sm text-on-surface-variant">Hard <span class="text-on-surface">1/253</span></span></div></div></section>
+<section class="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+<h3 class="font-label-md text-label-md uppercase tracking-widest text-outline mb-4">Recently Unlocked</h3>
+<div class="grid grid-cols-3 gap-2">
+<div class="aspect-square bg-surface-container-highest rounded border border-outline-variant flex items-center justify-center group cursor-help relative" title="Algorithm Ace">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">terminal</span>
+</div>
+<div class="aspect-square bg-surface-container-highest rounded border border-outline-variant flex items-center justify-center group cursor-help" title="Clean Coder">
+<span class="material-symbols-outlined text-secondary group-hover:scale-110 transition-transform">cleaning_services</span>
+</div>
+<div class="aspect-square bg-surface-container-highest rounded border border-outline-variant flex items-center justify-center group cursor-help" title="Bug Hunter">
+<span class="material-symbols-outlined text-error group-hover:scale-110 transition-transform">pest_control</span>
+</div>
+</div>
+</section><section class="bg-surface-container-low border border-outline-variant rounded-xl p-6 relative overflow-hidden group">
+  <div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all"></div>
+  <h3 class="font-label-md text-label-md uppercase tracking-widest text-outline mb-4 flex items-center gap-2">
+    <span class="material-symbols-outlined text-tertiary text-[20px]">card_giftcard</span>
+    Prize Pool
+  </h3>
+  <div class="space-y-4 relative z-10">
+    <div class="bg-surface-container-high p-4 rounded-lg border border-outline-variant">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="material-symbols-outlined text-secondary">workspace_premium</span>
+        <span class="text-body-sm font-bold">Project X Pro</span>
+      </div>
+      <p class="text-label-sm text-outline leading-relaxed">Top 10 finishers get 3 months of premium subscription access.</p>
+    </div>
+    <div class="bg-surface-container-high p-4 rounded-lg border border-outline-variant">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="material-symbols-outlined text-primary">token</span>
+        <span class="text-body-sm font-bold">1,000 $X-Tokens</span>
+      </div>
+      <p class="text-label-sm text-outline leading-relaxed">Redeemable for exclusive community perks and merch.</p>
+    </div>
+  </div>
+  <button class="w-full mt-6 bg-surface-container-highest text-on-surface border border-outline-variant py-2.5 rounded-lg text-label-md font-bold hover:bg-surface-bright active:scale-95 transition-all">View All Rewards</button>
+</section>
+</aside>
+<!-- Center Column: Challenges -->
+<div class="col-span-12 lg:col-span-6 space-y-gutter">
+<!-- Featured Challenge -->
+
+<!-- Filters -->
+<div class="flex flex-wrap gap-3 items-center">
+<button class="px-5 py-2 rounded-full text-label-md font-bold transition-all bg-surface-container-low border-outline-variant text-on-surface-variant">All</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-low border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary text-label-md transition-all">Algorithms</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-low border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary text-label-md transition-all">Frontend</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-low border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary text-label-md transition-all">Backend</button>
+
+</div><section class="mt-8 mb-8">
+  <h3 class="font-label-md text-label-md uppercase tracking-widest text-outline mb-4">Highlighted Challenges</h3>
+  <div class="bg-surface-container-low border border-primary/30 rounded-xl relative overflow-hidden group p-6">
+    <div class="absolute -right-20 -top-20 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all w-40 h-40"></div>
+    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="bg-error/10 text-error border border-error/20 px-3 py-1 rounded text-label-sm font-bold">EXPERT</span>
+          <span class="text-tertiary text-label-md font-mono-code">+1000 XP</span>
+        </div>
+        <h2 class="font-headline-lg text-on-surface group-hover:text-primary transition-colors text-headline-md mb-2">System Design: Scalable Architecture</h2>
+        <p class="text-on-surface-variant max-w-2xl text-body-sm">Design a globally distributed, fault-tolerant system capable of handling 100k+ requests per second with sub-100ms latency. Focus on database sharding and caching strategies.</p>
+      </div>
+      <button class="bg-primary text-on-primary rounded-lg font-bold text-label-md hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 whitespace-nowrap px-5 py-2">Take Challenge</button>
+    </div>
+  </div>
+</section><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"><div class="bg-surface-container-low border rounded-xl p-6 hover:border-primary/50 transition-colors group cursor-pointer border-outline-variant/30"><div class="flex justify-between items-start mb-4"><span class="bg-error/10 text-error border border-error/20 px-2 py-0.5 rounded text-label-sm font-bold">HARD</span><span class="text-tertiary text-label-md font-mono-code">+450 XP</span></div><h4 class="font-headline-md text-headline-md mb-2 text-on-surface group-hover:text-primary transition-colors">Dynamic Programming Master</h4><p class="text-body-sm text-on-surface-variant mb-6">Solve complex optimization problems using advanced memoization techniques.</p><div class="flex justify-between items-center border-t border-outline-variant pt-4"><span class="text-label-sm text-outline">312 attempted</span><span class="material-symbols-outlined text-outline group-hover:text-primary transform group-hover:translate-x-1 transition-all">arrow_forward</span></div></div><div class="bg-surface-container-low border rounded-xl p-6 hover:border-primary/50 transition-colors group cursor-pointer border-outline-variant/30"><div class="flex justify-between items-start mb-4"><span class="bg-tertiary/10 text-tertiary border border-tertiary/20 px-2 py-0.5 rounded text-label-sm font-bold">MEDIUM</span><span class="text-tertiary text-label-md font-mono-code">+180 XP</span></div><h4 class="font-headline-md text-headline-md mb-2 text-on-surface group-hover:text-primary transition-colors">React Hook Optimization</h4><p class="text-body-sm text-on-surface-variant mb-6">Refactor a heavy component to minimize re-renders using useMemo and useCallback.</p><div class="flex justify-between items-center border-t border-outline-variant pt-4"><span class="text-label-sm text-outline">954 attempted</span><span class="material-symbols-outlined text-outline group-hover:text-primary transform group-hover:translate-x-1 transition-all">arrow_forward</span></div></div><div class="bg-surface-container-low border rounded-xl p-6 hover:border-primary/50 transition-colors group cursor-pointer border-outline-variant/30"><div class="flex justify-between items-start mb-4"><span class="bg-tertiary/10 text-tertiary border border-tertiary/20 px-2 py-0.5 rounded text-label-sm font-bold">MEDIUM</span><span class="text-tertiary text-label-md font-mono-code">+200 XP</span></div><h4 class="font-headline-md text-headline-md mb-2 text-on-surface group-hover:text-primary transition-colors">SQL Performance Tuning</h4><p class="text-body-sm text-on-surface-variant mb-6">Optimize slow-running queries by analyzing execution plans and adding indexes.</p><div class="flex justify-between items-center border-t border-outline-variant pt-4"><span class="text-label-sm text-outline">621 attempted</span><span class="material-symbols-outlined text-outline group-hover:text-primary transform group-hover:translate-x-1 transition-all">arrow_forward</span></div></div></div>
+<!-- Daily Challenges Grid -->
+
+</div>
+<!-- Right Column: Leaderboard & Rewards -->
+<aside class="col-span-12 lg:col-span-3 space-y-6">
+<!-- Leaderboard -->
+<section class="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md">Leaderboard</h3>
+<span class="text-label-sm text-primary font-bold uppercase">Weekly</span>
+</div>
+<div class="divide-y divide-outline-variant">
+<!-- Top 1 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="text-tertiary font-black font-mono-code text-lg w-4">1</span>
+<div class="w-8 h-8 rounded-full bg-tertiary/20 flex items-center justify-center border border-tertiary/30">
+<img class="w-full h-full rounded-full object-cover" data-alt="Minimalist profile avatar of a developer, stylized as a 3D clay-render character with clean lines and soft lighting on a dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsqJNS2G8vJOqrGNeSaqcwtufC3JMenU-85asD4WIPixGMlfn5cm6-TFGprjkWEKVvmp-tcYm9kKwhHyLGSPVa2rLBQaXhk35s4EBZdR_eUZNsgGgDOacf_UD_6besu4kqHnz_0Pthpg7FTKF7rApzmtfIJBjKQSACURcKUC3ZCiVF4he9bihyEz8NuUZpCAxgwJxDcH9ByKRRYsFn4VNopE1NBkGy1zraWX9xVrxeJ7HNxtIKn4Lr68eYyO2fhTeMXDKkda1v-nI">
+</div>
+<span class="font-medium text-body-sm">dev_master</span>
+</div>
+<span class="text-label-md font-mono-code text-on-surface">12,450</span>
+</div>
+<!-- Top 2 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="text-outline font-black font-mono-code text-lg w-4">2</span>
+<div class="w-8 h-8 rounded-full bg-outline/20 flex items-center justify-center border border-outline/30">
+<img class="w-full h-full rounded-full object-cover" data-alt="A stylized minimalist developer avatar featuring sleek design, soft volumetric lighting, and a modern aesthetic on a deep charcoal background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClG-jVHU79xaymhcSAHuUWjulV4UiotFBRx8yoT9r3nzF0-7liAbCwIAflrGJpJaOEZHtDsxbulV4hQJpPGZBeLoDYArVEDunCcuqyefrMugmenfmD7fmbl5dGBVdXaJ9eYV2Lo0fSCvrzKMF3zglUvTbUaxSoQYc_4IKhRz6M4p7iE9rbUgv6iHNKJ3QA9i8XC4974nqVgpxfhGFsDh3jZ0LIIHUJDOrOmqTG6vfs_uiTfId1xqe6VZsOLPxFnqld5g_i4BsEk78">
+</div>
+<span class="font-medium text-body-sm">pixel_knight</span>
+</div>
+<span class="text-label-md font-mono-code text-on-surface">11,200</span>
+</div>
+<!-- Top 3 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="text-on-tertiary-container font-black font-mono-code text-lg w-4">3</span>
+<div class="w-8 h-8 rounded-full bg-on-tertiary-container/20 flex items-center justify-center border border-on-tertiary-container/30">
+<img class="w-full h-full rounded-full object-cover" data-alt="Clean, high-fidelity developer avatar icon with a tech-focused modern aesthetic, lit with subtle neon accents on a dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOqor33yhZJ9-QReBW965e12f2OTxCWKLHwkc7qDvtPoztJS5xWmvJf1tfSYQf7l5UGfAzffFDJNzu6r-kgos6IDH-_7F5NNrqoOOUk5NePYEkdiQpZOiUrcdOlRbaF0WnVxH9OAG3JPKP1jY1Yqi2kPlH_eGLIPcW-LPl-ix5rONlX55qJ-JLygriCotVK6gVZ7Z_yH-31ntjt7DDZM9FDC-r-u3egHNIkdeEorc7w27BpmLY-BPnY8DvS-w6uYr9zkZaG33n1tI">
+</div>
+<span class="font-medium text-body-sm">stack_guru</span>
+</div>
+<span class="text-label-md font-mono-code text-on-surface">10,890</span>
+</div>
+<!-- Top 4 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="text-outline font-bold text-body-sm w-4">4</span>
+<div class="w-8 h-8 rounded-full bg-outline-variant/20 flex items-center justify-center border border-outline-variant/30">
+<img class="w-full h-full rounded-full object-cover" data-alt="Digital art style developer portrait with minimalist features and soft glow effect, designed for a high-end UI interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDucrcBGjay8NrIFM9jl50tPqWVVtaHHtfM8mAzQb-R81R1MIiWf6zF2YPwyU8HwzC6EFgZf9dtN2rVo3i-DVi0LaJde2sChoeLSzWNm6g03xp94pHT-EITq974Cfh4vJzCfmpvVhsbpR5L4KBWAHvpFnjTemaRf2Im1K3s7F6Lvb9lDoCSPpI8N9UbkIDHoKriUug7l_GBIhvJtv9_dNlibuYs4ChHODBfjezUXOugp7YYng6PvCdQIR2dK5-vT3lIGpOyfGfuo0M">
+</div>
+<span class="font-medium text-body-sm">node_ninja</span>
+</div>
+<span class="text-label-md font-mono-code text-on-surface">9,420</span>
+</div>
+<!-- Top 5 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="text-outline font-bold text-body-sm w-4">5</span>
+<div class="w-8 h-8 rounded-full bg-outline-variant/20 flex items-center justify-center border border-outline-variant/30">
+<img class="w-full h-full rounded-full object-cover" data-alt="A clean, vector-style portrait of a tech professional, emphasizing a modern minimalist look with high-contrast dark mode lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDretGTzLZxu6cR-XmMmpDgFqdxGXS4EagHf93A5-WHTVht4qs5DGsOG-16Yds18EmJWpdlrTprn46E_Wea123w2kdUfFIR9sRthWUoKSPPp8eHG5vSW6idQ6Fv0rjgPI_tvkdwu6dj2ljaiHY2psqC_PAXr3fr0XQaMLzZGkKGJQv-t_Kas7V2P2JfPWhKVIVKz8zMP9JrmKeIB2EhZ1gd5W5p_6HdCRYPtiIy0hgAmxInB4BdRtJLmfq9ovnyI55iGMtAKZ3ch-g">
+</div>
+<span class="font-medium text-body-sm">rust_ace</span>
+</div>
+<span class="text-label-md font-mono-code text-on-surface">8,100</span>
+</div>
+</div>
+<button class="w-full p-4 text-center text-primary text-label-md font-bold hover:bg-surface-container-high transition-colors border-t border-outline-variant">View All Rankings</button>
+</section>
+<!-- Rewards Pool -->
+
+</aside>
+</div>
+</main>
+<!-- Floating Action Button: Contextual for Challenges -->
+<button class="fixed bottom-8 right-8 bg-primary text-on-primary-container h-14 w-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group z-50">
+<span class="material-symbols-outlined text-[28px]">add</span>
+<span class="absolute right-16 bg-surface-container-highest border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-label-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Create Challenge</span>
+</button>
+<script>
+        // Simple interaction for chips
+        document.querySelectorAll('.flex.flex-wrap.gap-3.items-center button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.flex.flex-wrap.gap-3.items-center button').forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-on-primary');
+                    btn.classList.add('bg-surface-container-low', 'border-outline-variant', 'text-on-surface-variant');
+                });
+                button.classList.add('bg-primary', 'text-on-primary');
+                button.classList.remove('bg-surface-container-low', 'border-outline-variant', 'text-on-surface-variant');
+            });
+        });
+    </script>
+
+
+
+
+
+</body></html>

@@ -42,6 +42,13 @@ export default function App() {
 
   // Triggers dynamic glitch transition and updates active screen
   const handleChoosePill = (selected: PillChoice) => {
+    if (selected === 'blue') {
+      setChoice(selected);
+      setActiveScreen(selected);
+      setIsGlitching(false);
+      return;
+    }
+
     setTransitionChoice(selected);
     setIsGlitching(true);
     
@@ -55,6 +62,14 @@ export default function App() {
 
   // Re-routes back to the Morpheus Choice screen with a glitch transition
   const handleResetToChoice = () => {
+    if (activeScreen === 'blue') {
+      setChoice('none');
+      setActiveScreen('none');
+      setIsGlitching(false);
+      setShowSettings(false);
+      return;
+    }
+
     setTransitionChoice('none');
     setIsGlitching(true);
     
@@ -120,7 +135,7 @@ export default function App() {
       )}
 
       {/* Screen Glitch Reality Transition Overlay */}
-      {isGlitching && (
+      {isGlitching && activeScreen !== 'blue' && (
         <div className={`fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-mono crt-screen ${
           transitionChoice === 'red' ? 'text-matrix-red' : 
           transitionChoice === 'blue' ? 'text-matrix-blue' : 
@@ -147,8 +162,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header Navigation (Hidden in red fullscreen CLI tab view) */}
-      {activeScreen !== 'red' && (
+      {/* Main Top Header Navigation (Hidden in red & blue full-page views) */}
+      {activeScreen !== 'red' && activeScreen !== 'blue' && (
         <header className="border-b border-outline-variant bg-[#0c0f0f] relative z-30">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             
@@ -210,7 +225,7 @@ export default function App() {
       )}
 
       {/* Main Container Router pages switch */}
-      <main className={`${activeScreen === 'red' ? '' : 'relative min-h-[calc(100vh-80px)]'} crt-screen`}>
+      <main className={`${activeScreen === 'red' ? '' : activeScreen === 'blue' ? 'relative min-h-screen' : 'relative min-h-[calc(100vh-80px)]'} crt-screen`}>
         {activeScreen === 'none' && (
           <MorpheusChoice onChoose={handleChoosePill} />
         )}

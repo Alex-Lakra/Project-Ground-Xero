@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Project Xero - Communities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#dfe2ed",
+                      "secondary": "#85da76",
+                      "secondary-fixed-dim": "#85da76",
+                      "on-primary": "#002e6b",
+                      "surface-bright": "#353942",
+                      "on-primary-fixed-variant": "#004397",
+                      "on-surface-variant": "#c3c6d4",
+                      "on-error": "#690005",
+                      "tertiary-fixed-dim": "#ffb86a",
+                      "tertiary-fixed": "#ffdcbc",
+                      "on-primary-fixed": "#001a43",
+                      "surface-dim": "#0f131b",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-lowest": "#0a0e16",
+                      "background": "#0f131b",
+                      "tertiary-container": "#ca801f",
+                      "outline-variant": "#434752",
+                      "surface-container-low": "#181c24",
+                      "secondary-fixed": "#a0f78f",
+                      "tertiary": "#ffb86a",
+                      "on-tertiary-fixed": "#2c1700",
+                      "error-container": "#93000a",
+                      "surface-container": "#1c2028",
+                      "on-background": "#dfe2ed",
+                      "on-surface": "#dfe2ed",
+                      "on-secondary": "#003a02",
+                      "on-secondary-fixed-variant": "#005305",
+                      "on-secondary-fixed": "#002201",
+                      "on-primary-container": "#00275e",
+                      "on-tertiary-container": "#3f2300",
+                      "surface-tint": "#aec6ff",
+                      "inverse-primary": "#295bb3",
+                      "secondary-container": "#005e06",
+                      "surface": "#0f131b",
+                      "surface-container-high": "#262a32",
+                      "primary": "#aec6ff",
+                      "primary-fixed": "#d8e2ff",
+                      "outline": "#8d909d",
+                      "surface-container-highest": "#31353d",
+                      "on-tertiary": "#492900",
+                      "error": "#ffb4ab",
+                      "surface-variant": "#31353d",
+                      "on-tertiary-fixed-variant": "#683d00",
+                      "primary-fixed-dim": "#aec6ff",
+                      "primary-container": "#628fea",
+                      "on-secondary-container": "#82d672",
+                      "inverse-on-surface": "#2c3039"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "unit": "4px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "container-max": "1200px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Geist"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Geist"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "mono-code": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.04em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "mono-code": [
+                              "13px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0D1117;
+            color: #E6EDF3;
+        }
+        .ghost-mode {
+            opacity: 0.35;
+            filter: blur(1px) desaturate(80%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="font-body-md antialiased min-h-screen flex flex-col">
+<!-- Top Navigation -->
+<nav class="fixed top-0 w-full z-50 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop h-16 w-full max-w-container-max mx-auto">
+<!-- Brand -->
+<div class="font-headline-md text-headline-md font-bold text-on-surface dark:text-on-surface">
+                Project Xero
+            </div>
+<!-- Links (Desktop) -->
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-200" href="#">Communities</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Courses</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Challenges</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Events</a>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="bg-[#161B22] border border-[#21262D] rounded-full pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64 text-on-surface placeholder:text-outline" placeholder="Find anything" type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-[#21262D]">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A small circular avatar placeholder image showing a subtle gradient or abstract pattern for a user profile in a dark mode tech UI" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXzjIjD7EB66nnupYeKyZXlNva3ls0SaweFC29nttOoQiKgorMjv682S2PMxwptHQeBbcYH68DeMaGhOAH294AwH1M1MbbBgM-SncVfGi6mGCIv9I8TYDl-KIGDPBJ8GSnxvhk-aZmnmin8PdZpo1XizQlnAarhakEFThawtqkVefsxWJTz5p7KISjlcmcS2RRNuyIRNCtHhuIQeZLhNcsoWhAYAf48Ct8_pLroiLdCKSfrZxBh1L_M6ykPl7jv6gPMCRaI_qlA34"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow pt-24 pb-12 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Left Sidebar: CS Communities -->
+<aside class="col-span-1 md:col-span-3">
+<div class="bg-[#161B22] border border-[#21262D] rounded-xl p-6 sticky top-24">
+<h2 class="font-label-md text-label-md text-[#8B949E] uppercase tracking-wider mb-4 flex items-center justify-between">
+                        CS Communities
+                        <span class="material-symbols-outlined text-sm">expand_less</span>
+</h2>
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#1C212B] border border-[#3A4150]" href="#">
+<span class="material-symbols-outlined text-[#FF7F50]">security</span>
+<span class="font-body-sm text-body-sm">CyberSecurity</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#A020F0]">psychology</span>
+<span class="font-body-sm text-body-sm">AI_MachineLearning</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#00FFFF]">code_blocks</span>
+<span class="font-body-sm text-body-sm">WebDevelopment</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#3b82f6]">database</span>
+<span class="font-body-sm text-body-sm">DataScience</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#10b981]">terminal</span>
+<span class="font-body-sm text-body-sm">DevOps_Cloud</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#34d399]">smartphone</span>
+<span class="font-body-sm text-body-sm">MobileDev</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#ec4899]">palette</span>
+<span class="font-body-sm text-body-sm">UI_UX_Design</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1C212B] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#f97316]">integration_instructions</span>
+<span class="font-body-sm text-body-sm text-ellipsis overflow-hidden whitespace-nowrap">CompetitiveProgramming</span>
+</a>
+</li>
+</ul>
+<button class="w-full mt-6 py-2 px-4 rounded-lg border border-[#21262D] text-[#8B949E] hover:bg-[#1C212B] hover:text-white transition-colors font-label-sm text-label-sm">
+                        Explore All
+                    </button>
+</div>
+</aside>
+<!-- Middle Feed (Ghost Mode) -->
+<section class="col-span-1 md:col-span-6 ghost-mode flex flex-col gap-6">
+<!-- Filter Bar -->
+<div class="flex items-center gap-2 mb-2">
+<button class="flex items-center gap-1 bg-[#161B22] border border-[#21262D] px-3 py-1.5 rounded-full text-sm hover:bg-[#1C212B]">
+<span class="material-symbols-outlined text-sm">local_fire_department</span> Hot
+                    </button>
+<button class="flex items-center gap-1 bg-[#1C212B] border border-[#3A4150] px-3 py-1.5 rounded-full text-sm text-primary">
+<span class="material-symbols-outlined text-sm">auto_awesome</span> Best
+                    </button>
+<button class="flex items-center gap-1 bg-[#161B22] border border-[#21262D] px-3 py-1.5 rounded-full text-sm hover:bg-[#1C212B]">
+<span class="material-symbols-outlined text-sm">new_releases</span> New
+                    </button>
+</div>
+<!-- Post Card 1 -->
+<article class="bg-[#161B22] border border-[#21262D] rounded-xl p-4">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A tiny abstract icon representing a technology community in a dark mode layout" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB47qhJBd41xT5eZhA-p2b-i_JBb7TYO7TVlYAgXJfJcy57yE12O3PnpDYSSxyAzif3GA4Xw7WMUXe7e5up3Xy2eDb4Qco-eS3VnEuOrKhIv7ft9z9JPD_x53soDg5YTIV-k4QAiEZEh5GG1_Tzs59UYwqQxdHa7X4DjzaF6-Tzj5L4RH__wLGOsLO69vqB5DEDJvU-jtlOv2ChWRKQ67UMlDWhzwqQaoLVwrPvwTk1fHwD_mR7a30XV5E-frbkJsYmaIY9lhRyxtc"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">c/AI_MachineLearning</span>
+<span class="text-[#8B949E] text-xs">• 2h ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold mb-2">Understanding Transformer Architecture in 2024</h3>
+<p class="font-body-sm text-body-sm text-[#8B949E] mb-4 line-clamp-3">
+                        I've been diving deep into attention mechanisms lately and wanted to share a simplified mental model that finally helped me understand how self-attention actually weights input sequence importance without RNN recurrences...
+                    </p>
+<div class="w-full h-48 bg-surface-variant rounded-lg mb-4 flex items-center justify-center border border-[#21262D]">
+<img class="w-full h-full object-cover rounded-lg opacity-80" data-alt="A schematic diagram of a neural network transformer architecture in dark mode aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJKh4X7FbAtjqfe4IoJEr9aK50TmpoO5uT8JkCpFTgoLWW3kSqu0HwiJ-CUki1Q3hkkDsPebH5dxalJyOQqnPYc1WqfBuJUHrSiW12nfNcT5c4gUrKl6FlZuzFW33Dx9Ur9fqeR_V01VAba5jBrpK-vgrWlAsPQKFPyEF5vWBBNdFPvhC2mUIiAeRvZcajKAQAQhNRuzmtQtMCCOBpW45wi9HH2EQf-IQI4Vl4g4ECE_OMhV_1nXDWija34Lq1-u4-zCzERL_q9XA"/>
+</div>
+<div class="flex items-center gap-4 text-[#8B949E]">
+<div class="flex items-center gap-1 bg-surface border border-[#21262D] rounded-full px-2 py-1">
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">arrow_upward</span>
+<span class="text-xs font-medium">1.2k</span>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-error">arrow_downward</span>
+</div>
+<button class="flex items-center gap-1 hover:text-on-surface px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="text-xs font-medium">142 Comments</span>
+</button>
+<button class="flex items-center gap-1 hover:text-on-surface px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">share</span>
+<span class="text-xs font-medium">Share</span>
+</button>
+</div>
+</article>
+<!-- Post Card 2 -->
+<article class="bg-[#161B22] border border-[#21262D] rounded-xl p-4">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small icon for a coding community" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxTArYW8yUb_3CkFVvc2WV2G7l5HpKpjb52pm4VlvZz1Nc2HRnWCV2D38vIaP62_RYh_U8bwF4zlCF79XWo3JT77LoJi3YKlPP91zXn4r1PM-D_EqaC5J0Ih3Sahgw0z2_kHdfyxFH383At-hRAfiVKbDAaoxY6scRmx8YHGQlyI3q9zElELO2toWdNTz9YU-YHsYAmZ9cgt18QOzlH5VelOr0pQmE2bWS8V1kxTzfeYYFeGsBzUPku_9kJEOl6ZBcC05W3q0wjPs"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">c/WebDevelopment</span>
+<span class="text-[#8B949E] text-xs">• 5h ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold mb-2">My new React hook library is now open source</h3>
+<p class="font-body-sm text-body-sm text-[#8B949E] mb-4">
+                        After using these same custom hooks across 4 different freelance projects, I decided to bundle them up, write proper documentation, and release them. Feedback welcome!
+                    </p>
+<div class="flex items-center gap-4 text-[#8B949E]">
+<div class="flex items-center gap-1 bg-surface border border-[#21262D] rounded-full px-2 py-1">
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">arrow_upward</span>
+<span class="text-xs font-medium">854</span>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-error">arrow_downward</span>
+</div>
+<button class="flex items-center gap-1 hover:text-on-surface px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="text-xs font-medium">64 Comments</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Right Sidebar: Recent Posts (Ghost Mode) -->
+<aside class="col-span-1 md:col-span-3 ghost-mode">
+<div class="bg-[#161B22] border border-[#21262D] rounded-xl p-4 sticky top-24">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-label-md text-label-md text-[#8B949E] uppercase tracking-wider">Recent Posts</h2>
+<button class="text-primary text-sm hover:underline">Clear</button>
+</div>
+<div class="space-y-4">
+<!-- Mini Post 1 -->
+<div class="group cursor-pointer">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface">c/CyberSecurity</span>
+<span class="text-[#8B949E] text-[10px]">• 1d ago</span>
+</div>
+<div class="flex justify-between gap-3">
+<h4 class="font-body-sm text-body-sm group-hover:text-primary transition-colors line-clamp-2">Zero-day vulnerability found in popular npm package</h4>
+<div class="w-16 h-12 bg-surface-variant rounded border border-[#21262D] flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small thumbnail showing abstract code and a lock symbol in dark mode" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0M02MOl_4LK38zyYxIsid6400xWNMivSOe3baTREuLyrC2rS8sRlHZCFOhMtl4sd6RAhqGPsUhuZUSHX0zO0JqfAhl8jcnMg63UF875hhcdN1_B40PyAlOpdarWTkMx4befH4VOS4qdyVK5oqpmNQNbo-wZclvgvW_Qaiujz0TAOPHJPONskEbnWfNiirRVDo-cna4pvcL_cefV0paVftMeq6JC01CsKyN-FjOMzB5JEN203TOMpkyXpgNGdeEjDrwfqf-7VYJ3M"/>
+</div>
+</div>
+<div class="flex items-center gap-3 mt-2 text-[#8B949E] text-xs">
+<span>1.5k upvotes</span>
+<span>342 comments</span>
+</div>
+</div>
+<div class="h-px w-full bg-[#21262D]"></div>
+<!-- Mini Post 2 -->
+<div class="group cursor-pointer">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface">c/DevOps_Cloud</span>
+<span class="text-[#8B949E] text-[10px]">• 2d ago</span>
+</div>
+<div class="flex justify-between gap-3">
+<h4 class="font-body-sm text-body-sm group-hover:text-primary transition-colors line-clamp-2">Migrating from AWS to GCP: A 6-month retrospective</h4>
+</div>
+<div class="flex items-center gap-3 mt-2 text-[#8B949E] text-xs">
+<span>892 upvotes</span>
+<span>128 comments</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>
