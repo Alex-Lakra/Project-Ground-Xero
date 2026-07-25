@@ -4,6 +4,7 @@ import DigitalRain from './DigitalRain';
 import { firebaseDb, SSHUser } from '../services/firebaseDb';
 import { QRCodeSVG } from 'qrcode.react';
 import ProfileCard from './ProfileCard';
+import NodeMapViewer from './NodeMapViewer';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -31,6 +32,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Profile Card Panel Visibility & Customization State
   const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [showNodeMap, setShowNodeMap] = useState<boolean>(false);
   const [localGuestProfile, setLocalGuestProfile] = useState<SSHUser>(() => {
     const saved = localStorage.getItem('ground_xero_guest_profile');
     if (saved) {
@@ -676,6 +678,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
+          'nodemap                     - Open operator interactive node graph map.',
           'profile                     - Toggle operator profile card on right side.',
           'rename <name>               - Update display name.',
           'about <status>              - Update status bubble message.',
@@ -816,6 +819,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         }
 
         setCmatrixConfig({ active: true, color });
+        return;
+      }
+
+      // Nodemap command
+      if (base === 'nodemap') {
+        setShowNodeMap(true);
         return;
       }
 
@@ -1086,6 +1095,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             'whoami           - Display the current active user.',
             'passwd <new_pass> - Reset your active user password.',
             'profile          - Toggle operator profile matrix card on right side.',
+            'nodemap          - Open operator interactive node graph map.',
             'rename <name>    - Update profile display name (saves to DB).',
             'about <status>   - Update profile status message (saves to DB).',
             'addstack <tech>  - Add tech stack item (saves to DB).',
@@ -1110,6 +1120,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
           standardLogs.push(' ');
           setTerminalLogs(prev => [...prev, ...standardLogs]);
+          return;
+        }
+
+        // nodemap command
+        if (base === 'nodemap') {
+          setShowNodeMap(true);
           return;
         }
 
@@ -1384,6 +1400,17 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     return (
       <div className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative">
 
+        {/* Node Map Overlay */}
+        {showNodeMap && (
+          <NodeMapViewer 
+            username={sshSessionUser ? sshSessionUser.username : localGuestProfile.username} 
+            onClose={() => setShowNodeMap(false)} 
+            isLoggedIn={!!sshSessionUser}
+            leetcodeUrl={localStorage.getItem(`leetcode_url_${sshSessionUser?.username || 'global'}`) || undefined}
+            codeforcesUrl={localStorage.getItem(`codeforces_url_${sshSessionUser?.username || 'global'}`) || undefined}
+          />
+        )}
+
         {/* Background Matrix Rain Cascade */}
         <DigitalRain color="#ff0033" density={rainDensity} />
 
@@ -1506,9 +1533,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                       const profileCmds = ['profile', 'rename', 'about', 'addstack', 'repo', 'profpic', 'clearstack'];
                       const availableCommands = sshState === 'logged_in'
                         ? sshSessionUser?.username === 'root'
-                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', ...profileCmds]
-                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', ...profileCmds]
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue', ...profileCmds];
+                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', 'nodemap', ...profileCmds]
+                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'nodemap', ...profileCmds]
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue', 'nodemap', ...profileCmds];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
