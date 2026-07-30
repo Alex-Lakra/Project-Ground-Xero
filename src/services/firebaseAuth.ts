@@ -10,16 +10,16 @@ import {
 } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-// Firebase configuration from environment or provided credentials
+// Firebase configuration loaded strictly from environment variables (.env.local)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAK3XjgwnPaohi0J5baz5RmakN7WrhiR48",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "project-ground-xero.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DB_URL || "https://project-ground-xero-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "project-ground-xero",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "project-ground-xero.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "351793706800",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:351793706800:web:82a6614c647e3bf930baf5",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-5VJWSGE8FY"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  databaseURL: import.meta.env.VITE_FIREBASE_DB_URL || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ''
 };
 
 // Initialize Firebase App
@@ -125,23 +125,25 @@ async function saveAndFetchUserProfile(user: FirebaseUser, extraData: Record<str
 
   // 2. Backup write to Realtime DB with strict 1.5s timeout
   try {
-    const dbUrl = (firebaseConfig.databaseURL || 'https://project-ground-xero-default-rtdb.asia-southeast1.firebasedatabase.app/').replace(/\/$/, '');
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 1500);
+    const dbUrl = (firebaseConfig.databaseURL || import.meta.env.VITE_FIREBASE_DB_URL || '').replace(/\/$/, '');
+    if (dbUrl) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 1500);
 
-    await fetch(`${dbUrl}/users/${user.uid}.json`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || extraData.displayName || '',
-        role,
-        lastLogin: new Date().toISOString()
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timer);
+      await fetch(`${dbUrl}/users/${user.uid}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || extraData.displayName || '',
+          role,
+          lastLogin: new Date().toISOString()
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+    }
   } catch (rtdbErr) {
     console.warn('[Firebase Auth] Realtime DB sync fallback warning:', rtdbErr);
   }
