@@ -1,49 +1,53 @@
-import React, { useState } from 'react';
+import React from 'react';
 import EnterpriseDashboard from './bluepill/EnterpriseDashboard';
 import LoginPage from './bluepill/LoginPage';
+import { AuthProvider } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { ShieldCheck, RefreshCw } from 'lucide-react';
 
 /**
- * BluePillConstruct serves as the primary entry point for the Blue Pill reality.
- * It renders the temporary Login Gate first, and upon authentication or continuing as guest,
- * renders the CodeFlow Enterprise Dashboard.
+ * Inner component that enforces authentication route protection based on Firebase Auth state.
  */
-export default function BluePillConstruct() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<'student' | 'admin'>('student');
+function BluePillProtectedRouter() {
+  const { currentUser, loading } = useAuth();
 
-  const handleLoginSuccess = (email: string, role: 'student' | 'admin') => {
-    setUserEmail(email);
-    setUserRole(role);
-    setIsLoggedIn(true);
-  };
-
-  const handleContinueAsGuest = () => {
-    setUserEmail('Guest Access');
-    setUserRole('student');
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserEmail(null);
-    setUserRole('student');
-  };
-
-  if (!isLoggedIn) {
+  // Loading state while Firebase restores or checks persistent session
+  if (loading) {
     return (
-      <LoginPage 
-        onLoginSuccess={handleLoginSuccess}
-        onContinueAsGuest={handleContinueAsGuest}
-      />
+      <div className="min-h-screen bg-[#090c12] text-[#dfe2ed] flex flex-col items-center justify-center font-mono">
+        <div className="text-center space-y-4">
+          <div className="relative inline-block">
+            <div className="w-12 h-12 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin mx-auto" />
+            <ShieldCheck className="w-6 h-6 text-[#60a5fa] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <div className="text-sm font-bold tracking-widest text-[#aec6ff] uppercase">
+            [VERIFYING FIREBASE SESSION]
+          </div>
+          <p className="text-xs text-[#6b7280]">
+            Checking persistent auth tokens...
+          </p>
+        </div>
+      </div>
     );
   }
 
+  // Protected route check: If unauthenticated, present Firebase Login/Auth page
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
+  // Authenticated user access granted: Render Enterprise Dashboard
+  return <EnterpriseDashboard />;
+}
+
+/**
+ * BluePillConstruct serves as the primary entry point for the Blue Pill reality.
+ * Wraps the sub-tree in AuthProvider so Firebase Auth state is accessible globally.
+ */
+export default function BluePillConstruct() {
   return (
-    <EnterpriseDashboard 
-      userEmail={userEmail}
-      userRole={userRole}
-      onLogout={handleLogout} 
-    />
+    <AuthProvider>
+      <BluePillProtectedRouter />
+    </AuthProvider>
   );
 }

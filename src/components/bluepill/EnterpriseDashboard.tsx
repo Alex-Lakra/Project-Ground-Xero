@@ -7,14 +7,10 @@ import CommunitiesView from './CommunitiesView';
 import EventsView from './EventsView';
 import ProfileView from './ProfileView';
 import AdminConsoleView from './AdminConsoleView';
+import { useAuth } from '../../hooks/useAuth';
 
-interface EnterpriseDashboardProps {
-  userEmail?: string | null;
-  userRole?: 'student' | 'admin';
-  onLogout?: () => void;
-}
-
-export default function EnterpriseDashboard({ userEmail, userRole, onLogout }: EnterpriseDashboardProps = {}) {
+export default function EnterpriseDashboard() {
+  const { userRole } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTab>(userRole === 'admin' ? 'admin' : 'dashboard');
 
   return (
@@ -24,9 +20,6 @@ export default function EnterpriseDashboard({ userEmail, userRole, onLogout }: E
         <HeaderNav 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
-          userEmail={userEmail}
-          userRole={userRole}
-          onLogout={onLogout}
         />
 
         {/* Tab View Router */}

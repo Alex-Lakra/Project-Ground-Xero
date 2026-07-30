@@ -1,17 +1,21 @@
 import React from 'react';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut, ShieldCheck, User, UserCheck } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export type NavTab = 'dashboard' | 'communities' | 'courses' | 'challenges' | 'events' | 'profile' | 'admin';
 
 interface HeaderNavProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
-  userEmail?: string | null;
-  userRole?: 'student' | 'admin';
-  onLogout?: () => void;
 }
 
-export default function HeaderNav({ activeTab, setActiveTab, userEmail, userRole, onLogout }: HeaderNavProps) {
+export default function HeaderNav({ activeTab, setActiveTab }: HeaderNavProps) {
+  const { currentUser, userRole, isAnonymous, logout } = useAuth();
+
+  const displayName = isAnonymous
+    ? 'Guest User'
+    : currentUser?.displayName || currentUser?.email || 'Authenticated User';
+
   return (
     <header className="sticky top-0 z-50 bg-[#0f131b] border-b border-[#434752] w-full">
       <div className="flex justify-between items-center px-6 md:px-8 h-16 w-full">
@@ -119,29 +123,51 @@ export default function HeaderNav({ activeTab, setActiveTab, userEmail, userRole
             <span className="material-symbols-outlined">settings</span>
           </button>
 
+          {/* User Email / Display Name badge */}
+          <div className={`hidden lg:flex items-center gap-2 border px-2.5 py-1 rounded-lg text-xs font-mono ${
+            isAnonymous 
+              ? 'bg-amber-950/40 border-amber-800/50 text-amber-300' 
+              : 'bg-[#171d28] border-[#2e374d] text-[#a8dadc]'
+          }`}>
+            {isAnonymous ? (
+              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <User className="w-3.5 h-3.5 text-[#60a5fa]" />
+            )}
+            <span className="max-w-[150px] truncate" title={currentUser?.email || 'Anonymous Guest'}>
+              {isAnonymous ? 'Guest User' : displayName}
+            </span>
+          </div>
+
           {/* User Profile Avatar */}
           <div
             onClick={() => setActiveTab('profile')}
-            className="w-8 h-8 rounded-full bg-[#1c2028] overflow-hidden border border-[#434752] cursor-pointer hover:border-[#aec6ff] transition-all"
-            title="View Student Profile"
+            className="w-8 h-8 rounded-full bg-[#1c2028] overflow-hidden border border-[#434752] cursor-pointer hover:border-[#aec6ff] transition-all flex items-center justify-center"
+            title={`View profile for ${displayName}`}
           >
-            <img
-              className="w-full h-full object-cover"
-              alt="Alex Rivera Profile"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBc6mf_cYWQ4fag9mWs39WZKDi73FMgWK8W5icg4bLpW0CtOdnqTeUjDDY9j5MAIm39N--yVS5S-ATTEkc1nGywJDMnHsq45A8e0HJrR1qXoru0Z6W44IbW7rKBSHeHEPpUTnz5y8WcGDdLQLAvP2kvDd2QouLWvnX56na6NjGHV4gfH7IXh1x_mgiQPJua8Vrky2UpoLHHBrZhz31lNwls2H1aLdlUI1sb0s8oaz0w5F62_g3NyXF4rJhHwJRsmquJqlq-IgLMnE"
-            />
+            {currentUser?.photoURL ? (
+              <img
+                className="w-full h-full object-cover"
+                alt="User Profile"
+                src={currentUser.photoURL}
+              />
+            ) : (
+              <div className={`w-full h-full text-white flex items-center justify-center font-bold text-xs uppercase ${
+                isAnonymous ? 'bg-amber-700' : 'bg-[#2563eb]'
+              }`}>
+                {isAnonymous ? 'G' : displayName.charAt(0)}
+              </div>
+            )}
           </div>
 
-          {/* Log Out / Lock Session */}
-          {onLogout && (
-            <button
-              onClick={onLogout}
-              className="p-2 text-[#c3c6d4] hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1"
-              title="Lock Session / Log Out to Login Page"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
+          {/* Firebase Sign Out / Logout */}
+          <button
+            onClick={logout}
+            className="p-2 text-[#c3c6d4] hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1"
+            title="Sign Out of Firebase Account"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>
