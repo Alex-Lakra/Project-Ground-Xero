@@ -1,298 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useCourses, Course, Lesson, Resource, DiscussionComment } from '../../services/courseService';
 import { firebaseDb } from '../../services/firebaseDb';
 
-// ==========================================
-// Data Interfaces
-// ==========================================
-
-export interface Lesson {
-  id: string;
-  title: string;
-  duration: string;
-  completed: boolean;
-  videoThumbnail: string;
-  overview: {
-    description: string;
-    takeaways: string[];
-  };
-}
-
-export interface Resource {
-  id: string;
-  title: string;
-  size: string;
-  type: string;
-}
-
-export interface DiscussionComment {
-  id: string;
-  author: string;
-  avatar: string;
-  time: string;
-  comment: string;
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  category: string;
-  duration: string;
-  lessonsCount: string;
-  price: string;
-  image: string;
-  instructor: {
-    name: string;
-    role: string;
-    avatar: string;
-  };
-  lessons: Lesson[];
-  resources: Resource[];
-  discussions: DiscussionComment[];
-}
-
-// ==========================================
-// Initial Sample Courses Data
-// ==========================================
-
-const INITIAL_COURSES: Course[] = [
-  {
-    id: 'c1',
-    title: 'Microservices with Go: Implementing gRPC & Protocol Buffers',
-    category: 'DevOps',
-    duration: '15h 20m',
-    lessonsCount: '12 Lessons',
-    price: '$89.00',
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
-    instructor: {
-      name: 'Alex Chen',
-      role: 'Senior Go Engineer',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    },
-    resources: [
-      { id: 'r1', title: 'gRPC-Service-Boilerplate.zip', size: '2.4 MB', type: 'Archive' },
-      { id: 'r2', title: 'Protocol-Buffers-Cheatsheet.pdf', size: '1.1 MB', type: 'PDF Document' },
-      { id: 'r3', title: 'Go-Microservices-Architecture-Diagram.png', size: '3.8 MB', type: 'Image' },
-    ],
-    discussions: [
-      {
-        id: 'd1',
-        author: 'Elena Rostova',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-        time: '2 hours ago',
-        comment: 'Great explanation on protoc code generation! How do we handle dynamic load balancing with etcd in production?',
-      },
-      {
-        id: 'd2',
-        author: 'Marcus Vance',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-        time: '5 hours ago',
-        comment: 'The bidirectional streaming example saved me hours of debugging. Highly recommended lesson!',
-      },
-    ],
-    lessons: [
-      {
-        id: 'l1',
-        title: '1. Introduction to Microservices Architecture',
-        duration: '15:20',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'An overview of microservices patterns vs monolithic architecture, service discovery, and inter-service communication primitives.',
-          takeaways: [
-            'Understanding monolithic vs microservices tradeoffs.',
-            'Decoupling business logic with isolated domain services.',
-            'REST vs gRPC latency comparison under high concurrency.',
-          ],
-        },
-      },
-      {
-        id: 'l2',
-        title: '2. Setting up the Go Workspace & Tooling',
-        duration: '22:45',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Configuring Go modules, protoc compiler plugins, and development environment tools for automated building.',
-          takeaways: [
-            'Installing protoc compiler and Go protoc plugins.',
-            'Setting up Go module paths and directory layout.',
-            'Automating stub compilation with Makefile targets.',
-          ],
-        },
-      },
-      {
-        id: 'l3',
-        title: '3. Protocol Buffers Crash Course & Proto Schema Design',
-        duration: '18:30',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Designing proto3 schemas, message field tags, scalar types, enums, and nested definitions.',
-          takeaways: [
-            'Writing clean `.proto` files for service definitions.',
-            'Backward and forward schema compatibility guidelines.',
-            'Efficient binary serialization mechanics.',
-          ],
-        },
-      },
-      {
-        id: 'l4',
-        title: '4. Implementing gRPC Server & Client Handlers',
-        duration: '28:15',
-        completed: false,
-        videoThumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'In this lesson, we dive deep into implementing gRPC in our Go microservices architecture. We will cover defining Protocol Buffers, generating Go code, and setting up the gRPC server and client.',
-          takeaways: [
-            'Writing clean `.proto` files for service definitions.',
-            'Using `protoc` to generate Go stubs.',
-            'Implementing server interfaces.',
-            'Handling errors and metadata in gRPC.',
-          ],
-        },
-      },
-      {
-        id: 'l5',
-        title: '5. Service Discovery & Client-Side Load Balancing',
-        duration: '35:10',
-        completed: false,
-        videoThumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Implementing dynamic service registration, health check pings, and round-robin client-side load balancing.',
-          takeaways: [
-            'Integrating etcd / Consul service registries.',
-            'gRPC health checking protocol implementation.',
-            'Round-robin and sticky connection balancing strategies.',
-          ],
-        },
-      },
-    ],
-  },
-  {
-    id: 'c2',
-    title: 'React 19 Deep Dive & Server Actions',
-    category: 'Web',
-    duration: '12h 45m',
-    lessonsCount: '18 Lessons',
-    price: '$89.00',
-    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&q=80',
-    instructor: {
-      name: 'Sarah Drasner',
-      role: 'Principal UI Architect',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    },
-    resources: [
-      { id: 'r1', title: 'React-19-Cheat-Sheet.pdf', size: '1.8 MB', type: 'PDF' },
-      { id: 'r2', title: 'Server-Components-Demo.zip', size: '4.2 MB', type: 'Archive' },
-    ],
-    discussions: [],
-    lessons: [
-      {
-        id: 'l1',
-        title: '1. React 19 Compiler & Auto-Memoization',
-        duration: '14:20',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Deep dive into the automatic memoization compiler in React 19 eliminating manual useMemo & useCallback.',
-          takeaways: [
-            'How React Compiler analyzes component AST.',
-            'Eliminating unnecessary re-renders automatically.',
-            'Migration path for existing React codebases.',
-          ],
-        },
-      },
-      {
-        id: 'l2',
-        title: '2. Server Actions & Optimistic Form Updates',
-        duration: '21:00',
-        completed: false,
-        videoThumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Building zero-JS form submissions, useActionState, useOptimistic, and pending status indicators.',
-          takeaways: [
-            'Defining async server actions safely.',
-            'Instant UI updates using useOptimistic hook.',
-            'Handling mutation errors and toast feedback.',
-          ],
-        },
-      },
-    ],
-  },
-  {
-    id: 'c3',
-    title: 'Advanced SQL Query Performance & Indexing',
-    category: 'Data Science',
-    duration: '15h 20m',
-    lessonsCount: '24 Lessons',
-    price: '$75.00',
-    image: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&w=800&q=80',
-    instructor: {
-      name: 'Hitesh Choudhary',
-      role: 'Database Engineer',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    },
-    resources: [],
-    discussions: [],
-    lessons: [
-      {
-        id: 'l1',
-        title: '1. B-Tree & Hash Index Internals',
-        duration: '18:10',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Understanding disk page layouts, index scan types, composite index column order, and query execution plans.',
-          takeaways: [
-            'Reading EXPLAIN ANALYZE tree outputs.',
-            'Index sequential scan vs bitmap index scan.',
-            'Avoiding index bloat and redundant indexes.',
-          ],
-        },
-      },
-    ],
-  },
-  {
-    id: 'c4',
-    title: 'Security-First Cyber Warfare & Matrix Penetration',
-    category: 'Cyber',
-    duration: '10h 30m',
-    lessonsCount: '14 Lessons',
-    price: '$99.00',
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80',
-    instructor: {
-      name: 'Kelsey Hightower',
-      role: 'Security Director',
-      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80',
-    },
-    resources: [],
-    discussions: [],
-    lessons: [
-      {
-        id: 'l1',
-        title: '1. Zero-Day Vulnerability Scanning & Payload Design',
-        duration: '22:15',
-        completed: true,
-        videoThumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80',
-        overview: {
-          description: 'Scanning exposed subnets, analyzing memory dumps, and constructing shellcode payloads.',
-          takeaways: [
-            'Subnet reconnaissance techniques.',
-            'Analyzing binary targets with Ghidra.',
-            'Constructing non-null byte shellcode payloads.',
-          ],
-        },
-      },
-    ],
-  },
-];
+export type { Course, Lesson, Resource, DiscussionComment };
 
 export default function CoursesView() {
   // ==========================================
-  // State Definitions
+  // Data Access Hook (Dynamic Courses & Category Filter)
   // ==========================================
-  const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  
+  const {
+    courses,
+    filteredCourses,
+    savedCourseIds,
+    toggleLessonComplete,
+    toggleSaveCourse,
+    isSavedCourse,
+    getCourseProgress,
+  } = useCourses(activeCategory, 'root');
 
   // Playback Navigation State (null = Catalog View, Course = Video Playback View)
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
@@ -302,7 +28,6 @@ export default function CoursesView() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(70);
-  const [savedCourseIds, setSavedCourseIds] = useState<string[]>([]);
 
   // Video Playback Content Active Tab: 'overview' | 'resources' | 'discussion'
   const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'discussion'>('overview');
@@ -310,39 +35,28 @@ export default function CoursesView() {
   // New Comment Input state
   const [newComment, setNewComment] = useState<string>('');
 
-  // Sync user course progress & bookmarks from Firebase on mount
+  // Synchronize activeCourse reference when courses list updates in background
   useEffect(() => {
-    async function syncProgressFromFirebase() {
-      const data = await firebaseDb.getUserProgress('root');
-      if (data && data.completedLessons) {
-        setCourses(prevCourses =>
-          prevCourses.map(course => {
-            const completedIds = data.completedLessons[course.id];
-            if (!completedIds) return course;
-            return {
-              ...course,
-              lessons: course.lessons.map(lesson => ({
-                ...lesson,
-                completed: completedIds.includes(lesson.id),
-              })),
-            };
-          })
-        );
-      }
-      if (data && data.savedCourses) {
-        setSavedCourseIds(data.savedCourses);
+    if (activeCourse) {
+      const updated = courses.find(c => c.id === activeCourse.id);
+      if (updated) {
+        setActiveCourse(updated);
       }
     }
-    syncProgressFromFirebase();
-  }, []);
+  }, [courses]);
+
+  // Find active lesson object
+  const activeLesson: Lesson | undefined = activeCourse?.lessons.find(l => l.id === activeLessonId) || activeCourse?.lessons[0];
 
   // Automatically fetch video metadata from YouTube oEmbed & save/cache to Firebase DB
   useEffect(() => {
-    if (!activeCourse) return;
+    if (!activeCourse || !activeLesson) return;
+    let isMounted = true;
+
     async function autoFetchAndSaveVideoMeta() {
-      const videoId = 'CYtO1q6zfgA';
-      const meta = await firebaseDb.fetchAndSaveVideoMetadata(videoId);
-      if (meta && meta.title) {
+      const vid = activeLesson?.videoId || 'CYtO1q6zfgA';
+      const meta = await firebaseDb.fetchAndSaveVideoMetadata(vid);
+      if (meta && meta.title && isMounted) {
         setActiveCourse(prev => {
           if (!prev) return null;
           const updatedLessons = prev.lessons.map(l =>
@@ -359,13 +73,12 @@ export default function CoursesView() {
         });
       }
     }
-    autoFetchAndSaveVideoMeta();
-  }, [activeCourse?.id, activeLessonId]);
 
-  // Helper to calculate total completed lessons for a course
-  const getCourseCompletedCount = (course: Course): number => {
-    return course.lessons.filter(l => l.completed).length;
-  };
+    autoFetchAndSaveVideoMeta();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeCourse?.id, activeLessonId, activeLesson?.videoId]);
 
   // Switch to Video Playback view
   const handleOpenPlayback = (course: Course, lessonId?: string) => {
@@ -382,63 +95,14 @@ export default function CoursesView() {
     setIsPlaying(false);
   };
 
-  // Toggle completion status of active or specific lesson and sync with Firebase
+  // Toggle completion status of active or specific lesson
   const handleToggleLessonComplete = (courseId: string, lessonId: string) => {
-    setCourses(prevCourses => {
-      const nextCourses = prevCourses.map(c => {
-        if (c.id !== courseId) return c;
-        const updatedLessons = c.lessons.map(l =>
-          l.id === lessonId ? { ...l, completed: !l.completed } : l
-        );
-        return { ...c, lessons: updatedLessons };
-      });
-
-      const completedMap: Record<string, string[]> = {};
-      nextCourses.forEach(c => {
-        completedMap[c.id] = c.lessons.filter(l => l.completed).map(l => l.id);
-      });
-
-      firebaseDb.saveUserProgress({
-        username: 'root',
-        completedLessons: completedMap,
-        savedCourses: savedCourseIds,
-      });
-
-      return nextCourses;
-    });
-
-    if (activeCourse && activeCourse.id === courseId) {
-      setActiveCourse(prev => {
-        if (!prev) return null;
-        const updatedLessons = prev.lessons.map(l =>
-          l.id === lessonId ? { ...l, completed: !l.completed } : l
-        );
-        return { ...prev, lessons: updatedLessons };
-      });
-    }
+    toggleLessonComplete(courseId, lessonId);
   };
 
-  // Toggle saving/bookmarking a course and sync with Firebase
+  // Toggle saving/bookmarking a course
   const handleToggleSaveCourse = (courseId: string) => {
-    setSavedCourseIds(prevSaved => {
-      const isCurrentlySaved = prevSaved.includes(courseId);
-      const nextSaved = isCurrentlySaved
-        ? prevSaved.filter(id => id !== courseId)
-        : [...prevSaved, courseId];
-
-      const completedMap: Record<string, string[]> = {};
-      courses.forEach(c => {
-        completedMap[c.id] = c.lessons.filter(l => l.completed).map(l => l.id);
-      });
-
-      firebaseDb.saveUserProgress({
-        username: 'root',
-        completedLessons: completedMap,
-        savedCourses: nextSaved,
-      });
-
-      return nextSaved;
-    });
+    toggleSaveCourse(courseId);
   };
 
   // Post a new comment to active course discussion
@@ -454,26 +118,20 @@ export default function CoursesView() {
       comment: newComment.trim(),
     };
 
-    const updatedDiscussions = [commentObj, ...activeCourse.discussions];
+    const updatedDiscussions = [commentObj, ...(activeCourse.discussions || [])];
     
     setActiveCourse(prev => prev ? { ...prev, discussions: updatedDiscussions } : null);
-    setCourses(prev =>
-      prev.map(c => c.id === activeCourse.id ? { ...c, discussions: updatedDiscussions } : c)
-    );
-
     setNewComment('');
   };
-
-  // Find active lesson object
-  const activeLesson = activeCourse?.lessons.find(l => l.id === activeLessonId) || activeCourse?.lessons[0];
 
   // ==========================================
   // VIEW STATE 2: VIDEO PLAYBACK PAGE VIEW
   // ==========================================
   if (activeCourse && activeLesson) {
-    const completedCount = getCourseCompletedCount(activeCourse);
+    const completedCount = activeCourse.lessons.filter(l => l.completed).length;
     const totalLessons = activeCourse.lessons.length;
     const isCurrentLessonCompleted = activeLesson.completed;
+    const currentVideoId = activeLesson.videoId || 'CYtO1q6zfgA';
 
     return (
       <div className="bg-[#0F1117] min-h-screen text-[#dfe2ed] font-body-md antialiased select-none pb-12">
@@ -495,12 +153,12 @@ export default function CoursesView() {
           {/* Left Column: Video & Details (lg:w-2/3) */}
           <div className="flex-grow flex flex-col gap-gutter lg:w-2/3">
             
-            {/* Video Player Box with YouTube Embed */}
+            {/* Video Player Box with YouTube No-Cookie Embed */}
             <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden shadow-lg relative group video-container aspect-video">
               {isPlaying ? (
                 <iframe
                   title={activeLesson.title}
-                  src="https://www.youtube.com/embed/CYtO1q6zfgA?autoplay=1&enablejsapi=1&rel=0"
+                  src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&enablejsapi=1&rel=0`}
                   className="w-full h-full aspect-video border-0 rounded-xl"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
@@ -510,7 +168,7 @@ export default function CoursesView() {
                   <img
                     alt={activeLesson.title}
                     className="w-full h-full object-cover"
-                    src={activeLesson.videoThumbnail || activeCourse.image}
+                    src={activeLesson.videoThumbnail || `https://i.ytimg.com/vi/${currentVideoId}/hqdefault.jpg`}
                   />
                   
                   {/* Play / Pause Centered Overlay */}
@@ -612,13 +270,13 @@ export default function CoursesView() {
                   <button
                     onClick={() => handleToggleSaveCourse(activeCourse.id)}
                     className={`font-label-md text-label-md px-4 py-2 rounded-lg border border-outline-variant transition-colors flex items-center gap-2 cursor-pointer ${
-                      savedCourseIds.includes(activeCourse.id) ? 'bg-primary-container text-on-primary-container border-primary' : 'bg-surface-variant hover:bg-surface-bright text-on-surface'
+                      isSavedCourse(activeCourse.id) ? 'bg-primary-container text-on-primary-container border-primary' : 'bg-surface-variant hover:bg-surface-bright text-on-surface'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm" data-icon={savedCourseIds.includes(activeCourse.id) ? 'bookmark_added' : 'bookmark'}>
-                      {savedCourseIds.includes(activeCourse.id) ? 'bookmark_added' : 'bookmark'}
+                    <span className="material-symbols-outlined text-sm" data-icon={isSavedCourse(activeCourse.id) ? 'bookmark_added' : 'bookmark'}>
+                      {isSavedCourse(activeCourse.id) ? 'bookmark_added' : 'bookmark'}
                     </span>
-                    <span>{savedCourseIds.includes(activeCourse.id) ? 'Saved' : 'Save'}</span>
+                    <span>{isSavedCourse(activeCourse.id) ? 'Saved' : 'Save'}</span>
                   </button>
 
                   {/* Mark Complete Button */}
@@ -662,7 +320,7 @@ export default function CoursesView() {
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  Resources ({activeCourse.resources.length})
+                  Resources ({(activeCourse.resources || []).length})
                 </button>
                 <button
                   onClick={() => setActiveTab('discussion')}
@@ -672,7 +330,7 @@ export default function CoursesView() {
                       : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  Discussion ({activeCourse.discussions.length})
+                  Discussion ({(activeCourse.discussions || []).length})
                 </button>
               </div>
 
@@ -683,7 +341,7 @@ export default function CoursesView() {
                   
                   <h3 className="font-headline-sm text-headline-sm text-on-surface mt-2 font-bold">Key Takeaways:</h3>
                   <ul className="list-disc pl-5 flex flex-col gap-2">
-                    {activeLesson.overview?.takeaways.map((takeaway, idx) => (
+                    {(activeLesson.overview?.takeaways || []).map((takeaway, idx) => (
                       <li key={idx}>{takeaway}</li>
                     ))}
                   </ul>
@@ -693,7 +351,7 @@ export default function CoursesView() {
               {/* TAB 2: RESOURCES */}
               {activeTab === 'resources' && (
                 <div className="flex flex-col gap-3">
-                  {activeCourse.resources.length > 0 ? (
+                  {(activeCourse.resources || []).length > 0 ? (
                     activeCourse.resources.map(res => (
                       <div key={res.id} className="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -739,7 +397,7 @@ export default function CoursesView() {
 
                   {/* Comment List */}
                   <div className="flex flex-col gap-4">
-                    {activeCourse.discussions.length > 0 ? (
+                    {(activeCourse.discussions || []).length > 0 ? (
                       activeCourse.discussions.map(disc => (
                         <div key={disc.id} className="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex gap-3">
                           <img src={disc.avatar} alt={disc.author} className="w-9 h-9 rounded-full object-cover border border-outline-variant" />
@@ -883,7 +541,7 @@ export default function CoursesView() {
                   Continue Watching
                 </p>
                 <div
-                  onClick={() => handleOpenPlayback(courses[0], 'l4')}
+                  onClick={() => handleOpenPlayback(courses[0], courses[0].lessons[0]?.id)}
                   className="group cursor-pointer"
                 >
                   <div className="relative aspect-video rounded-lg overflow-hidden mb-3 border border-[#434752]">
@@ -896,18 +554,18 @@ export default function CoursesView() {
                       <span className="material-symbols-outlined text-white text-4xl">play_circle</span>
                     </div>
                   </div>
-                  <h4 className="text-sm font-semibold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
+                  <h4 className="text-sm font-semibold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors line-clamp-1">
                     {courses[0].title}
                   </h4>
                   <div className="mt-3">
                     <div className="flex justify-between text-[11px] text-[#c3c6d4] mb-1 font-mono">
-                      <span>{Math.round((getCourseCompletedCount(courses[0]) / courses[0].lessons.length) * 100)}% Complete</span>
-                      <span>{getCourseCompletedCount(courses[0])}/{courses[0].lessons.length} Lessons</span>
+                      <span>{getCourseProgress(courses[0])}% Complete</span>
+                      <span>{courses[0].lessons.filter(l => l.completed).length}/{courses[0].lessons.length} Lessons</span>
                     </div>
                     <div className="h-1.5 w-full bg-[#31353d] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#aec6ff]"
-                        style={{ width: `${(getCourseCompletedCount(courses[0]) / courses[0].lessons.length) * 100}%` }}
+                        style={{ width: `${getCourseProgress(courses[0])}%` }}
                       />
                     </div>
                   </div>
@@ -918,7 +576,7 @@ export default function CoursesView() {
                 <ul className="space-y-4">
                   <li className="flex items-center gap-3 text-[#c3c6d4] hover:text-[#aec6ff] transition-colors cursor-pointer text-sm">
                     <span className="material-symbols-outlined text-[20px]">bookmark</span>
-                    <span>Saved Courses</span>
+                    <span>Saved Courses ({savedCourseIds.length})</span>
                   </li>
                   <li className="flex items-center gap-3 text-[#c3c6d4] hover:text-[#aec6ff] transition-colors cursor-pointer text-sm">
                     <span className="material-symbols-outlined text-[20px]">history</span>
@@ -980,19 +638,20 @@ export default function CoursesView() {
           {/* Latest for You */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-[#dfe2ed]">Latest for You</h3>
+              <h3 className="text-xl font-bold text-[#dfe2ed]">
+                {activeCategory ? `${activeCategory} Curriculums` : 'Latest for You'}
+              </h3>
               <a className="text-[#aec6ff] text-sm font-medium hover:underline" href="#">View all</a>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses
-                .filter(c => !activeCategory || c.category === activeCategory)
-                .map(course => (
-                  <div
-                    key={course.id}
-                    onClick={() => handleOpenPlayback(course)}
-                    className="bg-[#181c24] border border-[#434752] rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-[#aec6ff]/50"
-                  >
+              {filteredCourses.map(course => (
+                <div
+                  key={course.id}
+                  onClick={() => handleOpenPlayback(course)}
+                  className="bg-[#181c24] border border-[#434752] rounded-xl overflow-hidden group cursor-pointer transition-all hover:border-[#aec6ff]/50 flex flex-col justify-between"
+                >
+                  <div>
                     <div className="aspect-video relative overflow-hidden">
                       <img
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -1002,12 +661,15 @@ export default function CoursesView() {
                       <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-white font-medium">
                         {course.lessonsCount}
                       </div>
+                      <div className="absolute top-3 left-3 px-2 py-1 bg-[#628fea]/90 backdrop-blur-md rounded text-[10px] text-white font-bold font-mono">
+                        {course.category}
+                      </div>
                     </div>
                     <div className="p-5">
-                      <h4 className="text-base font-bold text-[#dfe2ed] mb-2 group-hover:text-[#aec6ff] transition-colors line-clamp-1">
+                      <h4 className="text-base font-bold text-[#dfe2ed] mb-2 group-hover:text-[#aec6ff] transition-colors line-clamp-2 leading-snug">
                         {course.title}
                       </h4>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2">
                         <div className="flex items-center gap-2 text-[#c3c6d4]">
                           <span className="material-symbols-outlined text-[16px]">schedule</span>
                           <span className="text-xs font-mono">{course.duration}</span>
@@ -1016,7 +678,8 @@ export default function CoursesView() {
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -1027,6 +690,7 @@ export default function CoursesView() {
             <h3 className="text-xs font-bold mb-4 text-[#dfe2ed] uppercase tracking-wider">Mentors</h3>
             <div className="space-y-4">
               {[
+                { name: 'Striver (take U forward)', rating: '4.99', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
                 { name: 'Sarah Drasner', rating: '4.98', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80' },
                 { name: 'Hitesh Choudhary', rating: '4.95', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80' },
                 { name: 'Kelsey Hightower', rating: '4.92', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80' }
