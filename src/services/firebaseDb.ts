@@ -13,7 +13,7 @@ export interface SSHUser {
   uid?: string;
 }
 
-export const DEFAULT_GHOST_AVATAR = 'https://lh3.googleusercontent.com/d/1j0nNw_HFwqT3bm1I24g96UF7hsvhn9Xr';
+export const DEFAULT_GHOST_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" fill="%23050505"/><path d="M50 18C33 18 22 30 22 46v26h10v-6h12v6h12v-6h12v6h10V46c0-16-11-28-28-28z" fill="%23ff0033" opacity="0.85"/><circle cx="40" cy="42" r="5" fill="%23000"/><circle cx="60" cy="42" r="5" fill="%23000"/><circle cx="40" cy="42" r="2" fill="%23ff0033"/><circle cx="60" cy="42" r="2" fill="%23ff0033"/><path d="M36 56h28v3H36z" fill="%23ff0033"/></svg>`;
 
 /**
  * Formats user input URLs to direct image CDN links (e.g. converting Google Drive share links)
@@ -24,10 +24,10 @@ export function formatImageUrl(url?: string): string {
   if (!cleanUrl) return DEFAULT_GHOST_AVATAR;
 
   // Transform Google Drive viewer URLs into direct CDN image URLs
-  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('drive.usercontent.google.com')) {
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('drive.usercontent.google.com') || cleanUrl.includes('lh3.googleusercontent.com')) {
     const fileIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (fileIdMatch && fileIdMatch[1]) {
-      return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
+      return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w500`;
     }
   }
 

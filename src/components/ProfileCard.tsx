@@ -71,11 +71,12 @@ export default function ProfileCard({ user, onClose }: ProfileCardProps) {
             <img
               alt={displayName}
               className="avatar w-[72px] h-[72px] object-cover border-2 border-[#ff0000] shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-black transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_22px_rgba(255,0,0,0.9)] group-hover:border-white"
-              src={avatarUrl}
+              src={avatarUrl || DEFAULT_GHOST_AVATAR}
+              referrerPolicy="no-referrer"
               onError={(e) => {
-                // Fallback ghost avatar if user image fails to load
-                if ((e.target as HTMLImageElement).src !== DEFAULT_GHOST_AVATAR) {
-                  (e.target as HTMLImageElement).src = DEFAULT_GHOST_AVATAR;
+                const target = e.target as HTMLImageElement;
+                if (target.src !== DEFAULT_GHOST_AVATAR) {
+                  target.src = DEFAULT_GHOST_AVATAR;
                 }
               }}
             />
