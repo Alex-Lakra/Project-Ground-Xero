@@ -51,23 +51,6 @@ async function startServer() {
     }
   });
 
-  app.get("/api/scrape-playlist", async (req, res) => {
-    const listId = (req.query.list as string) || "PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz";
-    try {
-      const { exec } = await import("child_process");
-      const scriptPath = path.join(currentDirname, "scripts", "scrape_youtube_playlist.py");
-      exec(`python3 "${scriptPath}" "${listId}"`, (error, stdout, stderr) => {
-        if (error) {
-          console.warn("[Playlist Scraper API] Exec error:", error.message);
-          return res.status(500).json({ error: error.message, stderr });
-        }
-        return res.json({ success: true, message: "Playlist successfully scraped and synchronized to database!", output: stdout });
-      });
-    } catch (err: any) {
-      return res.status(500).json({ error: err.message || "Failed to execute playlist scraper" });
-    }
-  });
-
   // Serve static files / Vite middleware
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
