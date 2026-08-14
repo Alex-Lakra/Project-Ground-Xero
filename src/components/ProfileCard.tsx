@@ -119,6 +119,11 @@ export default function ProfileCard({ user, onClose }: ProfileCardProps) {
         <h1 className="text-[20px] font-bold leading-tight terminal-text truncate hover:text-white transition-colors">
           {user?.username || 'root'}:~ $ {displayName}
         </h1>
+        {user?.email && (
+          <div className="text-[12px] text-[#ffaaaa] font-mono mb-1 truncate">
+            &lt;{user.email}&gt;
+          </div>
+        )}
         <div className="flex items-center gap-2 mt-1 mb-3 flex-wrap">
           <span className="terminal-text-dim text-xs font-medium">UID: {uid}</span>
           <span className="terminal-text-dim text-xs font-medium">|</span>

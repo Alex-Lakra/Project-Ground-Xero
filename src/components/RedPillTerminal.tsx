@@ -5,6 +5,8 @@ import { firebaseDb, SSHUser, DEFAULT_GHOST_AVATAR, formatImageUrl } from '../se
 import { QRCodeSVG } from 'qrcode.react';
 import ProfileCard from './ProfileCard';
 import NodeMapViewer from './NodeMapViewer';
+import { auth } from '../services/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -29,6 +31,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [sshSessionUser, setSshSessionUser] = useState<SSHUser | null>(null);
   const [sshTempPassword, setSshTempPassword] = useState('');
   const [ssh2faSecret, setSsh2faSecret] = useState('');
+  const [sshAttemptCount, setSshAttemptCount] = useState<number>(0);
 
   // Profile Card Panel Visibility & Customization State
   const [showProfile, setShowProfile] = useState<boolean>(false);
@@ -885,7 +888,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           return;
         }
 
-        const sshMatch = cmd.match(/^ssh\s+([a-zA-Z0-9_-]+)@([a-zA-Z0-9._-]+)$/i);
+        const sshMatch = cmd.match(/^ssh\s+(.+)@([^@\s]+)$/i);
         if (sshMatch) {
           const username = sshMatch[1];
           const host = sshMatch[2].toLowerCase();
@@ -902,7 +905,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           ]);
 
           // Fetch user from DB first to verify existence
-          const userObj = await firebaseDb.getUser(username);
+          const userObj = await firebaseDb.getUserByEmailOrUsername(username);
 
           const diag = firebaseDb.getDiagnostics();
           let dbStatus = '';
@@ -925,6 +928,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
           setTerminalLogs(prev => [...prev, `${username}@${host}'s password: `]);
           setSshUser(username);
+          setSshAttemptCount(0);
           setSshState('ssh_password');
           return;
         }
@@ -941,60 +945,120 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       // STATE: SSH_PASSWORD (Login authentication check)
       // ----------------------------------------------------
       if (sshState === 'ssh_password') {
-        const userObj = await firebaseDb.getUser(sshUser);
+        let isAuthenticated = false;
+        let fbUser: any = null;
 
-        if (userObj && userObj.passwordHash === cmd) {
-          setSshSessionUser(userObj);
+        // Find existing local/firestore user
+        let userObj = await firebaseDb.getUserByEmailOrUsername(sshUser);
+        let loginEmail = userObj?.email || sshUser;
 
-          // Check if mandatory first login password reset is needed
-          if (!userObj.isPasswordChanged) {
-            setTerminalLogs(prev => [
-              ...prev,
-              `Authentication Approved.`,
-              `[MANDATORY PROTOCOL]: First login detected. You must change your default password.`,
-              `Enter new password:`
-            ]);
-            setSshState('ssh_new_password');
-            return;
+        try {
+          // Attempt actual Firebase Auth Login
+          if (auth) {
+            const cred = await signInWithEmailAndPassword(auth, loginEmail, cmd);
+            fbUser = cred.user;
+            isAuthenticated = true;
+          }
+        } catch (err: any) {
+          isAuthenticated = false;
+        }
+
+        // Fallback for simulation (e.g. root/matrix)
+        if (!isAuthenticated && userObj && userObj.passwordHash === cmd && sshUser === 'root') {
+          isAuthenticated = true;
+        }
+
+        if (isAuthenticated) {
+          // Create profile if missing
+          if (!userObj && fbUser) {
+            userObj = {
+              username: fbUser.displayName?.replace(/\s+/g, '_').toLowerCase() || fbUser.email?.split('@')[0] || 'operator',
+              email: fbUser.email || loginEmail,
+              passwordHash: '***',
+              isPasswordChanged: true,
+              is2faEnabled: true,
+              twoFactorSecret: '',
+              displayName: fbUser.displayName || 'Operator',
+            };
+            await firebaseDb.saveUser(userObj);
           }
 
-          // Check if 2FA enrollment is completed
-          if (!userObj.is2faEnabled) {
-            const secret = generate2faSecret();
-            const updatedUser = { ...userObj, twoFactorSecret: secret };
-            await firebaseDb.saveUser(updatedUser);
-            setSshSessionUser(updatedUser);
-            setSsh2faSecret(secret);
-            setSshState('ssh_2fa_setup');
+          if (userObj) {
+            setSshSessionUser(userObj);
 
+            // If logged in via Firebase Auth, skip mandatory password/2fa reset
+            if (fbUser || (userObj.isPasswordChanged && userObj.is2faEnabled)) {
+              setSshState('logged_in');
+              setTerminalLogs(prev => [
+                ...prev,
+                `[SUCCESS] Authentication Approved. Access granted via secure channel.`,
+                ` `,
+                `Welcome to zero mainframe // node: zero // user: ${userObj!.username}`,
+                `Type 'help' to see authorized node operations.`,
+                ` `
+              ]);
+              return;
+            }
+
+            if (!userObj.isPasswordChanged) {
+              setTerminalLogs(prev => [
+                ...prev,
+                `Authentication Approved.`,
+                `[MANDATORY PROTOCOL]: First login detected. You must change your default password.`,
+                `Enter new password:`
+              ]);
+              setSshState('ssh_new_password');
+              return;
+            }
+
+            if (!userObj.is2faEnabled) {
+              const secret = generate2faSecret();
+              const updatedUser = { ...userObj, twoFactorSecret: secret };
+              await firebaseDb.saveUser(updatedUser);
+              setSshSessionUser(updatedUser);
+              setSsh2faSecret(secret);
+              setSshState('ssh_2fa_setup');
+
+              setTerminalLogs(prev => [
+                ...prev,
+                `Authentication Approved.`,
+                `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
+                `----------------------------------------------------`,
+                `1. Open Google Authenticator or another TOTP application.`,
+                `2. Scan the generated QR Code below, OR add the custom key manually:`,
+                `   Key (Raw): ${secret}`,
+                `   Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
+                `3. Enter the 6-digit active verification OTP below to enroll.`,
+                `[TESTING OPTION]: Enter "123456" to bypass.`,
+                `----------------------------------------------------`,
+                `Enter 2FA OTP Code:`
+              ]);
+              return;
+            }
+
+            setSshState('ssh_2fa_verify');
             setTerminalLogs(prev => [
               ...prev,
-              `Authentication Approved.`,
-              `[MANDATORY PROTOCOL]: 2FA Authenticator setup is required.`,
-              `----------------------------------------------------`,
-              `1. Open Google Authenticator or another TOTP application.`,
-              `2. Scan the generated QR Code below, OR add the custom key manually:`,
-              `   Key (Raw): ${secret}`,
-              `   Key (Formatted): ${secret.match(/.{1,4}/g)?.join(' ') || secret}`,
-              `3. Enter the 6-digit active verification OTP below to enroll.`,
-              `[TESTING OPTION]: Enter "123456" to bypass.`,
-              `----------------------------------------------------`,
-              `Enter 2FA OTP Code:`
+              `Enter 2FA Code (OTP) for verification:`,
+              `[TESTING OPTION]: Enter "123456" to bypass.`
             ]);
-            return;
           }
-
-          // Else, ask for standard 2FA OTP verification code
-          setSshState('ssh_2fa_verify');
-          setTerminalLogs(prev => [
-            ...prev,
-            `Enter 2FA Code (OTP) for verification:`,
-            `[TESTING OPTION]: Enter "123456" to bypass.`
-          ]);
         } else {
-          setTerminalLogs(prev => [...prev, `Permission denied, please try again.`]);
-          setSshState('none');
-          setSshUser('');
+          const newCount = sshAttemptCount + 1;
+          if (newCount >= 3) {
+            setTerminalLogs(prev => [
+              ...prev, 
+              `Permission denied, please try again.`, 
+              `Permission denied (publickey,password).`, 
+              `Connection to zero closed.`
+            ]);
+            setSshState('none');
+            setSshUser('');
+            setSshAttemptCount(0);
+          } else {
+            setTerminalLogs(prev => [...prev, `Permission denied, please try again.`, `${sshUser}@zero's password: `]);
+            setSshAttemptCount(newCount);
+          }
         }
         return;
       }
