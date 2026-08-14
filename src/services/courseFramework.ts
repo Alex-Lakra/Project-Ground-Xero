@@ -1,4 +1,5 @@
 import { firebaseDb } from './firebaseDb';
+import scrapedCPData from './scrapedPlaylists.json';
 
 // ==========================================
 // Data Framework Schema Definitions
@@ -61,19 +62,21 @@ export interface UserProgressState {
 // Authentic Master Course Datasets & Playlists
 // ==========================================
 
+const cpScrapedLessons: Lesson[] = (scrapedCPData?.lessons as Lesson[]) || [];
+
 export const MASTER_COURSES_FRAMEWORK: Course[] = [
-  // 1. Competitive Programming (Striver A2Z DSA Playlist)
+  // 1. Competitive Programming (Striver A2Z DSA Scraped Playlist)
   {
     id: 'c-cp-a2z',
-    title: 'A2Z Data Structures & Competitive Programming Suite',
+    title: scrapedCPData?.title || 'Strivers A2Z-DSA Course | DSA Playlist | Placements',
     category: 'CP',
     difficulty: 'Advanced',
     duration: '45h 30m',
-    lessonsCount: '8 Lessons',
+    lessonsCount: `${cpScrapedLessons.length || 15} Lessons`,
     price: 'FREE',
     image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
     instructor: {
-      name: 'Striver (take U forward)',
+      name: scrapedCPData?.instructor || 'take U forward (Striver)',
       role: 'Competitive Programming Legend',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     },
@@ -91,7 +94,7 @@ export const MASTER_COURSES_FRAMEWORK: Course[] = [
         comment: 'Striver A2Z sheet is the absolute gold standard for mastering DSA and cracking competitive programming rounds!',
       },
     ],
-    lessons: [
+    lessons: cpScrapedLessons.length > 0 ? cpScrapedLessons : [
       {
         id: 'l-cp-1',
         title: '1. Time & Space Complexity Analysis in CP',
