@@ -345,12 +345,16 @@ export default function CoursesView() {
       if (meta && meta.title) {
         setActiveCourse(prev => {
           if (!prev) return null;
+          const updatedLessons = prev.lessons.map(l =>
+            l.id === activeLessonId ? { ...l, title: meta.title } : l
+          );
           return {
             ...prev,
             instructor: {
               ...prev.instructor,
               name: meta.authorName || prev.instructor.name,
             },
+            lessons: updatedLessons,
           };
         });
       }
