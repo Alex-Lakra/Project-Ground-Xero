@@ -1,5 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getDatabase, Database } from 'firebase/database';
 
 export interface FirebaseConfigValidation {
   isValid: boolean;
@@ -43,7 +45,7 @@ function isPlaceholderValue(value: string | undefined): boolean {
  * Validate Firebase Environment Configuration
  */
 export function validateFirebaseConfig(): FirebaseConfigValidation {
-  const env = import.meta.env;
+  const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (typeof process !== 'undefined' ? (process.env as any) : {});
 
   const rawConfig = {
     apiKey: env.VITE_FIREBASE_API_KEY?.trim(),
@@ -76,11 +78,25 @@ export const firebaseValidation = validateFirebaseConfig();
 
 let appInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
+let rtdbInstance: Database | null = null;
 
 if (firebaseValidation.isValid) {
   try {
     appInstance = !getApps().length ? initializeApp(firebaseValidation.config) : getApp();
     authInstance = getAuth(appInstance);
+    try {
+      dbInstance = getFirestore(appInstance);
+    } catch (e) {
+      console.warn('[Firebase] Firestore init notice:', e);
+    }
+    try {
+      if (firebaseValidation.config.databaseURL) {
+        rtdbInstance = getDatabase(appInstance);
+      }
+    } catch (e) {
+      console.warn('[Firebase] Realtime DB init notice:', e);
+    }
   } catch (err) {
     console.error('[Firebase Initialization Error]:', err);
   }
@@ -91,8 +107,11 @@ if (firebaseValidation.isValid) {
   );
 }
 
-// Export singleton app and auth instances
+// Export singleton app, auth, db, rtdb and config
 export const app = appInstance as FirebaseApp;
 export const auth = authInstance as Auth;
+export const db = dbInstance as Firestore | null;
+export const rtdb = rtdbInstance as Database | null;
+export const firebaseConfig = firebaseValidation.config;
 
 export default appInstance;

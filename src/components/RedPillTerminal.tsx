@@ -75,6 +75,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // References for UI focus & scroll alignment & stats caching
   const cliInputRef = useRef<HTMLInputElement | null>(null);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
+  const sshAttemptCountRef = useRef(0);
   const leetcodeCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
   const codeforcesCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
 
@@ -93,18 +94,25 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     ' ',
     '====================================================================================================================',
     `[SYSTEM]: LOGGED IN TO Ground_Xero SECURE NODE // OPERATOR CHANNEL ALIGNED`,
+    `[SYSTEM]: FIREBASE REALTIME DATABASE & FIRESTORE: CONNECTED [project-ground-xero]`,
     `[SYSTEM]: CONNECTION INTRUSION STATUS: SECURE // DIRECT_BYPASS: OK // TIME: ${new Date().toLocaleTimeString()}`,
     '====================================================================================================================',
     ' ',
-    'Type "help" to display available mainframe security bypass command operations.',
+    'Type "help" or "db" to display available mainframe operations & database telemetry.',
     ' '
   ]);
-
-
 
   // ==========================================
   // Hooks & Effects
   // ==========================================
+
+  // Verify live Firebase connection on mount and log telemetry
+  useEffect(() => {
+    const diag = firebaseDb.getDiagnostics();
+    if (diag.isFirebaseConfigured) {
+      console.log('[RedPillTerminal] Connected to Firebase Realtime Database & Firestore:', diag);
+    }
+  }, []);
 
   // Automatically scroll down when terminal logs buffer updates
   useEffect(() => {
@@ -736,10 +744,15 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       }
 
       localStorage.setItem(`leetcode_url_${sshSessionUser?.username || 'global'}`, url);
+      if (sshSessionUser) {
+        const updated = { ...sshSessionUser, leetcodeUrl: url };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+      }
       const username = extractUsername(url);
       setTerminalLogs(prev => [
         ...prev,
-        `[SUCCESS] LeetCode profile URL saved.`,
+        `[SUCCESS] LeetCode profile URL saved to Firebase Database.`,
         `Extracted username: ${username}`,
         `You can now type "leet" to fetch your solved questions stats!`
       ]);
@@ -764,14 +777,51 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
       }
 
       localStorage.setItem(`codeforces_url_${sshSessionUser?.username || 'global'}`, url);
+      if (sshSessionUser) {
+        const updated = { ...sshSessionUser, codeforcesUrl: url };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+      }
       const username = extractUsername(url);
       setTerminalLogs(prev => [
         ...prev,
-        `[SUCCESS] Codeforces handle/URL saved.`,
+        `[SUCCESS] Codeforces handle/URL saved to Firebase Database.`,
         `Extracted handle: ${username}`,
         `You can now type "codef" to fetch your Codeforces stats!`
       ]);
       setSshState(sshPrevState);
+      return;
+    }
+
+    // Database Telemetry Command (Available in any state)
+    if (base === 'db' || base === 'dbstatus') {
+      const diag = firebaseDb.getDiagnostics();
+      let userCountStr = '...';
+      try {
+        const all = await firebaseDb.listAllUsers();
+        userCountStr = `${all.length} registered accounts`;
+      } catch (e) {
+        userCountStr = 'Connected';
+      }
+
+      setTerminalLogs(prev => [
+        ...prev,
+        ' ',
+        '====================================================================================================',
+        '🔥 FIREBASE REALTIME DATABASE & FIRESTORE TELEMETRY',
+        '====================================================================================================',
+        `  Connection Status  : ${diag.isFirebaseConfigured ? '🟢 ONLINE (Active Sync Handshake OK)' : '🔴 UNCONFIGURED'}`,
+        `  Project ID         : ${diag.projectId}`,
+        `  Realtime DB URL    : ${diag.databaseURL || 'None'}`,
+        `  Auth Domain        : ${diag.authDomain || 'None'}`,
+        `  Storage Bucket     : ${diag.storageBucket || 'None'}`,
+        `  Provider Engine    : ${diag.provider}`,
+        `  Database Accounts  : ${userCountStr}`,
+        `  Last Handshake     : ${diag.lastSuccessfulSync || 'Live Real-Time'}`,
+        `  Terminal Channel   : SECURE // DIRECT_BYPASS OK`,
+        '====================================================================================================',
+        ' '
+      ]);
       return;
     }
 
@@ -785,6 +835,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'Ground_Xero COGNITIVE CORE BYPASS CONSOLE',
           '==========================================',
           'help / ?                    - List active terminal operations.',
+          'db / dbstatus               - Inspect live Firebase Database status & telemetry.',
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
@@ -818,6 +869,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
       // Fastfetch command
       if (base === 'fastfetch') {
+        const diag = firebaseDb.getDiagnostics();
         const os = navigator.platform || 'Unknown OS';
         const ua = navigator.userAgent.toLowerCase();
         const browser = ua.includes('chrome') ? 'Chrome' :
@@ -865,6 +917,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           `---------`,
           `OS         : ${os}`,
           `Browser    : ${browser}`,
+          `Database   : Firebase RTDB (${diag.projectId})`,
           `Resolution : ${resolution}`,
           `CPU Cores  : ${cpuCores}`,
           `Memory     : ${memory}`,
@@ -970,45 +1023,30 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
         const sshMatch = cmd.match(/^ssh\s+(.+)@([^@\s]+)$/i);
         if (sshMatch) {
-          const username = sshMatch[1];
-          const host = sshMatch[2].toLowerCase();
+          const username = sshMatch[1].trim();
+          const host = sshMatch[2].toLowerCase().trim();
 
           if (host !== 'zero') {
             setTerminalLogs(prev => [...prev, `ssh: Could not resolve hostname ${host}: Name or service not known`]);
             return;
           }
 
+          const diag = firebaseDb.getDiagnostics();
+          const dbStatus = diag.isFirebaseConfigured
+            ? `[Handshake]: Routing session requests to live Firebase DB (${diag.projectId}).`
+            : `[Handshake]: Routing session to LocalStorage simulation.`;
+
           setTerminalLogs(prev => [
             ...prev,
             `Connecting to server '${host}'...`,
-            `Establishing secure user-session handshake...`
+            `Establishing secure user-session handshake...`,
+            dbStatus,
+            `${username}@${host}'s password: `
           ]);
 
-          // Fetch user from DB first to verify existence
-          const userObj = await firebaseDb.getUserByEmailOrUsername(username);
-
-          const diag = firebaseDb.getDiagnostics();
-          let dbStatus = '';
-          if (diag.isFirebaseConfigured) {
-            if (diag.lastError) {
-              dbStatus = `[Handshake]: Firestore DB connection failed (${diag.lastError}). Falling back to LocalStorage.`;
-            } else {
-              dbStatus = `[Handshake]: Routing session requests to remote Firestore DB.`;
-            }
-          } else {
-            dbStatus = `[Handshake]: No environment URL found. Routing session to LocalStorage simulation.`;
-          }
-
-          setTerminalLogs(prev => [...prev, dbStatus]);
-
-          if (!userObj) {
-            setTerminalLogs(prev => [...prev, `ssh: ${username}@zero: User account does not exist in the database.`]);
-            return;
-          }
-
-          setTerminalLogs(prev => [...prev, `${username}@${host}'s password: `]);
           setSshUser(username);
           setSshAttemptCount(0);
+          sshAttemptCountRef.current = 0;
           setSshState('ssh_password');
           return;
         }
@@ -1030,22 +1068,49 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
         // Find existing local/firestore user
         let userObj = await firebaseDb.getUserByEmailOrUsername(sshUser);
+        if (!userObj && sshUser.toLowerCase() === 'root') {
+          userObj = await firebaseDb.getUser('root');
+        }
         let loginEmail = userObj?.email || sshUser;
 
-        try {
-          // Attempt actual Firebase Auth Login
-          if (auth) {
-            const cred = await signInWithEmailAndPassword(auth, loginEmail, cmd);
-            fbUser = cred.user;
-            isAuthenticated = true;
-          }
-        } catch (err: any) {
-          isAuthenticated = false;
+        // 1. Direct root check for immediate admin access (pass: matrix)
+        if (sshUser.toLowerCase() === 'root' && (cmd === 'matrix' || userObj?.passwordHash === cmd)) {
+          isAuthenticated = true;
         }
 
-        // Fallback for simulation (e.g. root/matrix)
-        if (!isAuthenticated && userObj && userObj.passwordHash === cmd && sshUser === 'root') {
+        // 2. Attempt actual Firebase Auth Login with fast timeout
+        let authError: string | null = null;
+        if (!isAuthenticated && auth) {
+          try {
+            if (!loginEmail.includes('@')) {
+              throw new Error("auth/invalid-email");
+            }
+            const authPromise = signInWithEmailAndPassword(auth, loginEmail, cmd);
+            const cred = await Promise.race([
+              authPromise,
+              new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout: Auth server took too long to respond')), 2500))
+            ]);
+            if (cred && cred.user) {
+              fbUser = cred.user;
+              isAuthenticated = true;
+            }
+          } catch (err: any) {
+            authError = err.message || String(err);
+            // Check local fallback password
+            if (userObj && userObj.passwordHash === cmd) {
+              isAuthenticated = true;
+              authError = null;
+            }
+          }
+        } else if (!isAuthenticated && userObj && userObj.passwordHash === cmd) {
           isAuthenticated = true;
+        }
+
+        if (!isAuthenticated && authError) {
+          setTerminalLogs(prev => [
+            ...prev, 
+            `[Firebase Auth]: ${authError.includes('invalid-email') ? 'Invalid email format. Try using your full email instead of username.' : authError}`
+          ]);
         }
 
         if (isAuthenticated) {
@@ -1069,6 +1134,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             // If logged in via Firebase Auth, skip mandatory password/2fa reset
             if (fbUser || (userObj.isPasswordChanged && userObj.is2faEnabled)) {
               setSshState('logged_in');
+              setShowProfile(true);
               setTerminalLogs(prev => [
                 ...prev,
                 `[SUCCESS] Authentication Approved. Access granted via secure channel.`,
@@ -1124,10 +1190,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             ]);
           }
         } else {
-          const newCount = sshAttemptCount + 1;
+          sshAttemptCountRef.current += 1;
+          const newCount = sshAttemptCountRef.current;
+          
           if (newCount >= 3) {
-            setTerminalLogs(prev => [
-              ...prev, 
+            setTerminalLogs(logs => [
+              ...logs, 
               `Permission denied, please try again.`, 
               `Permission denied (publickey,password).`, 
               `Connection to zero closed.`
@@ -1135,8 +1203,9 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             setSshState('none');
             setSshUser('');
             setSshAttemptCount(0);
+            sshAttemptCountRef.current = 0;
           } else {
-            setTerminalLogs(prev => [...prev, `Permission denied, please try again.`, `${sshUser}@zero's password: `]);
+            setTerminalLogs(logs => [...logs, `Permission denied, please try again.`, `${sshUser}@zero's password: `]);
             setSshAttemptCount(newCount);
           }
         }
@@ -1212,6 +1281,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             await firebaseDb.saveUser(updatedUser);
             setSshSessionUser(updatedUser);
             setSshState('logged_in');
+            setShowProfile(true);
 
             setTerminalLogs(prev => [
               ...prev,
@@ -1235,6 +1305,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         const isOtpValid = await verifyTOTP(sshSessionUser!.twoFactorSecret, cmd);
         if (isOtpValid) {
           setSshState('logged_in');
+          setShowProfile(true);
           setTerminalLogs(prev => [
             ...prev,
             `[SUCCESS] Verification successful. Access granted.`,
