@@ -249,4 +249,58 @@ export const firebaseDb = {
     }
     return false;
   },
+
+  /**
+   * Retrieves course progress for a given user
+   */
+  async getUserProgress(username: string): Promise<{ username: string; completedLessons: Record<string, string[]>; savedCourses: string[] }> {
+    const key = (username || 'root').toLowerCase();
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/user_progress/${key}`);
+      if (response.ok) {
+        const doc = await response.json();
+        const fields = doc.fields || {};
+        const completedJson = fields.completedLessonsJson?.stringValue || '{}';
+        const savedJson = fields.savedCoursesJson?.stringValue || '[]';
+        return {
+          username: key,
+          completedLessons: JSON.parse(completedJson),
+          savedCourses: JSON.parse(savedJson),
+        };
+      }
+    } catch (err: any) {
+      console.warn('[Firestore DB] getUserProgress failed, using LocalStorage fallback.', err);
+    }
+    const local = localStorage.getItem(`ground_xero_progress_${key}`);
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch (e) {}
+    }
+    return { username: key, completedLessons: {}, savedCourses: [] };
+  },
+
+  /**
+   * Saves course progress for a given user
+   */
+  async saveUserProgress(progress: { username: string; completedLessons: Record<string, string[]>; savedCourses: string[] }): Promise<void> {
+    const key = (progress.username || 'root').toLowerCase();
+    try {
+      const body = {
+        fields: {
+          username: { stringValue: key },
+          completedLessonsJson: { stringValue: JSON.stringify(progress.completedLessons || {}) },
+          savedCoursesJson: { stringValue: JSON.stringify(progress.savedCourses || []) },
+        }
+      };
+      await fetch(`${FIRESTORE_BASE}/user_progress/${key}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (err: any) {
+      console.warn('[Firestore DB] saveUserProgress failed, using LocalStorage fallback.', err);
+    }
+    localStorage.setItem(`ground_xero_progress_${key}`, JSON.stringify(progress));
+  },
 };

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { firebaseDb } from '../../services/firebaseDb';
 
 // ==========================================
 // Data Interfaces
@@ -301,13 +302,39 @@ export default function CoursesView() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(70);
-  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [savedCourseIds, setSavedCourseIds] = useState<string[]>([]);
 
   // Video Playback Content Active Tab: 'overview' | 'resources' | 'discussion'
   const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'discussion'>('overview');
 
   // New Comment Input state
   const [newComment, setNewComment] = useState<string>('');
+
+  // Sync user course progress & bookmarks from Firebase on mount
+  useEffect(() => {
+    async function syncProgressFromFirebase() {
+      const data = await firebaseDb.getUserProgress('root');
+      if (data && data.completedLessons) {
+        setCourses(prevCourses =>
+          prevCourses.map(course => {
+            const completedIds = data.completedLessons[course.id];
+            if (!completedIds) return course;
+            return {
+              ...course,
+              lessons: course.lessons.map(lesson => ({
+                ...lesson,
+                completed: completedIds.includes(lesson.id),
+              })),
+            };
+          })
+        );
+      }
+      if (data && data.savedCourses) {
+        setSavedCourseIds(data.savedCourses);
+      }
+    }
+    syncProgressFromFirebase();
+  }, []);
 
   // Helper to calculate total completed lessons for a course
   const getCourseCompletedCount = (course: Course): number => {
@@ -329,17 +356,30 @@ export default function CoursesView() {
     setIsPlaying(false);
   };
 
-  // Toggle completion status of active or specific lesson
+  // Toggle completion status of active or specific lesson and sync with Firebase
   const handleToggleLessonComplete = (courseId: string, lessonId: string) => {
-    setCourses(prevCourses =>
-      prevCourses.map(c => {
+    setCourses(prevCourses => {
+      const nextCourses = prevCourses.map(c => {
         if (c.id !== courseId) return c;
         const updatedLessons = c.lessons.map(l =>
           l.id === lessonId ? { ...l, completed: !l.completed } : l
         );
         return { ...c, lessons: updatedLessons };
-      })
-    );
+      });
+
+      const completedMap: Record<string, string[]> = {};
+      nextCourses.forEach(c => {
+        completedMap[c.id] = c.lessons.filter(l => l.completed).map(l => l.id);
+      });
+
+      firebaseDb.saveUserProgress({
+        username: 'root',
+        completedLessons: completedMap,
+        savedCourses: savedCourseIds,
+      });
+
+      return nextCourses;
+    });
 
     if (activeCourse && activeCourse.id === courseId) {
       setActiveCourse(prev => {
@@ -350,6 +390,29 @@ export default function CoursesView() {
         return { ...prev, lessons: updatedLessons };
       });
     }
+  };
+
+  // Toggle saving/bookmarking a course and sync with Firebase
+  const handleToggleSaveCourse = (courseId: string) => {
+    setSavedCourseIds(prevSaved => {
+      const isCurrentlySaved = prevSaved.includes(courseId);
+      const nextSaved = isCurrentlySaved
+        ? prevSaved.filter(id => id !== courseId)
+        : [...prevSaved, courseId];
+
+      const completedMap: Record<string, string[]> = {};
+      courses.forEach(c => {
+        completedMap[c.id] = c.lessons.filter(l => l.completed).map(l => l.id);
+      });
+
+      firebaseDb.saveUserProgress({
+        username: 'root',
+        completedLessons: completedMap,
+        savedCourses: nextSaved,
+      });
+
+      return nextSaved;
+    });
   };
 
   // Post a new comment to active course discussion
@@ -521,15 +584,15 @@ export default function CoursesView() {
                 <div className="flex gap-3">
                   {/* Save Button */}
                   <button
-                    onClick={() => setIsSaved(!isSaved)}
+                    onClick={() => handleToggleSaveCourse(activeCourse.id)}
                     className={`font-label-md text-label-md px-4 py-2 rounded-lg border border-outline-variant transition-colors flex items-center gap-2 cursor-pointer ${
-                      isSaved ? 'bg-primary-container text-on-primary-container border-primary' : 'bg-surface-variant hover:bg-surface-bright text-on-surface'
+                      savedCourseIds.includes(activeCourse.id) ? 'bg-primary-container text-on-primary-container border-primary' : 'bg-surface-variant hover:bg-surface-bright text-on-surface'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm" data-icon={isSaved ? 'bookmark_added' : 'bookmark'}>
-                      {isSaved ? 'bookmark_added' : 'bookmark'}
+                    <span className="material-symbols-outlined text-sm" data-icon={savedCourseIds.includes(activeCourse.id) ? 'bookmark_added' : 'bookmark'}>
+                      {savedCourseIds.includes(activeCourse.id) ? 'bookmark_added' : 'bookmark'}
                     </span>
-                    <span>{isSaved ? 'Saved' : 'Save'}</span>
+                    <span>{savedCourseIds.includes(activeCourse.id) ? 'Saved' : 'Save'}</span>
                   </button>
 
                   {/* Mark Complete Button */}
