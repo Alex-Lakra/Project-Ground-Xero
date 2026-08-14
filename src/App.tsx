@@ -46,12 +46,51 @@ export default function App() {
   });
 
   // ==========================================
+  // Browser History & Persistence Sync
+  // ==========================================
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace('#/', '');
+      let newChoice: PillChoice = 'none';
+      if (hash === 'red' || hash === 'blue') {
+        newChoice = hash as PillChoice;
+      }
+
+      if (newChoice === 'none') {
+        localStorage.removeItem('gx_active_pill');
+      } else {
+        localStorage.setItem('gx_active_pill', newChoice);
+      }
+
+      setChoice(newChoice);
+      setActiveScreen(newChoice);
+      setIsGlitching(false);
+      setShowSettings(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    // Initial sync
+    const saved = localStorage.getItem('gx_active_pill') as PillChoice;
+    if (saved === 'red' || saved === 'blue') {
+      if (window.location.hash !== `#/${saved}`) {
+        window.history.replaceState({ pill: saved }, '', `#/${saved}`);
+      }
+    } else if (window.location.hash) {
+      window.history.replaceState({ pill: 'none' }, '', window.location.pathname);
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // ==========================================
   // Transition Handlers
   // ==========================================
 
   // Triggers dynamic glitch transition and updates active screen
   const handleChoosePill = (selected: PillChoice) => {
     localStorage.setItem('gx_active_pill', selected);
+    window.history.pushState({ pill: selected }, '', `#/${selected}`);
     
     if (selected === 'blue') {
       setChoice(selected);
@@ -74,6 +113,7 @@ export default function App() {
   // Re-routes back to the Morpheus Choice screen with a glitch transition
   const handleResetToChoice = () => {
     localStorage.removeItem('gx_active_pill');
+    window.history.pushState({ pill: 'none' }, '', window.location.pathname);
 
     if (activeScreen === 'blue') {
       setChoice('none');
