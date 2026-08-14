@@ -4,6 +4,34 @@ export interface SSHUser {
   isPasswordChanged: boolean; // First login requires password reset
   is2faEnabled: boolean; // First login requires 2FA setup
   twoFactorSecret: string; // Authenticator app TOTP secret
+  displayName?: string;
+  statusBubble?: string;
+  bioLink?: string;
+  avatarUrl?: string;
+  techStack?: string[];
+  pronouns?: string;
+  uid?: string;
+}
+
+export const DEFAULT_GHOST_AVATAR = 'https://lh3.googleusercontent.com/d/1j0nNw_HFwqT3bm1I24g96UF7hsvhn9Xr';
+
+/**
+ * Formats user input URLs to direct image CDN links (e.g. converting Google Drive share links)
+ */
+export function formatImageUrl(url?: string): string {
+  if (!url) return DEFAULT_GHOST_AVATAR;
+  const cleanUrl = url.trim();
+  if (!cleanUrl) return DEFAULT_GHOST_AVATAR;
+
+  // Transform Google Drive viewer URLs into direct CDN image URLs
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('drive.usercontent.google.com')) {
+    const fileIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
+    }
+  }
+
+  return cleanUrl;
 }
 
 // ----------------------------------------------------
@@ -20,6 +48,13 @@ const SEED_USERS: Record<string, SSHUser> = {
     isPasswordChanged: false,
     is2faEnabled: false,
     twoFactorSecret: '',
+    displayName: 'Alex_The_Gamer',
+    statusBubble: '> Compiling kernel...',
+    bioLink: 'https://github.com/AlexTheCoder/projects',
+    avatarUrl: DEFAULT_GHOST_AVATAR,
+    techStack: ['TS', 'REACT', 'NODE', 'PY'],
+    pronouns: 'he/him',
+    uid: '25UCOMP008',
   },
 };
 
@@ -45,6 +80,7 @@ const saveLocalUsers = (users: Record<string, SSHUser>) => {
 interface FirestoreField {
   stringValue?: string;
   booleanValue?: boolean;
+  arrayValue?: { values?: FirestoreField[] };
 }
 
 function mapDocumentToUser(doc: any): SSHUser {
@@ -55,6 +91,15 @@ function mapDocumentToUser(doc: any): SSHUser {
     isPasswordChanged: fields.isPasswordChanged?.booleanValue || false,
     is2faEnabled: fields.is2faEnabled?.booleanValue || false,
     twoFactorSecret: fields.twoFactorSecret?.stringValue || '',
+    displayName: fields.displayName?.stringValue || '',
+    statusBubble: fields.statusBubble?.stringValue || '',
+    bioLink: fields.bioLink?.stringValue || '',
+    avatarUrl: formatImageUrl(fields.avatarUrl?.stringValue),
+    techStack: fields.techStack?.arrayValue?.values
+      ? fields.techStack.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    pronouns: fields.pronouns?.stringValue || '',
+    uid: fields.uid?.stringValue || '',
   };
 }
 
@@ -66,6 +111,17 @@ function mapUserToDocument(user: SSHUser) {
       isPasswordChanged: { booleanValue: user.isPasswordChanged },
       is2faEnabled: { booleanValue: user.is2faEnabled },
       twoFactorSecret: { stringValue: user.twoFactorSecret },
+      displayName: { stringValue: user.displayName || '' },
+      statusBubble: { stringValue: user.statusBubble || '' },
+      bioLink: { stringValue: user.bioLink || '' },
+      avatarUrl: { stringValue: user.avatarUrl || '' },
+      techStack: {
+        arrayValue: {
+          values: (user.techStack || []).map(s => ({ stringValue: s }))
+        }
+      },
+      pronouns: { stringValue: user.pronouns || '' },
+      uid: { stringValue: user.uid || '' },
     }
   };
 }
