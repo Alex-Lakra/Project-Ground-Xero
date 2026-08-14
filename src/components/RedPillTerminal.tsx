@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal as TermIcon, Eye, Settings } from 'lucide-react';
 import DigitalRain from './DigitalRain';
-import { firebaseDb, SSHUser } from '../services/firebaseDb';
+import { firebaseDb, SSHUser, DEFAULT_GHOST_AVATAR, formatImageUrl } from '../services/firebaseDb';
 import { QRCodeSVG } from 'qrcode.react';
+import ProfileCard from './ProfileCard';
+import NodeMapViewer from './NodeMapViewer';
 
 interface RedPillTerminalProps {
   onOpenSettings?: () => void;
@@ -28,13 +30,41 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   const [sshTempPassword, setSshTempPassword] = useState('');
   const [ssh2faSecret, setSsh2faSecret] = useState('');
 
+  // Profile Card Panel Visibility & Customization State
+  const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [showNodeMap, setShowNodeMap] = useState<boolean>(false);
+  const [localGuestProfile, setLocalGuestProfile] = useState<SSHUser>(() => {
+    const saved = localStorage.getItem('ground_xero_guest_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      username: 'guest',
+      passwordHash: '',
+      isPasswordChanged: true,
+      is2faEnabled: false,
+      twoFactorSecret: '',
+      displayName: 'Alex_The_Gamer',
+      statusBubble: '> Compiling kernel...',
+      bioLink: 'https://github.com/AlexTheCoder/projects',
+      avatarUrl: DEFAULT_GHOST_AVATAR,
+      techStack: ['TS', 'REACT', 'NODE'],
+      pronouns: 'he/him',
+      uid: '25UCOMP008',
+    };
+  });
+
   // Rain visualizer configuration State
   const [rainDensity, setRainDensity] = useState(1.2);
   const [cmatrixConfig, setCmatrixConfig] = useState<{ active: boolean, color: string }>({ active: false, color: '#00ff00' });
 
-  // References for UI focus & scroll alignment
+  // References for UI focus & scroll alignment & stats caching
   const cliInputRef = useRef<HTMLInputElement | null>(null);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
+  const leetcodeCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
+  const codeforcesCacheRef = useRef<Record<string, { stats: any; recent: any[]; timestamp: number }>>({});
 
   // Command history for up/down arrow navigation
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -299,6 +329,26 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Fetch stats and print to terminal logs
   const fetchStatsAndPrint = async (username: string) => {
+    // 1. Instant Cache hit check (valid for 2 minutes)
+    const cached = leetcodeCacheRef.current[username];
+    if (cached && Date.now() - cached.timestamp < 120000) {
+      setTerminalLogs(prev => [
+        ...prev,
+        ` `,
+        `--- Problem Solved Stats for ${username} [INSTANT CACHE] ---`,
+        `Easy:   ${cached.stats.easy}`,
+        `Medium: ${cached.stats.medium}`,
+        `Hard:   ${cached.stats.hard}`,
+        ` `,
+        `--- Top Recent Accepted Submissions ---`,
+        ...(cached.recent.length === 0 
+          ? ['No recent submissions found.']
+          : cached.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
+        ` `
+      ]);
+      return;
+    }
+
     try {
       const response = await fetch('/api/scrape', {
         method: 'POST',
@@ -313,6 +363,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
       const data = await response.json();
       if (data.success) {
+        // Save to in-memory cache
+        leetcodeCacheRef.current[username] = {
+          stats: data.stats,
+          recent: data.recent,
+          timestamp: Date.now()
+        };
+
         setTerminalLogs(prev => [
           ...prev,
           ` `,
@@ -323,7 +380,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           ` `,
           `--- Top Recent Accepted Submissions ---`,
           ...(data.recent.length === 0 
-            ? ['No recent submissions found. (Profile might be private or DOM structure changed)']
+            ? ['No recent submissions found.']
             : data.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
           ` `
         ]);
@@ -340,6 +397,24 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
   // Fetch Codeforces stats and print to terminal logs
   const fetchCodeforcesStatsAndPrint = async (username: string) => {
+    // 1. Instant Cache hit check (valid for 2 minutes)
+    const cached = codeforcesCacheRef.current[username];
+    if (cached && Date.now() - cached.timestamp < 120000) {
+      setTerminalLogs(prev => [
+        ...prev,
+        ` `,
+        `--- Codeforces Stats for ${username} [INSTANT CACHE] ---`,
+        `Problems Solved: ${cached.stats.solved}`,
+        ` `,
+        `--- Top Recent Accepted Submissions ---`,
+        ...(cached.recent.length === 0 
+          ? ['No recent submissions found.']
+          : cached.recent.map((sub: string, index: number) => `${index + 1}. ${sub}`)),
+        ` `
+      ]);
+      return;
+    }
+
     try {
       const response = await fetch('/api/scrape-codeforces', {
         method: 'POST',
@@ -354,6 +429,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
       const data = await response.json();
       if (data.success) {
+        // Save to in-memory cache
+        codeforcesCacheRef.current[username] = {
+          stats: data.stats,
+          recent: data.recent,
+          timestamp: Date.now()
+        };
+
         setTerminalLogs(prev => [
           ...prev,
           ` `,
@@ -418,6 +500,140 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     if (base === 'clear' || base === 'cls') {
       setTerminalLogs(['[LOCAL BUFFER CACHE ERASED]']);
       return;
+    }
+
+    // Profile Commands (Restricted to authenticated SSH users)
+    if (base === 'profile' || base === 'rename' || base === 'about' || base === 'addstack' || base === 'repo' || base === 'profpic' || base === 'clearstack') {
+      if (sshState !== 'logged_in' || !sshSessionUser) {
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          '[ERROR] ACCESS DENIED: Profile features are only available to logged in users.',
+          `Please authenticate via SSH first (e.g., run 'ssh root@zero').`,
+          ' '
+        ]);
+        setShowProfile(false);
+        return;
+      }
+
+      if (base === 'profile') {
+        setShowProfile(prev => !prev);
+        setTerminalLogs(prev => [
+          ...prev,
+          ' ',
+          '======================================================',
+          '[SYSTEM]: OPERATOR MAINFRAME PROFILE PANEL TOGGLED',
+          '======================================================',
+          `Profile matrix for [${sshSessionUser.username}] displayed on the right viewport.`,
+          ' ',
+          'Available Profile Customization Commands:',
+          '  rename <display_name>   - Update operator display name.',
+          '  about <status>          - Update status bubble / bio message.',
+          '  addstack <tech>         - Add skill/tech stack tag (e.g. TS, REACT, RUST).',
+          '  repo <url>              - Update repository / GitHub URL.',
+          '  profpic <url>           - Update avatar profile picture URL.',
+          '  clearstack              - Clear all skill tags.',
+          ' '
+        ]);
+        return;
+      }
+
+      if (base === 'rename') {
+        const newName = cmd.slice(6).trim();
+        if (!newName) {
+          setTerminalLogs(prev => [...prev, 'Usage: rename <display_name>']);
+          return;
+        }
+
+        const updated = { ...sshSessionUser, displayName: newName };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile display name updated to "${newName}" for user [${sshSessionUser.username}].`]);
+        return;
+      }
+
+      if (base === 'about') {
+        const newStatus = cmd.slice(5).trim();
+        if (!newStatus) {
+          setTerminalLogs(prev => [...prev, 'Usage: about <status_text_or_bio>']);
+          return;
+        }
+
+        const updated = { ...sshSessionUser, statusBubble: newStatus };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile about status updated to "> ${newStatus}" for user [${sshSessionUser.username}].`]);
+        return;
+      }
+
+      if (base === 'addstack') {
+        const tech = cmd.slice(8).trim().toUpperCase();
+        if (!tech) {
+          setTerminalLogs(prev => [...prev, 'Usage: addstack <tech_name> (e.g. TS, REACT, NODE, PYTHON)']);
+          return;
+        }
+
+        const currentStack = sshSessionUser.techStack || [];
+        const updatedStack = currentStack.includes(tech) ? currentStack : [...currentStack, tech];
+        const updated = { ...sshSessionUser, techStack: updatedStack };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Added skill '${tech}' to profile for user [${sshSessionUser.username}].`]);
+        return;
+      }
+
+      if (base === 'repo') {
+        const newRepo = cmd.slice(4).trim();
+        if (!newRepo) {
+          setTerminalLogs(prev => [...prev, 'Usage: repo <url> (e.g. https://github.com/username/project)']);
+          return;
+        }
+
+        const updated = { ...sshSessionUser, bioLink: newRepo };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile repository URL updated to ${newRepo} for user [${sshSessionUser.username}].`]);
+        return;
+      }
+
+      if (base === 'profpic') {
+        const rawPic = cmd.slice(7).trim();
+        if (!rawPic) {
+          setTerminalLogs(prev => [...prev, 'Usage: profpic <image_url>']);
+          return;
+        }
+
+        const newPic = formatImageUrl(rawPic);
+        const updated = { ...sshSessionUser, avatarUrl: newPic };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        const logs = [`[SUCCESS] Profile picture URL updated for user [${sshSessionUser.username}].`];
+        if (rawPic !== newPic) {
+          logs.push(`[INFO] Processed Google Drive URL into direct CDN stream.`);
+        }
+        setTerminalLogs(prev => [...prev, ...logs]);
+        return;
+      }
+
+      if (base === 'clearstack') {
+        const updated = { ...sshSessionUser, techStack: [] };
+        setSshSessionUser(updated);
+        await firebaseDb.saveUser(updated);
+
+        setShowProfile(true);
+        setTerminalLogs(prev => [...prev, `[SUCCESS] Profile tech stack cleared for user [${sshSessionUser.username}].`]);
+        return;
+      }
     }
 
     // ----------------------------------------------------
@@ -489,6 +705,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           'clear / cls                 - Erase local console logs buffer cache.',
           'fastfetch                   - Display system information and diagnostics.',
           'cmatrix                     - Enter full screen matrix rain visualizer mode.',
+          'nodemap                     - Open operator interactive node graph map.',
+          'profile                     - Toggle operator profile card on right side.',
+          'rename <name>               - Update display name.',
+          'about <status>              - Update status bubble message.',
+          'addstack <tech>             - Add tech stack tag (TS, REACT, NODE, etc.).',
+          'repo <url>                  - Update repository link.',
+          'profpic <url>               - Update avatar profile picture URL.',
           'ssh user@zero               - SSH tunnel into the zero server node.',
           '/leet                       - Configure LeetCode profile (requires login).',
           'leet                        - View LeetCode solved stats (requires login).',
@@ -623,6 +846,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         }
 
         setCmatrixConfig({ active: true, color });
+        return;
+      }
+
+      // Nodemap command
+      if (base === 'nodemap') {
+        setShowNodeMap(true);
         return;
       }
 
@@ -892,6 +1121,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             '======================================',
             'whoami           - Display the current active user.',
             'passwd <new_pass> - Reset your active user password.',
+            'profile          - Toggle operator profile matrix card on right side.',
+            'nodemap          - Open operator interactive node graph map.',
+            'rename <name>    - Update profile display name (saves to DB).',
+            'about <status>   - Update profile status message (saves to DB).',
+            'addstack <tech>  - Add tech stack item (saves to DB).',
+            'repo <url>       - Update profile repository URL (saves to DB).',
+            'profpic <url>    - Update profile picture URL (saves to DB).',
             '/leet            - Configure your LeetCode profile URL.',
             'leet             - View your LeetCode stats & recent submissions.',
             '/codef           - Configure your Codeforces profile URL/handle.',
@@ -911,6 +1147,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
           standardLogs.push(' ');
           setTerminalLogs(prev => [...prev, ...standardLogs]);
+          return;
+        }
+
+        // nodemap command
+        if (base === 'nodemap') {
+          setShowNodeMap(true);
           return;
         }
 
@@ -1054,6 +1296,7 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           setSshState('none');
           setSshUser('');
           setSshSessionUser(null);
+          setShowProfile(false);
           return;
         }
 
@@ -1084,6 +1327,13 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             isPasswordChanged: false,
             is2faEnabled: false,
             twoFactorSecret: '',
+            displayName: newUsername,
+            statusBubble: '',
+            techStack: [],
+            bioLink: '',
+            avatarUrl: DEFAULT_GHOST_AVATAR,
+            uid: `UID_${newUsername.toUpperCase()}`,
+            pronouns: 'he/him',
           });
 
           setTerminalLogs(prev => [...prev, `[SUCCESS] User account '${newUsername}' registered successfully.`]);
@@ -1185,6 +1435,17 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
     return (
       <div className="bg-black text-[#e2e2e2] font-mono min-h-screen overflow-hidden flex flex-col relative">
 
+        {/* Node Map Overlay */}
+        {showNodeMap && (
+          <NodeMapViewer 
+            username={sshSessionUser ? sshSessionUser.username : localGuestProfile.username} 
+            onClose={() => setShowNodeMap(false)} 
+            isLoggedIn={!!sshSessionUser}
+            leetcodeUrl={localStorage.getItem(`leetcode_url_${sshSessionUser?.username || 'global'}`) || undefined}
+            codeforcesUrl={localStorage.getItem(`codeforces_url_${sshSessionUser?.username || 'global'}`) || undefined}
+          />
+        )}
+
         {/* Background Matrix Rain Cascade */}
         <DigitalRain color="#ff0033" density={rainDensity} />
 
@@ -1196,14 +1457,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
         </header>
 
         {/* Main Viewport Container */}
-        <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10">
+        <main className="pt-16 md:pt-24 pb-20 md:pb-6 flex-1 flex flex-col overflow-y-auto bg-black px-6 md:px-12 relative z-10 no-scrollbar">
 
         {/* TAB 1: CORE CLI SHELL */}
         {currentTab === 'terminal' && (
-          <div className="flex-1 flex flex-col h-full justify-between">
+          <div className={`flex-1 flex ${showProfile ? 'flex-col lg:flex-row gap-6' : 'flex-col'} h-full justify-between`}>
             {/* Scrollable logs list and active inline terminal input */}
             <div
-              className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 text-[#ff0033]"
+              className="flex-1 overflow-y-auto pr-1 space-y-1.5 font-mono text-xs select-text leading-relaxed max-h-[calc(100vh-220px)] mt-4 text-[#ff0033] no-scrollbar"
             >
               {terminalLogs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap font-mono font-medium tracking-wide">
@@ -1304,11 +1565,12 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                         const isSensitive = sshState === 'ssh_password' || sshState === 'ssh_new_password' || sshState === 'ssh_confirm_password';
                         if (isSensitive || input.length === 0) return;
 
+                      const profileCmds = ['profile', 'rename', 'about', 'addstack', 'repo', 'profpic', 'clearstack'];
                       const availableCommands = sshState === 'logged_in'
                         ? sshSessionUser?.username === 'root'
-                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa']
-                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit']
-                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue'];
+                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', 'nodemap', ...profileCmds]
+                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'nodemap', ...profileCmds]
+                        : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue', 'nodemap', ...profileCmds];
 
                       const parts = input.split(' ');
                       const partsLower = inputLower.split(' ');
@@ -1356,6 +1618,16 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
 
                 <div ref={terminalEndRef} />
               </div>
+
+              {/* Right Side: Profile Card Matrix Panel */}
+              {showProfile && sshState === 'logged_in' && sshSessionUser && (
+                <div className="w-full lg:w-[380px] flex-shrink-0 mt-4 overflow-y-auto max-h-[calc(100vh-220px)]">
+                  <ProfileCard
+                    user={sshSessionUser}
+                    onClose={() => setShowProfile(false)}
+                  />
+                </div>
+              )}
             </div>
           )}
 

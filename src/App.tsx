@@ -194,7 +194,7 @@ export default function App() {
           transitionChoice === 'blue' ? 'text-matrix-blue' : 
           'text-on-surface-variant'
         }`}>
-          <div className={`absolute top-0 left-0 w-full h-full bg-linear-to-b from-transparent to-transparent animate-pulse ${
+          <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-transparent animate-pulse ${
             transitionChoice === 'red' ? 'via-matrix-red/10' : 
             transitionChoice === 'blue' ? 'via-matrix-blue/10' : 
             'via-on-surface-variant/10'

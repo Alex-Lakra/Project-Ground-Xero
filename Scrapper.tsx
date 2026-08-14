@@ -1,76 +1,79 @@
-import puppeteer from 'puppeteer';
-
 export async function scrapeLeetCodeProfile(username: string) {
-    const url = `https://leetcode.com/u/${username}/`;
-
-    // Launch Puppeteer
-    const browser = await puppeteer.launch({
-        headless: true,
-        // Adding args to make the scraper look more like a real user to bypass basic bot protections
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-
-    // Set a real-looking User-Agent
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36');
+    const query = `
+        query getUserLeetCodeData($username: String!) {
+          matchedUser(username: $username) {
+            username
+            submitStats: submitStatsGlobal {
+              acSubmissionNum {
+                difficulty
+                count
+              }
+            }
+          }
+          recentAcSubmissionList(username: $username, limit: 15) {
+            title
+            titleSlug
+            timestamp
+          }
+        }
+    `;
 
     try {
-        // Wait until network activity settles so React has time to render the DOM
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-        // Execute code inside the browser environment to extract DOM elements
-        const scrapedData = await page.evaluate(() => {
-            const allElements = Array.from(document.querySelectorAll('*'));
-
-            // Easy solved count
-            const easyElement = allElements.find(el => el.childNodes.length === 1 && el.textContent?.trim() === 'Easy');
-            const easyText = easyElement?.parentElement?.textContent || easyElement?.textContent || '';
-            const easyMatch = easyText.replace('Easy', '').match(/\d+/);
-            const easy = easyMatch ? easyMatch[0] : '0';
-
-            // Medium solved count
-            const mediumElement = allElements.find(el => el.childNodes.length === 1 && (el.textContent?.trim() === 'Medium' || el.textContent?.trim() === 'Med.'));
-            const mediumText = mediumElement?.parentElement?.textContent || mediumElement?.textContent || '';
-            const mediumMatch = mediumText.replace('Medium', '').replace('Med.', '').match(/\d+/);
-            const medium = mediumMatch ? mediumMatch[0] : '0';
-
-            // Hard solved count
-            const hardElement = allElements.find(el => el.childNodes.length === 1 && el.textContent?.trim() === 'Hard');
-            const hardText = hardElement?.parentElement?.textContent || hardElement?.textContent || '';
-            const hardMatch = hardText.replace('Hard', '').match(/\d+/);
-            const hard = hardMatch ? hardMatch[0] : '0';
-
-            // 2. Scrape Recent Submissions
-            // Recent questions are links pointing to "/submissions/detail/..."
-            const links = Array.from(document.querySelectorAll('a[href^="/submissions/detail/"]'));
-
-            const recentSubmissions: string[] = [];
-            const seenUrls = new Set<string>();
-
-            for (const link of links) {
-                const href = link.getAttribute('href');
-                const titleDiv = link.querySelector('[data-title]');
-                const title = titleDiv ? titleDiv.getAttribute('data-title') : link.textContent?.split('\n')[0]?.trim();
-
-                if (title && href && !seenUrls.has(href)) {
-                    seenUrls.add(href);
-                    recentSubmissions.push(title);
-                }
-            }
-
-            return {
-                stats: { easy, medium, hard },
-                recent: recentSubmissions.slice(0, 5)
-            };
+        const response = await fetch("https://leetcode.com/graphql", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+                "Referer": "https://leetcode.com"
+            },
+            body: JSON.stringify({
+                query,
+                variables: { username }
+            }),
+            signal: AbortSignal.timeout(6000)
         });
 
-        return scrapedData;
+        if (!response.ok) {
+            throw new Error(`LeetCode GraphQL HTTP Error ${response.status}`);
+        }
 
-    } catch (error) {
-        throw error;
-    } finally {
-        await browser.close();
+        const json = await response.json();
+        if (json.errors && json.errors.length > 0) {
+            throw new Error(json.errors[0].message || "LeetCode GraphQL error");
+        }
+
+        if (!json.data || !json.data.matchedUser) {
+            throw new Error(`User account "${username}" not found on LeetCode.`);
+        }
+
+        const acSubmissions = json.data.matchedUser.submitStats?.acSubmissionNum || [];
+        let easy = "0";
+        let medium = "0";
+        let hard = "0";
+
+        for (const item of acSubmissions) {
+            if (item.difficulty === "Easy") easy = String(item.count);
+            if (item.difficulty === "Medium") medium = String(item.count);
+            if (item.difficulty === "Hard") hard = String(item.count);
+        }
+
+        const rawRecent = json.data.recentAcSubmissionList || [];
+        const recentSubmissions: string[] = [];
+        const seenTitles = new Set<string>();
+
+        for (const item of rawRecent) {
+            if (item.title && !seenTitles.has(item.title)) {
+                seenTitles.add(item.title);
+                recentSubmissions.push(item.title);
+            }
+        }
+
+        return {
+            stats: { easy, medium, hard },
+            recent: recentSubmissions.slice(0, 5)
+        };
+    } catch (error: any) {
+        throw new Error(`LeetCode fetch failed: ${error.message}`);
     }
 }
 
@@ -197,4 +200,4 @@ export async function scrapeLeetCodeDailyQuestion(forceRefresh = false) {
     }
 
     return cachedDailyQuestion;
-}
+}

@@ -7,7 +7,7 @@ import { scrapeLeetCodeProfile, scrapeCodeforcesProfile, scrapeLeetCodeDailyQues
 
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const currentDirname = typeof process !== 'undefined' && process.cwd ? process.cwd() : path.dirname(fileURLToPath(import.meta.url));
 
 async function startServer() {
   const app = express();

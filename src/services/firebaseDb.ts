@@ -4,6 +4,34 @@ export interface SSHUser {
   isPasswordChanged: boolean; // First login requires password reset
   is2faEnabled: boolean; // First login requires 2FA setup
   twoFactorSecret: string; // Authenticator app TOTP secret
+  displayName?: string;
+  statusBubble?: string;
+  bioLink?: string;
+  avatarUrl?: string;
+  techStack?: string[];
+  pronouns?: string;
+  uid?: string;
+}
+
+export const DEFAULT_GHOST_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" fill="%23050505"/><path d="M50 18C33 18 22 30 22 46v26h10v-6h12v6h12v-6h12v6h10V46c0-16-11-28-28-28z" fill="%23ff0033" opacity="0.85"/><circle cx="40" cy="42" r="5" fill="%23000"/><circle cx="60" cy="42" r="5" fill="%23000"/><circle cx="40" cy="42" r="2" fill="%23ff0033"/><circle cx="60" cy="42" r="2" fill="%23ff0033"/><path d="M36 56h28v3H36z" fill="%23ff0033"/></svg>`;
+
+/**
+ * Formats user input URLs to direct image CDN links (e.g. converting Google Drive share links)
+ */
+export function formatImageUrl(url?: string): string {
+  if (!url) return DEFAULT_GHOST_AVATAR;
+  const cleanUrl = url.trim();
+  if (!cleanUrl) return DEFAULT_GHOST_AVATAR;
+
+  // Transform Google Drive viewer URLs into direct CDN image URLs
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('drive.usercontent.google.com') || cleanUrl.includes('lh3.googleusercontent.com')) {
+    const fileIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w500`;
+    }
+  }
+
+  return cleanUrl;
 }
 
 // ----------------------------------------------------
@@ -20,6 +48,13 @@ const SEED_USERS: Record<string, SSHUser> = {
     isPasswordChanged: false,
     is2faEnabled: false,
     twoFactorSecret: '',
+    displayName: 'Alex_The_Gamer',
+    statusBubble: '> Compiling kernel...',
+    bioLink: 'https://github.com/AlexTheCoder/projects',
+    avatarUrl: DEFAULT_GHOST_AVATAR,
+    techStack: ['TS', 'REACT', 'NODE', 'PY'],
+    pronouns: 'he/him',
+    uid: '25UCOMP008',
   },
 };
 
@@ -45,6 +80,7 @@ const saveLocalUsers = (users: Record<string, SSHUser>) => {
 interface FirestoreField {
   stringValue?: string;
   booleanValue?: boolean;
+  arrayValue?: { values?: FirestoreField[] };
 }
 
 function mapDocumentToUser(doc: any): SSHUser {
@@ -55,6 +91,15 @@ function mapDocumentToUser(doc: any): SSHUser {
     isPasswordChanged: fields.isPasswordChanged?.booleanValue || false,
     is2faEnabled: fields.is2faEnabled?.booleanValue || false,
     twoFactorSecret: fields.twoFactorSecret?.stringValue || '',
+    displayName: fields.displayName?.stringValue || '',
+    statusBubble: fields.statusBubble?.stringValue || '',
+    bioLink: fields.bioLink?.stringValue || '',
+    avatarUrl: formatImageUrl(fields.avatarUrl?.stringValue),
+    techStack: fields.techStack?.arrayValue?.values
+      ? fields.techStack.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    pronouns: fields.pronouns?.stringValue || '',
+    uid: fields.uid?.stringValue || '',
   };
 }
 
@@ -66,6 +111,17 @@ function mapUserToDocument(user: SSHUser) {
       isPasswordChanged: { booleanValue: user.isPasswordChanged },
       is2faEnabled: { booleanValue: user.is2faEnabled },
       twoFactorSecret: { stringValue: user.twoFactorSecret },
+      displayName: { stringValue: user.displayName || '' },
+      statusBubble: { stringValue: user.statusBubble || '' },
+      bioLink: { stringValue: user.bioLink || '' },
+      avatarUrl: { stringValue: user.avatarUrl || '' },
+      techStack: {
+        arrayValue: {
+          values: (user.techStack || []).map(s => ({ stringValue: s }))
+        }
+      },
+      pronouns: { stringValue: user.pronouns || '' },
+      uid: { stringValue: user.uid || '' },
     }
   };
 }
@@ -192,5 +248,135 @@ export const firebaseDb = {
       return true;
     }
     return false;
+  },
+
+  /**
+   * Retrieves course progress for a given user
+   */
+  async getUserProgress(username: string): Promise<{ username: string; completedLessons: Record<string, string[]>; savedCourses: string[] }> {
+    const key = (username || 'root').toLowerCase();
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/user_progress/${key}`);
+      if (response.ok) {
+        const doc = await response.json();
+        const fields = doc.fields || {};
+        const completedJson = fields.completedLessonsJson?.stringValue || '{}';
+        const savedJson = fields.savedCoursesJson?.stringValue || '[]';
+        return {
+          username: key,
+          completedLessons: JSON.parse(completedJson),
+          savedCourses: JSON.parse(savedJson),
+        };
+      }
+    } catch (err: any) {
+      console.warn('[Firestore DB] getUserProgress failed, using LocalStorage fallback.', err);
+    }
+    const local = localStorage.getItem(`ground_xero_progress_${key}`);
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch (e) {}
+    }
+    return { username: key, completedLessons: {}, savedCourses: [] };
+  },
+
+  /**
+   * Saves course progress for a given user
+   */
+  async saveUserProgress(progress: { username: string; completedLessons: Record<string, string[]>; savedCourses: string[] }): Promise<void> {
+    const key = (progress.username || 'root').toLowerCase();
+    try {
+      const body = {
+        fields: {
+          username: { stringValue: key },
+          completedLessonsJson: { stringValue: JSON.stringify(progress.completedLessons || {}) },
+          savedCoursesJson: { stringValue: JSON.stringify(progress.savedCourses || []) },
+        }
+      };
+      await fetch(`${FIRESTORE_BASE}/user_progress/${key}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (err: any) {
+      console.warn('[Firestore DB] saveUserProgress failed, using LocalStorage fallback.', err);
+    }
+    localStorage.setItem(`ground_xero_progress_${key}`, JSON.stringify(progress));
+  },
+
+  /**
+   * Automatically fetches video metadata via YouTube oEmbed API and caches it in Firebase / LocalStorage
+   */
+  async fetchAndSaveVideoMetadata(videoId: string): Promise<{ videoId: string; title: string; authorName: string; authorUrl: string; thumbnailUrl: string } | null> {
+    const key = videoId.trim();
+    if (!key) return null;
+
+    // 1. Check if already cached in Firestore
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/video_metadata/${key}`);
+      if (response.ok) {
+        const doc = await response.json();
+        const fields = doc.fields || {};
+        if (fields.title?.stringValue) {
+          return {
+            videoId: key,
+            title: fields.title.stringValue,
+            authorName: fields.authorName?.stringValue || '',
+            authorUrl: fields.authorUrl?.stringValue || '',
+            thumbnailUrl: fields.thumbnailUrl?.stringValue || '',
+          };
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch live metadata via YouTube oEmbed API
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${key}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const meta = {
+          videoId: key,
+          title: data.title || '',
+          authorName: data.author_name || '',
+          authorUrl: data.author_url || '',
+          thumbnailUrl: data.thumbnail_url || `https://i.ytimg.com/vi/${key}/hqdefault.jpg`,
+        };
+
+        // 3. Save to Firestore DB
+        try {
+          const body = {
+            fields: {
+              videoId: { stringValue: meta.videoId },
+              title: { stringValue: meta.title },
+              authorName: { stringValue: meta.authorName },
+              authorUrl: { stringValue: meta.authorUrl },
+              thumbnailUrl: { stringValue: meta.thumbnailUrl },
+            }
+          };
+          await fetch(`${FIRESTORE_BASE}/video_metadata/${key}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+        } catch (e) {}
+
+        // Save to LocalStorage fallback
+        localStorage.setItem(`ground_xero_video_meta_${key}`, JSON.stringify(meta));
+        return meta;
+      }
+    } catch (err: any) {
+      console.warn('[Firestore DB] fetchAndSaveVideoMetadata oEmbed error', err);
+    }
+
+    // LocalStorage fallback
+    const local = localStorage.getItem(`ground_xero_video_meta_${key}`);
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch (e) {}
+    }
+
+    return null;
   },
 };
