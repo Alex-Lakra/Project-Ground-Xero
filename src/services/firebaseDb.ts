@@ -12,6 +12,14 @@ export interface SSHUser {
   pronouns?: string;
   uid?: string;
   email?: string;
+  friends?: string[];
+  friendRequests?: string[];
+  sentRequests?: string[];
+  blockedUsers?: string[];
+  privacySettings?: {
+    hideFriendList: boolean;
+    disableIncomingRequests: boolean;
+  };
 }
 
 export const DEFAULT_GHOST_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" fill="%23050505"/><path d="M50 18C33 18 22 30 22 46v26h10v-6h12v6h12v-6h12v6h10V46c0-16-11-28-28-28z" fill="%23ff0033" opacity="0.85"/><circle cx="40" cy="42" r="5" fill="%23000"/><circle cx="60" cy="42" r="5" fill="%23000"/><circle cx="40" cy="42" r="2" fill="%23ff0033"/><circle cx="60" cy="42" r="2" fill="%23ff0033"/><path d="M36 56h28v3H36z" fill="%23ff0033"/></svg>`;
@@ -103,6 +111,22 @@ function mapDocumentToUser(doc: any): SSHUser {
     pronouns: fields.pronouns?.stringValue || '',
     uid: fields.uid?.stringValue || '',
     email: fields.email?.stringValue || '',
+    friends: fields.friends?.arrayValue?.values
+      ? fields.friends.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    friendRequests: fields.friendRequests?.arrayValue?.values
+      ? fields.friendRequests.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    sentRequests: fields.sentRequests?.arrayValue?.values
+      ? fields.sentRequests.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    blockedUsers: fields.blockedUsers?.arrayValue?.values
+      ? fields.blockedUsers.arrayValue.values.map((v: any) => v.stringValue || '')
+      : [],
+    privacySettings: {
+      hideFriendList: fields.privacySettings?.mapValue?.fields?.hideFriendList?.booleanValue || false,
+      disableIncomingRequests: fields.privacySettings?.mapValue?.fields?.disableIncomingRequests?.booleanValue || false,
+    }
   };
 }
 
@@ -126,6 +150,26 @@ function mapUserToDocument(user: SSHUser) {
       pronouns: { stringValue: user.pronouns || '' },
       uid: { stringValue: user.uid || '' },
       email: { stringValue: user.email || '' },
+      friends: {
+        arrayValue: { values: (user.friends || []).map(s => ({ stringValue: s })) }
+      },
+      friendRequests: {
+        arrayValue: { values: (user.friendRequests || []).map(s => ({ stringValue: s })) }
+      },
+      sentRequests: {
+        arrayValue: { values: (user.sentRequests || []).map(s => ({ stringValue: s })) }
+      },
+      blockedUsers: {
+        arrayValue: { values: (user.blockedUsers || []).map(s => ({ stringValue: s })) }
+      },
+      privacySettings: {
+        mapValue: {
+          fields: {
+            hideFriendList: { booleanValue: user.privacySettings?.hideFriendList || false },
+            disableIncomingRequests: { booleanValue: user.privacySettings?.disableIncomingRequests || false }
+          }
+        }
+      }
     }
   };
 }

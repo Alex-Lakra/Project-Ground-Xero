@@ -5,6 +5,7 @@ import { firebaseDb, SSHUser, DEFAULT_GHOST_AVATAR, formatImageUrl } from '../se
 import { QRCodeSVG } from 'qrcode.react';
 import ProfileCard from './ProfileCard';
 import NodeMapViewer from './NodeMapViewer';
+import FriendListCard, { FriendListMode } from './FriendListCard';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -36,6 +37,14 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // Profile Card Panel Visibility & Customization State
   const [showProfile, setShowProfile] = useState<boolean>(false);
   const [showNodeMap, setShowNodeMap] = useState<boolean>(false);
+  
+  // Friend System States
+  const [showFriendList, setShowFriendList] = useState(false);
+  const [friendListMode, setFriendListMode] = useState<FriendListMode>('friends');
+  const [friendListUsers, setFriendListUsers] = useState<SSHUser[]>([]);
+  const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [viewedProfileUser, setViewedProfileUser] = useState<SSHUser | null>(null);
+
   const [localGuestProfile, setLocalGuestProfile] = useState<SSHUser>(() => {
     const saved = localStorage.getItem('ground_xero_guest_profile');
     if (saved) {
@@ -465,6 +474,77 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
   // ==========================================
   // CLI Command Logic
   // ==========================================
+
+  const handleFriendAction = async (action: 'add' | 'accept' | 'deny' | 'remove' | 'block' | 'unblock' | 'cancel', targetUser: SSHUser) => {
+    if (!sshSessionUser) return;
+    try {
+      const me = await firebaseDb.getUser(sshSessionUser.username);
+      const target = await firebaseDb.getUser(targetUser.username);
+      if (!me || !target) return;
+
+      const myFriends = [...(me.friends || [])];
+      const mySent = [...(me.sentRequests || [])];
+      const myReqs = [...(me.friendRequests || [])];
+      const myBlocked = [...(me.blockedUsers || [])];
+      const theirFriends = [...(target.friends || [])];
+      const theirSent = [...(target.sentRequests || [])];
+      const theirReqs = [...(target.friendRequests || [])];
+      const theirBlocked = [...(target.blockedUsers || [])];
+
+      if (action === 'add') {
+        if (!mySent.includes(target.username)) mySent.push(target.username);
+        if (!theirReqs.includes(me.username)) theirReqs.push(me.username);
+      } else if (action === 'accept') {
+        if (!myFriends.includes(target.username)) myFriends.push(target.username);
+        if (!theirFriends.includes(me.username)) theirFriends.push(me.username);
+        const reqIdx = myReqs.indexOf(target.username);
+        if (reqIdx > -1) myReqs.splice(reqIdx, 1);
+        const sentIdx = theirSent.indexOf(me.username);
+        if (sentIdx > -1) theirSent.splice(sentIdx, 1);
+      } else if (action === 'deny' || action === 'cancel') {
+        const reqIdx = myReqs.indexOf(target.username);
+        if (reqIdx > -1) myReqs.splice(reqIdx, 1);
+        const sentIdx = theirSent.indexOf(me.username);
+        if (sentIdx > -1) theirSent.splice(sentIdx, 1);
+        
+        const mySentIdx = mySent.indexOf(target.username);
+        if (mySentIdx > -1) mySent.splice(mySentIdx, 1);
+        const theirReqIdx = theirReqs.indexOf(me.username);
+        if (theirReqIdx > -1) theirReqs.splice(theirReqIdx, 1);
+      } else if (action === 'remove') {
+        const fIdx = myFriends.indexOf(target.username);
+        if (fIdx > -1) myFriends.splice(fIdx, 1);
+        const tIdx = theirFriends.indexOf(me.username);
+        if (tIdx > -1) theirFriends.splice(tIdx, 1);
+      } else if (action === 'block') {
+        if (!myBlocked.includes(target.username)) myBlocked.push(target.username);
+        [myFriends, mySent, myReqs].forEach(arr => {
+          const idx = arr.indexOf(target.username);
+          if (idx > -1) arr.splice(idx, 1);
+        });
+        [theirFriends, theirSent, theirReqs].forEach(arr => {
+          const idx = arr.indexOf(me.username);
+          if (idx > -1) arr.splice(idx, 1);
+        });
+      } else if (action === 'unblock') {
+        const bIdx = myBlocked.indexOf(target.username);
+        if (bIdx > -1) myBlocked.splice(bIdx, 1);
+      }
+
+      const updatedMe = { ...me, friends: myFriends, sentRequests: mySent, friendRequests: myReqs, blockedUsers: myBlocked };
+      const updatedTarget = { ...target, friends: theirFriends, sentRequests: theirSent, friendRequests: theirReqs, blockedUsers: theirBlocked };
+      await firebaseDb.saveUser(updatedMe);
+      await firebaseDb.saveUser(updatedTarget);
+      setSshSessionUser(updatedMe);
+      
+      if (['accept', 'deny', 'remove', 'block', 'cancel'].includes(action)) {
+        setFriendListUsers(prev => prev.filter(u => u.username !== targetUser.username));
+      }
+      setTerminalLogs(prev => [...prev, `[SYSTEM]: Action '${action}' performed on user '${targetUser.username}' successfully.`]);
+    } catch (e) {
+      setTerminalLogs(prev => [...prev, `[ERROR]: Failed to perform action.`]);
+    }
+  };
 
   const handleExecuteCliCommand = async () => {
     const cmd = cliInput.trim();
@@ -1196,6 +1276,8 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
             'leet             - View your LeetCode stats & recent submissions.',
             '/codef           - Configure your Codeforces profile URL/handle.',
             'codef            - View your Codeforces stats & recent submissions.',
+            'friends          - Open the network connections UI (Friends System).',
+            'friends help     - Show all Friend System commands.',
             'logout / exit    - Terminate SSH session and exit to local shell.'
           ];
 
@@ -1361,6 +1443,133 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
           setSshUser('');
           setSshSessionUser(null);
           setShowProfile(false);
+          setShowFriendList(false);
+          setViewedProfileUser(null);
+          return;
+        }
+
+        // Friend System Commands
+        if (base === 'friends') {
+          const args = parts;
+          if (args.length === 1 || args[1] === 'list') {
+            const myFriends = sshSessionUser.friends || [];
+            if (myFriends.length === 0) {
+              setTerminalLogs(prev => [...prev, `You have 0 friends in your network.`]);
+              return;
+            }
+            const allUsers = await firebaseDb.listAllUsers();
+            setFriendListUsers(allUsers.filter(u => myFriends.includes(u.username)));
+            setFriendListMode('friends');
+            setShowFriendList(true);
+            setTerminalLogs(prev => [...prev, `Opening network connections module...`]);
+            return;
+          } else if (args[1] === 'requests') {
+            const reqs = sshSessionUser.friendRequests || [];
+            if (reqs.length === 0) {
+              setTerminalLogs(prev => [...prev, `You have 0 inbound requests.`]);
+              return;
+            }
+            const allUsers = await firebaseDb.listAllUsers();
+            setFriendListUsers(allUsers.filter(u => reqs.includes(u.username)));
+            setFriendListMode('requests');
+            setShowFriendList(true);
+            setTerminalLogs(prev => [...prev, `Opening inbound requests module...`]);
+            return;
+          } else if (args[1] === 'sent') {
+            const sent = sshSessionUser.sentRequests || [];
+            if (sent.length === 0) {
+              setTerminalLogs(prev => [...prev, `You have 0 outbound requests.`]);
+              return;
+            }
+            const allUsers = await firebaseDb.listAllUsers();
+            setFriendListUsers(allUsers.filter(u => sent.includes(u.username)));
+            setFriendListMode('sent');
+            setShowFriendList(true);
+            setTerminalLogs(prev => [...prev, `Opening outbound requests module...`]);
+            return;
+          } else if (args[1] === 'blocked') {
+            const blocked = sshSessionUser.blockedUsers || [];
+            if (blocked.length === 0) {
+              setTerminalLogs(prev => [...prev, `You have 0 blocked entities.`]);
+              return;
+            }
+            const allUsers = await firebaseDb.listAllUsers();
+            setFriendListUsers(allUsers.filter(u => blocked.includes(u.username)));
+            setFriendListMode('blocked');
+            setShowFriendList(true);
+            setTerminalLogs(prev => [...prev, `Opening blocked entities module...`]);
+            return;
+          } else if (args[1] === 'search' && args[2]) {
+            const query = args.slice(2).join(' ').toLowerCase();
+            const allUsers = await firebaseDb.listAllUsers();
+            const results = allUsers.filter(u => 
+              u.username !== sshSessionUser.username &&
+              !(sshSessionUser.blockedUsers || []).includes(u.username) &&
+              (u.username.toLowerCase().includes(query) || 
+               u.email?.toLowerCase().includes(query) || 
+               u.displayName?.toLowerCase().includes(query))
+            );
+            
+            const filteredResults = results.filter(u => !u.privacySettings?.hideFriendList);
+
+            setFriendSearchQuery(query);
+            setFriendListUsers(filteredResults);
+            setFriendListMode('search');
+            setShowFriendList(true);
+            setTerminalLogs(prev => [...prev, `Executing global directory search for: ${query}...`]);
+            return;
+          } else if (['add', 'accept', 'deny', 'remove', 'block', 'unblock'].includes(args[1]) && args[2]) {
+            const targetUsername = args[2].toLowerCase();
+            const target = await firebaseDb.getUser(targetUsername);
+            if (!target) {
+              setTerminalLogs(prev => [...prev, `[ERROR]: User '${targetUsername}' not found.`]);
+              return;
+            }
+            if (targetUsername === sshSessionUser.username) {
+              setTerminalLogs(prev => [...prev, `[ERROR]: Cannot perform action on yourself.`]);
+              return;
+            }
+            if (args[1] === 'add' && target.privacySettings?.disableIncomingRequests) {
+              setTerminalLogs(prev => [...prev, `[ERROR]: User '${targetUsername}' is not accepting requests.`]);
+              return;
+            }
+            await handleFriendAction(args[1] as any, target);
+            return;
+          } else if (args[1] === 'privacy' && args[2] && args[3]) {
+            const setting = args[2];
+            const val = args[3].toLowerCase() === 'on';
+            if (setting === 'hideList' || setting === 'disableRequests') {
+               const p = sshSessionUser.privacySettings || { hideFriendList: false, disableIncomingRequests: false };
+               if (setting === 'hideList') p.hideFriendList = val;
+               if (setting === 'disableRequests') p.disableIncomingRequests = val;
+               const updated = { ...sshSessionUser, privacySettings: p };
+               await firebaseDb.saveUser(updated);
+               setSshSessionUser(updated);
+               setTerminalLogs(prev => [...prev, `[SYSTEM]: Privacy setting '${setting}' set to ${val ? 'ON' : 'OFF'}.`]);
+               return;
+            }
+          } else if (args[1] === 'help') {
+            setTerminalLogs(prev => [
+              ...prev,
+              `--- FRIEND SYSTEM COMMANDS ---`,
+              `friends                     : Open network connections`,
+              `friends requests            : View incoming requests`,
+              `friends sent                : View outbound requests`,
+              `friends blocked             : View blocked users`,
+              `friends search <query>      : Search the global directory`,
+              `friends add <user>          : Send a friend request`,
+              `friends accept <user>       : Accept a friend request`,
+              `friends deny <user>         : Deny a friend request`,
+              `friends remove <user>       : Remove a friend`,
+              `friends block <user>        : Block a user`,
+              `friends unblock <user>      : Unblock a user`,
+              `friends privacy hideList <on|off> : Hide from search and friends of friends`,
+              `friends privacy disableRequests <on|off> : Block all incoming requests`,
+              ` `
+            ]);
+            return;
+          }
+          setTerminalLogs(prev => [...prev, `Usage: friends [list|requests|sent|blocked|search|add|accept|deny|remove|block|unblock|privacy|help]`]);
           return;
         }
 
@@ -1632,8 +1841,8 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                       const profileCmds = ['profile', 'rename', 'about', 'addstack', 'repo', 'profpic', 'clearstack'];
                       const availableCommands = sshState === 'logged_in'
                         ? sshSessionUser?.username === 'root'
-                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', 'nodemap', ...profileCmds]
-                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'nodemap', ...profileCmds]
+                          ? ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'createuser', 'listusers', 'deleteuser', 'reset2fa', 'nodemap', 'friends', ...profileCmds]
+                          : ['help', '?', 'clear', 'cls', 'whoami', 'passwd', 'resetpassword', 'logout', 'exit', 'nodemap', 'friends', ...profileCmds]
                         : ['help', '?', 'clear', 'cls', 'fastfetch', 'cmatrix', 'ssh', 'exit', 'blue', 'nodemap', ...profileCmds];
 
                       const parts = input.split(' ');
@@ -1652,6 +1861,19 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
                               `${logPrefix} ${cliInput}`,
                               matches.join('  ')
                             ]);
+                          }
+                        } else if (parts[0] === 'friends' && sshState === 'logged_in') {
+                          if (parts.length === 2) {
+                            const subcmds = ['list', 'requests', 'sent', 'blocked', 'search', 'add', 'accept', 'deny', 'remove', 'block', 'unblock', 'privacy', 'help'];
+                            const matches = subcmds.filter(c => c.startsWith(partsLower[1]));
+                            if (matches.length === 1) setCliInput(`${parts[0]} ${matches[0]} `);
+                          } else if (parts.length === 3 && parts[1] === 'privacy') {
+                            const subcmds = ['hideList', 'disableRequests'];
+                            const matches = subcmds.filter(c => c.toLowerCase().startsWith(partsLower[2]));
+                            if (matches.length === 1) setCliInput(`${parts[0]} ${parts[1]} ${matches[0]} `);
+                          } else if (parts.length === 4 && parts[1] === 'privacy') {
+                            const matches = ['on', 'off'].filter(c => c.startsWith(partsLower[3]));
+                            if (matches.length === 1) setCliInput(`${parts[0]} ${parts[1]} ${parts[2]} ${matches[0]} `);
                           }
                         }
                       } else if (e.key.toLowerCase() === 'c' && e.ctrlKey) {
@@ -1684,12 +1906,30 @@ export default function RedPillTerminal({ onOpenSettings, onExit }: RedPillTermi
               </div>
 
               {/* Right Side: Profile Card Matrix Panel */}
-              {showProfile && sshState === 'logged_in' && sshSessionUser && (
-                <div className="w-full lg:w-[380px] flex-shrink-0 mt-4 overflow-y-auto max-h-[calc(100vh-220px)]">
-                  <ProfileCard
-                    user={sshSessionUser}
-                    onClose={() => setShowProfile(false)}
-                  />
+              {(showProfile || showFriendList) && sshState === 'logged_in' && sshSessionUser && (
+                <div className="w-full lg:w-[380px] flex-shrink-0 mt-4 overflow-y-auto max-h-[calc(100vh-220px)] flex flex-col gap-4">
+                  {showProfile && (
+                    <ProfileCard
+                      user={viewedProfileUser || sshSessionUser}
+                      onClose={() => {
+                        setShowProfile(false);
+                        setViewedProfileUser(null);
+                      }}
+                    />
+                  )}
+                  {showFriendList && (
+                    <FriendListCard
+                      mode={friendListMode}
+                      users={friendListUsers}
+                      searchQuery={friendSearchQuery}
+                      onClose={() => setShowFriendList(false)}
+                      onViewProfile={(user) => {
+                        setViewedProfileUser(user);
+                        setShowProfile(true);
+                      }}
+                      onAction={handleFriendAction}
+                    />
+                  )}
                 </div>
               )}
             </div>
