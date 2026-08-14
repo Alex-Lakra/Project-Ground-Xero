@@ -303,4 +303,80 @@ export const firebaseDb = {
     }
     localStorage.setItem(`ground_xero_progress_${key}`, JSON.stringify(progress));
   },
+
+  /**
+   * Automatically fetches video metadata via YouTube oEmbed API and caches it in Firebase / LocalStorage
+   */
+  async fetchAndSaveVideoMetadata(videoId: string): Promise<{ videoId: string; title: string; authorName: string; authorUrl: string; thumbnailUrl: string } | null> {
+    const key = videoId.trim();
+    if (!key) return null;
+
+    // 1. Check if already cached in Firestore
+    try {
+      const response = await fetch(`${FIRESTORE_BASE}/video_metadata/${key}`);
+      if (response.ok) {
+        const doc = await response.json();
+        const fields = doc.fields || {};
+        if (fields.title?.stringValue) {
+          return {
+            videoId: key,
+            title: fields.title.stringValue,
+            authorName: fields.authorName?.stringValue || '',
+            authorUrl: fields.authorUrl?.stringValue || '',
+            thumbnailUrl: fields.thumbnailUrl?.stringValue || '',
+          };
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch live metadata via YouTube oEmbed API
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${key}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const meta = {
+          videoId: key,
+          title: data.title || '',
+          authorName: data.author_name || '',
+          authorUrl: data.author_url || '',
+          thumbnailUrl: data.thumbnail_url || `https://i.ytimg.com/vi/${key}/hqdefault.jpg`,
+        };
+
+        // 3. Save to Firestore DB
+        try {
+          const body = {
+            fields: {
+              videoId: { stringValue: meta.videoId },
+              title: { stringValue: meta.title },
+              authorName: { stringValue: meta.authorName },
+              authorUrl: { stringValue: meta.authorUrl },
+              thumbnailUrl: { stringValue: meta.thumbnailUrl },
+            }
+          };
+          await fetch(`${FIRESTORE_BASE}/video_metadata/${key}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+        } catch (e) {}
+
+        // Save to LocalStorage fallback
+        localStorage.setItem(`ground_xero_video_meta_${key}`, JSON.stringify(meta));
+        return meta;
+      }
+    } catch (err: any) {
+      console.warn('[Firestore DB] fetchAndSaveVideoMetadata oEmbed error', err);
+    }
+
+    // LocalStorage fallback
+    const local = localStorage.getItem(`ground_xero_video_meta_${key}`);
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch (e) {}
+    }
+
+    return null;
+  },
 };

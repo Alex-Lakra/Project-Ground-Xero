@@ -336,6 +336,28 @@ export default function CoursesView() {
     syncProgressFromFirebase();
   }, []);
 
+  // Automatically fetch video metadata from YouTube oEmbed & save/cache to Firebase DB
+  useEffect(() => {
+    if (!activeCourse) return;
+    async function autoFetchAndSaveVideoMeta() {
+      const videoId = 'CYtO1q6zfgA';
+      const meta = await firebaseDb.fetchAndSaveVideoMetadata(videoId);
+      if (meta && meta.title) {
+        setActiveCourse(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            instructor: {
+              ...prev.instructor,
+              name: meta.authorName || prev.instructor.name,
+            },
+          };
+        });
+      }
+    }
+    autoFetchAndSaveVideoMeta();
+  }, [activeCourse?.id, activeLessonId]);
+
   // Helper to calculate total completed lessons for a course
   const getCourseCompletedCount = (course: Course): number => {
     return course.lessons.filter(l => l.completed).length;
