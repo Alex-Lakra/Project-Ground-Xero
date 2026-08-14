@@ -44,6 +44,12 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Hidden Admin Mode state (Activated via Cmd/Ctrl + Shift + A or ?mode=admin)
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+
   // Loading States
   const [activeProvider, setActiveProvider] = useState<AuthProviderType>(null);
   const [formError, setFormError] = useState('');
@@ -60,6 +66,35 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
 
   const isPasswordValid = password.length >= 6;
   const passwordsMatch = password === confirmPassword;
+
+  // Secret Shortcut & Query Parameter Listener
+  React.useEffect(() => {
+    // 1. Secret Key Combo Listener (Cmd + Shift + A or Ctrl + Shift + A)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminMode((prev) => {
+          const nextState = !prev;
+          setFormError('');
+          setSuccessMsg(nextState ? 'System Administrator Console Unlocked' : '');
+          return nextState;
+        });
+      }
+    };
+
+    // 2. Secret URL Query Parameter Listener (?mode=admin or ?role=admin)
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('mode') === 'admin' || searchParams.get('role') === 'admin') {
+        setIsAdminMode(true);
+      }
+    } catch (e) {
+      // Ignore URL parsing in non-browser environments
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Handle Login Submit
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,6 +114,28 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
     setActiveProvider('email');
     try {
       await login(email, password);
+    } catch (err: any) {
+      // Error handled by AuthContext
+    } finally {
+      setActiveProvider(null);
+    }
+  };
+
+  // Handle Admin Login Submit
+  const handleAdminSignInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setSuccessMsg('');
+
+    if (!adminEmail.trim() || !adminPassword.trim()) {
+      setFormError('Invalid email or password.');
+      return;
+    }
+
+    setActiveProvider('email');
+    try {
+      // Attempt login via the AuthContext
+      await login(adminEmail.trim(), adminPassword);
     } catch (err: any) {
       // Error handled by AuthContext
     } finally {
@@ -171,7 +228,7 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
   return (
     <div className="min-h-screen bg-[#090c12] text-[#dfe2ed] flex flex-col justify-between relative overflow-hidden font-sans antialiased">
       {/* Ambient Glow Effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#274472]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className={`absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-3xl pointer-events-none transition-colors duration-500 ${isAdminMode ? 'bg-amber-900/20' : 'bg-[#274472]/15'}`} />
       <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-[#3a6073]/10 rounded-full blur-2xl pointer-events-none" />
 
       {/* Top Header */}
@@ -189,12 +246,18 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
             </button>
           )}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#1d3557] to-[#457b9d] p-0.5 shadow-md flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-[#a8dadc]" />
+            <div className={`w-9 h-9 rounded-lg p-0.5 shadow-md flex items-center justify-center transition-all ${isAdminMode ? 'bg-gradient-to-tr from-amber-600 to-red-600' : 'bg-gradient-to-tr from-[#1d3557] to-[#457b9d]'}`}>
+              {isAdminMode ? (
+                <AlertTriangle className="w-5 h-5 text-amber-200" />
+              ) : (
+                <ShieldCheck className="w-5 h-5 text-[#a8dadc]" />
+              )}
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-wide text-white flex items-center gap-2">
-                Project X <span className="text-xs px-2 py-0.5 bg-[#1d3557] text-[#a8dadc] border border-[#457b9d]/40 rounded font-mono">FIREBASE AUTHENTICATION</span>
+                Project X <span className={`text-xs px-2 py-0.5 border rounded font-mono transition-all ${isAdminMode ? 'bg-amber-950/80 text-amber-300 border-amber-700/60' : 'bg-[#1d3557] text-[#a8dadc] border-[#457b9d]/40'}`}>
+                  {isAdminMode ? 'ADMIN CONSOLE' : 'FIREBASE AUTHENTICATION'}
+                </span>
               </h1>
             </div>
           </div>
@@ -238,8 +301,8 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
           )}
 
           {/* Authentication Card */}
-          <div className="bg-[#111520]/90 border border-[#2e3548] rounded-2xl p-8 shadow-2xl backdrop-blur-md relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2563eb] via-[#60a5fa] to-[#3b82f6]" />
+          <div className={`bg-[#111520]/90 border rounded-2xl p-8 shadow-2xl backdrop-blur-md relative overflow-hidden transition-all duration-300 ${isAdminMode ? 'border-amber-900/60 shadow-amber-950/30' : 'border-[#2e3548]'}`}>
+            <div className={`absolute top-0 left-0 right-0 h-1 transition-all ${isAdminMode ? 'bg-gradient-to-r from-amber-500 via-red-500 to-amber-600' : 'bg-gradient-to-r from-[#2563eb] via-[#60a5fa] to-[#3b82f6]'}`} />
 
             {/* Title */}
             <div className="mb-6 text-center">
@@ -273,8 +336,100 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
               </div>
             )}
 
-            {/* SIGN IN FORM */}
-            {mode === 'login' && (
+            {/* HIDDEN ADMIN AUTHENTICATION CONSOLE MODE */}
+            {isAdminMode ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-amber-900/40 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    <h2 className="text-sm font-bold text-amber-200 tracking-wide uppercase font-mono">
+                      System Administrator Verification
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAdminMode(false);
+                      setFormError('');
+                      setSuccessMsg('');
+                    }}
+                    className="text-xs text-[#787c8e] hover:text-white flex items-center gap-1 font-mono transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Exit Admin</span>
+                  </button>
+                </div>
+
+                <form onSubmit={handleAdminSignInSubmit} className="space-y-4">
+                  {/* Admin Email */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-amber-300/80 uppercase tracking-wider mb-1.5 font-mono">
+                      Administrator Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500/70" />
+                      <input
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="admin@xero.io"
+                        disabled={isSubmitting}
+                        className="w-full bg-[#0c0f17] border border-amber-900/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-amber-900/40 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Admin Security Access Key */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-amber-300/80 uppercase tracking-wider mb-1.5 font-mono">
+                      Security Access Key
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500/70" />
+                      <input
+                        type={showAdminPassword ? 'text' : 'password'}
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        disabled={isSubmitting}
+                        className="w-full bg-[#0c0f17] border border-amber-900/50 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-amber-900/40 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono disabled:opacity-60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-300 transition-colors p-1 cursor-pointer"
+                      >
+                        {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit Admin Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !isConfigValid}
+                    className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-amber-600/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed font-mono text-xs"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verifying Admin Credentials...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Authenticate Administrator</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <>
+                {/* SIGN IN FORM */}
+                {mode === 'login' && (
               <div className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
@@ -573,6 +728,8 @@ export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => v
                   </button>
                 </div>
               </form>
+            )}
+              </>
             )}
 
           </div>
