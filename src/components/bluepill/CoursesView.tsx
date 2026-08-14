@@ -406,28 +406,40 @@ export default function CoursesView() {
           {/* Left Column: Video & Details (lg:w-2/3) */}
           <div className="flex-grow flex flex-col gap-gutter lg:w-2/3">
             
-            {/* Video Player Box */}
+            {/* Video Player Box with YouTube Embed */}
             <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden shadow-lg relative group video-container aspect-video">
-              <img
-                alt={activeLesson.title}
-                className="w-full h-full object-cover"
-                src={activeLesson.videoThumbnail || activeCourse.image}
-              />
-              
-              {/* Play / Pause Centered Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <div
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center cursor-pointer pointer-events-auto hover:bg-primary transition-colors shadow-lg"
-                >
-                  <span
-                    className="material-symbols-outlined text-on-primary-container text-4xl ml-0.5 select-none"
-                    data-icon={isPlaying ? 'pause' : 'play_arrow'}
-                  >
-                    {isPlaying ? 'pause' : 'play_arrow'}
-                  </span>
-                </div>
-              </div>
+              {isPlaying ? (
+                <iframe
+                  title={activeLesson.title}
+                  src="https://www.youtube.com/embed/CYtO1q6zfgA?autoplay=1&enablejsapi=1&rel=0"
+                  className="w-full h-full aspect-video border-0 rounded-xl"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <>
+                  <img
+                    alt={activeLesson.title}
+                    className="w-full h-full object-cover"
+                    src={activeLesson.videoThumbnail || activeCourse.image}
+                  />
+                  
+                  {/* Play / Pause Centered Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    <div
+                      onClick={() => setIsPlaying(true)}
+                      className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center cursor-pointer pointer-events-auto hover:bg-primary transition-colors shadow-lg"
+                    >
+                      <span
+                        className="material-symbols-outlined text-on-primary-container text-4xl ml-0.5 select-none"
+                        data-icon="play_arrow"
+                      >
+                        play_arrow
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Controls Bar */}
               <div className="video-controls opacity-0 transition-opacity duration-300 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex flex-col gap-2 z-10">
