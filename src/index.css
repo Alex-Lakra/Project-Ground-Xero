@@ -3,7 +3,7 @@
 
 @theme {
   --font-anton: "Anton", sans-serif;
-  --font-mono: "Geist", "JetBrains Mono", monospace;
+  --font-mono: "JetBrainsMono Nerd Font", "JetBrains Mono", "Geist", monospace;
   --font-sans: "Inter", "Space Grotesk", sans-serif;
   --font-inter: "Inter", sans-serif;
   --font-geist: "Geist", monospace;

@@ -8,7 +8,7 @@ import { ShieldCheck, RefreshCw } from 'lucide-react';
 /**
  * Inner component that enforces authentication route protection based on Firebase Auth state.
  */
-function BluePillProtectedRouter() {
+function BluePillProtectedRouter({ onExitToChoice }: { onExitToChoice?: () => void }) {
   const { currentUser, loading } = useAuth();
 
   // Loading state while Firebase restores or checks persistent session
@@ -33,7 +33,7 @@ function BluePillProtectedRouter() {
 
   // Protected route check: If unauthenticated, present Firebase Login/Auth page
   if (!currentUser) {
-    return <LoginPage />;
+    return <LoginPage onExitToChoice={onExitToChoice} />;
   }
 
   // Authenticated user access granted: Render Enterprise Dashboard
@@ -44,10 +44,10 @@ function BluePillProtectedRouter() {
  * BluePillConstruct serves as the primary entry point for the Blue Pill reality.
  * Wraps the sub-tree in AuthProvider so Firebase Auth state is accessible globally.
  */
-export default function BluePillConstruct() {
+export default function BluePillConstruct({ onExitToChoice }: { onExitToChoice?: () => void }) {
   return (
     <AuthProvider>
-      <BluePillProtectedRouter />
+      <BluePillProtectedRouter onExitToChoice={onExitToChoice} />
     </AuthProvider>
   );
 }

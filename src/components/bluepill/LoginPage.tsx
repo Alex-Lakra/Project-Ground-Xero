@@ -21,7 +21,7 @@ import { useAuth } from '../../hooks/useAuth';
 type AuthMode = 'login' | 'signup' | 'forgot_password';
 type AuthProviderType = 'email' | 'google' | 'github' | 'guest' | null;
 
-export default function LoginPage() {
+export default function LoginPage({ onExitToChoice }: { onExitToChoice?: () => void }) {
   const {
     login,
     signUp,
@@ -176,14 +176,27 @@ export default function LoginPage() {
 
       {/* Top Header */}
       <header className="border-b border-[#252a36] bg-[#0c0f17]/80 backdrop-blur-md px-6 py-4 relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#1d3557] to-[#457b9d] p-0.5 shadow-md flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5 text-[#a8dadc]" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-wide text-white flex items-center gap-2">
-              Project X <span className="text-xs px-2 py-0.5 bg-[#1d3557] text-[#a8dadc] border border-[#457b9d]/40 rounded font-mono">FIREBASE AUTHENTICATION</span>
-            </h1>
+        <div className="flex items-center gap-4">
+          {onExitToChoice && (
+            <button
+              onClick={onExitToChoice}
+              className="p-2 rounded hover:bg-[#1d3557]/50 text-[#8d909d] hover:text-white transition-colors cursor-pointer mr-2"
+              title="Return to Construct Choice"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#1d3557] to-[#457b9d] p-0.5 shadow-md flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-[#a8dadc]" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-wide text-white flex items-center gap-2">
+                Project X <span className="text-xs px-2 py-0.5 bg-[#1d3557] text-[#a8dadc] border border-[#457b9d]/40 rounded font-mono">FIREBASE AUTHENTICATION</span>
+              </h1>
+            </div>
           </div>
         </div>
 
@@ -242,42 +255,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex border-b border-[#212738] mb-6 font-mono text-xs">
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                className={`flex-1 py-2 text-center transition-colors border-b-2 cursor-pointer ${
-                  mode === 'login'
-                    ? 'border-[#3b82f6] text-[#60a5fa] font-bold'
-                    : 'border-transparent text-[#8d909d] hover:text-[#c3c6d4]'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => switchMode('signup')}
-                className={`flex-1 py-2 text-center transition-colors border-b-2 cursor-pointer ${
-                  mode === 'signup'
-                    ? 'border-[#3b82f6] text-[#60a5fa] font-bold'
-                    : 'border-transparent text-[#8d909d] hover:text-[#c3c6d4]'
-                }`}
-              >
-                Sign Up
-              </button>
-              <button
-                type="button"
-                onClick={() => switchMode('forgot_password')}
-                className={`flex-1 py-2 text-center transition-colors border-b-2 cursor-pointer ${
-                  mode === 'forgot_password'
-                    ? 'border-[#3b82f6] text-[#60a5fa] font-bold'
-                    : 'border-transparent text-[#8d909d] hover:text-[#c3c6d4]'
-                }`}
-              >
-                Reset
-              </button>
-            </div>
+
 
             {/* Active Error Banner */}
             {activeError && (
@@ -297,75 +275,147 @@ export default function LoginPage() {
 
             {/* SIGN IN FORM */}
             {mode === 'login' && (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#c3c6d4] uppercase tracking-wider mb-1.5">
-                    Corporate Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b7280]" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@enterprise.io"
-                      required
-                      className="w-full bg-[#0c0f17] border border-[#2a3142] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-semibold text-[#c3c6d4] uppercase tracking-wider">
-                      Access Key / Password
+              <div className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#c3c6d4] uppercase tracking-wider mb-1.5">
+                      Corporate Email
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => switchMode('forgot_password')}
-                      className="text-[11px] text-[#60a5fa] hover:underline cursor-pointer"
-                    >
-                      Forgot password?
-                    </button>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b7280]" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@enterprise.io"
+                        required
+                        className="w-full bg-[#0c0f17] border border-[#2a3142] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all"
+                      />
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b7280]" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      required
-                      className="w-full bg-[#0c0f17] border border-[#2a3142] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#c3c6d4] transition-colors p-1 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-semibold text-[#c3c6d4] uppercase tracking-wider">
+                        Access Key / Password
+                      </label>
+                    </div>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b7280]" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        required
+                        className="w-full bg-[#0c0f17] border border-[#2a3142] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#c3c6d4] transition-colors p-1 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !isConfigValid}
+                    className="w-full mt-4 py-3 px-4 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] text-white font-semibold rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {activeProvider === 'email' ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Authenticating via Firebase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Sign In to Portal</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="relative my-6 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#252a36]" />
+                  </div>
+                  <span className="relative bg-[#111520] px-3 text-[11px] font-mono text-[#6b7280] uppercase tracking-wider">
+                    OR AUTHENTICATE WITH PROVIDER
+                  </span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !isConfigValid}
-                  className="w-full mt-4 py-3 px-4 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] text-white font-semibold rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {activeProvider === 'email' ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Authenticating via Firebase...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Sign In to Portal</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleProviderLogin('google')}
+                    disabled={isSubmitting || !isConfigValid}
+                    className="w-full py-2.5 px-4 bg-[#171d29] hover:bg-[#202838] border border-[#2d374d] hover:border-[#425275] rounded-xl font-medium text-xs text-[#dfe2ed] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {activeProvider === 'google' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                    ) : (
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                        <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+                        <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+                      </svg>
+                    )}
+                    <span>Continue with Google</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleProviderLogin('github')}
+                    disabled={isSubmitting || !isConfigValid}
+                    className="w-full py-2.5 px-4 bg-[#171d29] hover:bg-[#202838] border border-[#2d374d] hover:border-[#425275] rounded-xl font-medium text-xs text-[#dfe2ed] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {activeProvider === 'github' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#a8dadc]" />
+                    ) : (
+                      <svg className="w-4 h-4 shrink-0 fill-current text-[#dfe2ed]" viewBox="0 0 24 24">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                      </svg>
+                    )}
+                    <span>Continue with GitHub</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleProviderLogin('guest')}
+                    disabled={isSubmitting || !isConfigValid}
+                    className="w-full py-2.5 px-4 bg-[#161c29] hover:bg-[#1f283a] text-[#dfe2ed] border border-[#2e374d] hover:border-[#4b5878] rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {activeProvider === 'guest' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                    ) : (
+                      <UserCheck className="w-4 h-4 text-[#a8dadc] group-hover:text-white transition-colors" />
+                    )}
+                    <span>Continue as Guest (Anonymous Access)</span>
+                  </button>
+                </div>
+
+                <div className="flex justify-between items-center pt-6 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('forgot_password')}
+                    className="text-xs text-[#60a5fa] hover:text-white transition-colors cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode('signup')}
+                    className="text-xs text-[#60a5fa] hover:text-white transition-colors cursor-pointer font-semibold"
+                  >
+                    Create account
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* SIGN UP FORM */}
@@ -462,6 +512,16 @@ export default function LoginPage() {
                     </>
                   )}
                 </button>
+                
+                <div className="text-center pt-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('login')}
+                    className="text-xs text-[#8d909d] hover:text-white transition-colors cursor-pointer"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
               </form>
             )}
 
@@ -503,7 +563,7 @@ export default function LoginPage() {
                   )}
                 </button>
 
-                <div className="text-center pt-2">
+                <div className="text-center pt-2 mt-4">
                   <button
                     type="button"
                     onClick={() => switchMode('login')}
@@ -514,70 +574,6 @@ export default function LoginPage() {
                 </div>
               </form>
             )}
-
-            {/* MULTI-PROVIDER SOCIAL & GUEST AUTH SECTION */}
-            <div className="relative my-6 text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#252a36]" />
-              </div>
-              <span className="relative bg-[#111520] px-3 text-[11px] font-mono text-[#6b7280] uppercase tracking-wider">
-                OR AUTHENTICATE WITH PROVIDER
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {/* 1. Continue with Google */}
-              <button
-                type="button"
-                onClick={() => handleProviderLogin('google')}
-                disabled={isSubmitting || !isConfigValid}
-                className="w-full py-2.5 px-4 bg-[#171d29] hover:bg-[#202838] border border-[#2d374d] hover:border-[#425275] rounded-xl font-medium text-xs text-[#dfe2ed] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                {activeProvider === 'google' ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                ) : (
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                    <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
-                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
-                  </svg>
-                )}
-                <span>Continue with Google</span>
-              </button>
-
-              {/* 2. Continue with GitHub */}
-              <button
-                type="button"
-                onClick={() => handleProviderLogin('github')}
-                disabled={isSubmitting || !isConfigValid}
-                className="w-full py-2.5 px-4 bg-[#171d29] hover:bg-[#202838] border border-[#2d374d] hover:border-[#425275] rounded-xl font-medium text-xs text-[#dfe2ed] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                {activeProvider === 'github' ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-[#a8dadc]" />
-                ) : (
-                  <svg className="w-4 h-4 shrink-0 fill-current text-[#dfe2ed]" viewBox="0 0 24 24">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                  </svg>
-                )}
-                <span>Continue with GitHub</span>
-              </button>
-
-              {/* 3. Continue as Guest */}
-              <button
-                type="button"
-                onClick={() => handleProviderLogin('guest')}
-                disabled={isSubmitting || !isConfigValid}
-                className="w-full py-2.5 px-4 bg-[#161c29] hover:bg-[#1f283a] text-[#dfe2ed] border border-[#2e374d] hover:border-[#4b5878] rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                {activeProvider === 'guest' ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
-                ) : (
-                  <UserCheck className="w-4 h-4 text-[#a8dadc] group-hover:text-white transition-colors" />
-                )}
-                <span>Continue as Guest (Anonymous Access)</span>
-              </button>
-            </div>
 
           </div>
 

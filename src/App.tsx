@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Terminal as TermIcon, Settings, RefreshCw, Layers } from 'lucide-react';
 import { PillChoice, SystemSettings } from './types';
 import MorpheusChoice from './components/MorpheusChoice';
@@ -14,14 +14,23 @@ export default function App() {
   // ==========================================
   
   // App initialization load screen state
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    const saved = localStorage.getItem('gx_active_pill');
+    return !saved; // Only show loader if starting fresh
+  });
 
   // Active pill choice ('none' for Morpheus Choice, 'red' for Red Pill terminal, 'blue' for Blue Pill construct)
-  const [choice, setChoice] = useState<PillChoice>('none');
+  const [choice, setChoice] = useState<PillChoice>(() => {
+    const saved = localStorage.getItem('gx_active_pill');
+    return (saved as PillChoice) || 'none';
+  });
   
   // Glitch transition state management
   const [isGlitching, setIsGlitching] = useState(false);
-  const [activeScreen, setActiveScreen] = useState<PillChoice>('none');
+  const [activeScreen, setActiveScreen] = useState<PillChoice>(() => {
+    const saved = localStorage.getItem('gx_active_pill');
+    return (saved as PillChoice) || 'none';
+  });
   const [transitionChoice, setTransitionChoice] = useState<PillChoice>('none');
 
   // Toggle state for floating overlay drawers
@@ -42,6 +51,8 @@ export default function App() {
 
   // Triggers dynamic glitch transition and updates active screen
   const handleChoosePill = (selected: PillChoice) => {
+    localStorage.setItem('gx_active_pill', selected);
+    
     if (selected === 'blue') {
       setChoice(selected);
       setActiveScreen(selected);
@@ -62,6 +73,8 @@ export default function App() {
 
   // Re-routes back to the Morpheus Choice screen with a glitch transition
   const handleResetToChoice = () => {
+    localStorage.removeItem('gx_active_pill');
+
     if (activeScreen === 'blue') {
       setChoice('none');
       setActiveScreen('none');
@@ -236,7 +249,7 @@ export default function App() {
           />
         )}
         {activeScreen === 'blue' && (
-          <BluePillConstruct />
+          <BluePillConstruct onExitToChoice={handleResetToChoice} />
         )}
       </main>
 
