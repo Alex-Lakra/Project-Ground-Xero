@@ -3,6 +3,8 @@ import { scrapeUpcomingContests, Contest } from '../../../Scrapper';
 
 export default function ChallengesView() {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sortBy, setSortBy] = useState<'date' | 'xp' | 'difficulty'>('date');
+
   const [showTakeModal, setShowTakeModal] = useState(false);
   const [selectedChallengeTitle, setSelectedChallengeTitle] = useState('System Design: Scalable Architecture');
   const [selectedChallengeXp, setSelectedChallengeXp] = useState('+1000 XP');
@@ -58,8 +60,85 @@ export default function ChallengesView() {
     setShowTakeModal(true);
   };
 
-  // Filter contests or challenges based on selected category tab
-  const displayContests = contests.slice(0, 4);
+  // Sort Contests: LIVE status first, then by startTimeMs ascending (or XP descending)
+  const sortedContests = [...contests].sort((a, b) => {
+    if (sortBy === 'xp') {
+      const xpA = parseInt(a.xpReward.replace(/\D/g, '')) || 0;
+      const xpB = parseInt(b.xpReward.replace(/\D/g, '')) || 0;
+      return xpB - xpA;
+    }
+
+    // Default 'date' sorting: LIVE contests first, then soonest startTimeMs ascending
+    if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
+    if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
+    return a.startTimeMs - b.startTimeMs;
+  });
+
+  // Base Challenges Data List
+  const challengesList = [
+    {
+      id: 'ch-1',
+      title: 'Dynamic Programming Master',
+      difficulty: 'HARD',
+      difficultyColor: 'text-[#ffb4ab]',
+      bgColor: 'bg-[#ffb4ab]/10',
+      borderColor: 'border-[#ffb4ab]/20',
+      xp: '+450 XP',
+      xpNum: 450,
+      description: 'Solve complex optimization problems using advanced memoization techniques.',
+      attempted: 312,
+      category: 'Algorithms',
+    },
+    {
+      id: 'ch-2',
+      title: 'React Hook Optimization',
+      difficulty: 'MEDIUM',
+      difficultyColor: 'text-[#ffb86a]',
+      bgColor: 'bg-[#ffb86a]/10',
+      borderColor: 'border-[#ffb86a]/20',
+      xp: '+180 XP',
+      xpNum: 180,
+      description: 'Refactor a heavy component to minimize re-renders using useMemo and useCallback.',
+      attempted: 954,
+      category: 'Frontend',
+    },
+    {
+      id: 'ch-3',
+      title: 'SQL Performance Tuning',
+      difficulty: 'MEDIUM',
+      difficultyColor: 'text-[#ffb86a]',
+      bgColor: 'bg-[#ffb86a]/10',
+      borderColor: 'border-[#ffb86a]/20',
+      xp: '+200 XP',
+      xpNum: 200,
+      description: 'Optimize slow-running queries by analyzing execution plans and adding indexes.',
+      attempted: 621,
+      category: 'Backend',
+    },
+    {
+      id: 'ch-4',
+      title: 'Graph Shortest Path & Dijkstra',
+      difficulty: 'HARD',
+      difficultyColor: 'text-[#ffb4ab]',
+      bgColor: 'bg-[#ffb4ab]/10',
+      borderColor: 'border-[#ffb4ab]/20',
+      xp: '+500 XP',
+      xpNum: 500,
+      description: 'Find shortest paths in weighted directed graphs using Dijkstra & A* search.',
+      attempted: 428,
+      category: 'Algorithms',
+    },
+  ];
+
+  // Filter & Sort Challenges List
+  const sortedChallenges = challengesList
+    .filter(ch => activeCategory === 'All' || activeCategory === 'Contests' || activeCategory === ch.category)
+    .sort((a, b) => {
+      if (sortBy === 'xp' || sortBy === 'difficulty') {
+        return b.xpNum - a.xpNum;
+      }
+      return b.attempted - a.attempted;
+    });
 
   return (
     <div className="py-8 px-6 md:px-8 max-w-[1200px] mx-auto text-[#dfe2ed]">
@@ -148,32 +227,48 @@ export default function ChallengesView() {
 
         {/* Center Column: Challenges List & Live Contests */}
         <div className="col-span-12 lg:col-span-6 space-y-6">
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {['All', 'Contests', 'Algorithms', 'Frontend', 'Backend'].map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
-                  activeCategory === cat
-                    ? 'bg-[#628fea] text-white border-[#628fea]'
-                    : 'bg-[#181c24] border-[#434752] text-[#c3c6d4] hover:border-[#aec6ff]'
-                }`}
+          {/* Header Bar: Category Filter Pills & Sorting Selector */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-wrap gap-2 items-center">
+              {['All', 'Contests', 'Algorithms', 'Frontend', 'Backend'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                    activeCategory === cat
+                      ? 'bg-[#628fea] text-white border-[#628fea]'
+                      : 'bg-[#181c24] border-[#434752] text-[#c3c6d4] hover:border-[#aec6ff]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Sorting Controls */}
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="text-[#8d909d]">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'xp' | 'difficulty')}
+                className="bg-[#181c24] text-[#aec6ff] border border-[#434752] px-3 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-[#628fea] cursor-pointer"
               >
-                {cat}
-              </button>
-            ))}
+                <option value="date">Soonest Start</option>
+                <option value="xp">Highest XP</option>
+                <option value="difficulty">Highest Difficulty</option>
+              </select>
+            </div>
           </div>
 
-          {/* Live & Upcoming Contests (LeetCode & Codeforces) */}
+          {/* Live & Upcoming Contests (Sorted: Live First, then Soonest Start Time) */}
           {(activeCategory === 'All' || activeCategory === 'Contests') && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs uppercase font-mono tracking-widest text-[#8d909d] flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#85da76] animate-pulse" />
-                  Live & Upcoming Contests
+                  Live & Upcoming Contests ({sortedContests.length})
                 </h3>
-                <span className="text-[11px] font-mono text-[#aec6ff]">LeetCode • Codeforces</span>
+                <span className="text-[11px] font-mono text-[#aec6ff]">Sorted: {sortBy === 'xp' ? 'By XP' : 'Soonest First'}</span>
               </div>
 
               {loadingContests ? (
@@ -182,22 +277,33 @@ export default function ChallengesView() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {displayContests.map(c => (
+                  {sortedContests.map(c => (
                     <div
                       key={c.id}
-                      className="bg-[#181c24] border border-[#434752] rounded-xl p-5 space-y-3 hover:border-[#aec6ff]/60 transition-all group flex flex-col justify-between"
+                      className={`bg-[#181c24] border rounded-xl p-5 space-y-3 transition-all group flex flex-col justify-between ${
+                        c.status === 'LIVE' ? 'border-[#85da76]/80 shadow-md shadow-[#85da76]/10' : 'border-[#434752] hover:border-[#aec6ff]/60'
+                      }`}
                     >
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
-                              c.platform === 'LeetCode'
-                                ? 'bg-[#ffb86a]/10 text-[#ffb86a] border-[#ffb86a]/30'
-                                : 'bg-[#aec6ff]/10 text-[#aec6ff] border-[#aec6ff]/30'
-                            }`}
-                          >
-                            {c.platform.toUpperCase()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
+                                c.platform === 'LeetCode'
+                                  ? 'bg-[#ffb86a]/10 text-[#ffb86a] border-[#ffb86a]/30'
+                                  : 'bg-[#aec6ff]/10 text-[#aec6ff] border-[#aec6ff]/30'
+                              }`}
+                            >
+                              {c.platform.toUpperCase()}
+                            </span>
+
+                            {c.status === 'LIVE' && (
+                              <span className="bg-[#85da76]/20 text-[#85da76] border border-[#85da76]/40 px-2 py-0.5 rounded text-[10px] font-bold font-mono animate-pulse">
+                                LIVE NOW
+                              </span>
+                            )}
+                          </div>
+
                           <span className="text-[#85da76] text-xs font-mono font-bold">{c.xpReward}</span>
                         </div>
 
@@ -217,9 +323,13 @@ export default function ChallengesView() {
 
                         <button
                           onClick={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
-                          className="w-full py-2 bg-[#31353d] hover:bg-[#628fea] hover:text-white text-[#aec6ff] border border-[#434752] rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                          className={`w-full py-2 border rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            c.status === 'LIVE'
+                              ? 'bg-[#85da76] text-[#0f131b] hover:bg-[#a3f095] border-[#85da76]'
+                              : 'bg-[#31353d] hover:bg-[#628fea] hover:text-white text-[#aec6ff] border-[#434752]'
+                          }`}
                         >
-                          <span>Register & Enter</span>
+                          <span>{c.status === 'LIVE' ? 'Enter Live Contest' : 'Register & Enter'}</span>
                           <span className="material-symbols-outlined text-sm">open_in_new</span>
                         </button>
                       </div>
@@ -261,67 +371,35 @@ export default function ChallengesView() {
             </div>
           )}
 
-          {/* Cards Grid */}
+          {/* Sorted Challenge Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              onClick={() => handleOpenChallengeModal('Dynamic Programming Master', '+450 XP')}
-              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <span className="bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">HARD</span>
-                <span className="text-[#ffb86a] text-xs font-mono font-bold">+450 XP</span>
-              </div>
-              <h4 className="text-base font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                Dynamic Programming Master
-              </h4>
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                Solve complex optimization problems using advanced memoization techniques.
-              </p>
-              <div className="flex justify-between items-center border-t border-[#434752] pt-4 text-xs font-mono text-[#8d909d]">
-                <span>312 attempted</span>
-                <span className="material-symbols-outlined group-hover:text-[#aec6ff] group-hover:translate-x-1 transition-all">arrow_forward</span>
-              </div>
-            </div>
+            {sortedChallenges.map(ch => (
+              <div
+                key={ch.id}
+                onClick={() => handleOpenChallengeModal(ch.title, ch.xp)}
+                className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <span className={`${ch.bgColor} ${ch.difficultyColor} border ${ch.borderColor} px-2 py-0.5 rounded text-xs font-bold font-mono`}>
+                      {ch.difficulty}
+                    </span>
+                    <span className="text-[#ffb86a] text-xs font-mono font-bold">{ch.xp}</span>
+                  </div>
+                  <h4 className="text-base font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
+                    {ch.title}
+                  </h4>
+                  <p className="text-xs text-[#c3c6d4] leading-relaxed">
+                    {ch.description}
+                  </p>
+                </div>
 
-            <div
-              onClick={() => handleOpenChallengeModal('React Hook Optimization', '+180 XP')}
-              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <span className="bg-[#ffb86a]/10 text-[#ffb86a] border border-[#ffb86a]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">MEDIUM</span>
-                <span className="text-[#ffb86a] text-xs font-mono font-bold">+180 XP</span>
+                <div className="flex justify-between items-center border-t border-[#434752] pt-4 text-xs font-mono text-[#8d909d]">
+                  <span>{ch.attempted} attempted</span>
+                  <span className="material-symbols-outlined group-hover:text-[#aec6ff] group-hover:translate-x-1 transition-all">arrow_forward</span>
+                </div>
               </div>
-              <h4 className="text-base font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                React Hook Optimization
-              </h4>
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                Refactor a heavy component to minimize re-renders using useMemo and useCallback.
-              </p>
-              <div className="flex justify-between items-center border-t border-[#434752] pt-4 text-xs font-mono text-[#8d909d]">
-                <span>954 attempted</span>
-                <span className="material-symbols-outlined group-hover:text-[#aec6ff] group-hover:translate-x-1 transition-all">arrow_forward</span>
-              </div>
-            </div>
-
-            <div
-              onClick={() => handleOpenChallengeModal('SQL Performance Tuning', '+200 XP')}
-              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <span className="bg-[#ffb86a]/10 text-[#ffb86a] border border-[#ffb86a]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">MEDIUM</span>
-                <span className="text-[#ffb86a] text-xs font-mono font-bold">+200 XP</span>
-              </div>
-              <h4 className="text-base font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                SQL Performance Tuning
-              </h4>
-              <p className="text-xs text-[#c3c6d4] leading-relaxed">
-                Optimize slow-running queries by analyzing execution plans and adding indexes.
-              </p>
-              <div className="flex justify-between items-center border-t border-[#434752] pt-4 text-xs font-mono text-[#8d909d]">
-                <span>621 attempted</span>
-                <span className="material-symbols-outlined group-hover:text-[#aec6ff] group-hover:translate-x-1 transition-all">arrow_forward</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
