@@ -1,8 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { scrapeUpcomingContests, Contest } from '../../../Scrapper';
 
 export default function ChallengesView() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [showTakeModal, setShowTakeModal] = useState(false);
+  const [selectedChallengeTitle, setSelectedChallengeTitle] = useState('System Design: Scalable Architecture');
+  const [selectedChallengeXp, setSelectedChallengeXp] = useState('+1000 XP');
+  const [selectedChallengeLink, setSelectedChallengeLink] = useState<string | null>(null);
+
+  // Live Contests State (LeetCode & Codeforces)
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [loadingContests, setLoadingContests] = useState(true);
+
+  // Fetch live LeetCode & Codeforces contest data on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadContestsData() {
+      try {
+        setLoadingContests(true);
+        // Attempt fetching via /api/contests server route, fallback to direct scraper
+        const res = await fetch('/api/contests');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.contests) && isMounted) {
+            setContests(json.contests);
+            setLoadingContests(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('API contest fetch warning, calling fallback scraper:', err);
+      }
+
+      try {
+        const liveData = await scrapeUpcomingContests();
+        if (isMounted) {
+          setContests(liveData);
+        }
+      } catch (err) {
+        console.warn('Direct contest scraper error:', err);
+      } finally {
+        if (isMounted) setLoadingContests(false);
+      }
+    }
+
+    loadContestsData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleOpenChallengeModal = (title: string, xp: string, link?: string) => {
+    setSelectedChallengeTitle(title);
+    setSelectedChallengeXp(xp);
+    setSelectedChallengeLink(link || null);
+    setShowTakeModal(true);
+  };
+
+  // Filter contests or challenges based on selected category tab
+  const displayContests = contests.slice(0, 4);
 
   return (
     <div className="py-8 px-6 md:px-8 max-w-[1200px] mx-auto text-[#dfe2ed]">
@@ -89,11 +146,11 @@ export default function ChallengesView() {
           </section>
         </aside>
 
-        {/* Center Column: Challenges List */}
+        {/* Center Column: Challenges List & Live Contests */}
         <div className="col-span-12 lg:col-span-6 space-y-6">
           {/* Category Filter Pills */}
           <div className="flex flex-wrap gap-2 items-center">
-            {['All', 'Algorithms', 'Frontend', 'Backend'].map(cat => (
+            {['All', 'Contests', 'Algorithms', 'Frontend', 'Backend'].map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -108,38 +165,108 @@ export default function ChallengesView() {
             ))}
           </div>
 
-          {/* Highlighted Challenges Header */}
-          <div className="space-y-4">
-            <h3 className="text-xs uppercase font-mono tracking-widest text-[#8d909d]">Highlighted Challenges</h3>
-            <div className="bg-[#181c24] border border-[#aec6ff]/30 rounded-xl p-6 space-y-4 relative overflow-hidden group">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20 px-3 py-0.5 rounded text-xs font-bold font-mono">
-                      EXPERT
-                    </span>
-                    <span className="text-[#ffb86a] text-xs font-mono font-bold">+1000 XP</span>
-                  </div>
-                  <h2 className="text-xl font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
-                    System Design: Scalable Architecture
-                  </h2>
-                  <p className="text-xs text-[#c3c6d4] leading-relaxed max-w-xl">
-                    Design a globally distributed, fault-tolerant system capable of handling 100k+ requests per second with sub-100ms latency. Focus on database sharding and caching strategies.
-                  </p>
+          {/* Live & Upcoming Contests (LeetCode & Codeforces) */}
+          {(activeCategory === 'All' || activeCategory === 'Contests') && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs uppercase font-mono tracking-widest text-[#8d909d] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#85da76] animate-pulse" />
+                  Live & Upcoming Contests
+                </h3>
+                <span className="text-[11px] font-mono text-[#aec6ff]">LeetCode • Codeforces</span>
+              </div>
+
+              {loadingContests ? (
+                <div className="bg-[#181c24] border border-[#434752] rounded-xl p-6 text-center text-xs text-[#8d909d]">
+                  Loading live contest feeds...
                 </div>
-                <button
-                  onClick={() => setShowTakeModal(true)}
-                  className="bg-[#aec6ff] text-[#002e6b] hover:bg-[#628fea] hover:text-white px-5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer shadow-md"
-                >
-                  Take Challenge
-                </button>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {displayContests.map(c => (
+                    <div
+                      key={c.id}
+                      className="bg-[#181c24] border border-[#434752] rounded-xl p-5 space-y-3 hover:border-[#aec6ff]/60 transition-all group flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
+                              c.platform === 'LeetCode'
+                                ? 'bg-[#ffb86a]/10 text-[#ffb86a] border-[#ffb86a]/30'
+                                : 'bg-[#aec6ff]/10 text-[#aec6ff] border-[#aec6ff]/30'
+                            }`}
+                          >
+                            {c.platform.toUpperCase()}
+                          </span>
+                          <span className="text-[#85da76] text-xs font-mono font-bold">{c.xpReward}</span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors line-clamp-2">
+                          {c.title}
+                        </h4>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#434752]/60 space-y-3">
+                        <div className="flex items-center justify-between text-[11px] font-mono text-[#c3c6d4]">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            {c.startTimeFormatted}
+                          </span>
+                          <span className="text-[#8d909d]">Duration: {c.duration}</span>
+                        </div>
+
+                        <button
+                          onClick={() => window.open(c.url, '_blank', 'noopener,noreferrer')}
+                          className="w-full py-2 bg-[#31353d] hover:bg-[#628fea] hover:text-white text-[#aec6ff] border border-[#434752] rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <span>Register & Enter</span>
+                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Highlighted Challenges Header */}
+          {(activeCategory === 'All' || activeCategory === 'Algorithms') && (
+            <div className="space-y-4">
+              <h3 className="text-xs uppercase font-mono tracking-widest text-[#8d909d]">Highlighted Challenges</h3>
+              <div className="bg-[#181c24] border border-[#aec6ff]/30 rounded-xl p-6 space-y-4 relative overflow-hidden group">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20 px-3 py-0.5 rounded text-xs font-bold font-mono">
+                        EXPERT
+                      </span>
+                      <span className="text-[#ffb86a] text-xs font-mono font-bold">+1000 XP</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-[#dfe2ed] group-hover:text-[#aec6ff] transition-colors">
+                      System Design: Scalable Architecture
+                    </h2>
+                    <p className="text-xs text-[#c3c6d4] leading-relaxed max-w-xl">
+                      Design a globally distributed, fault-tolerant system capable of handling 100k+ requests per second with sub-100ms latency. Focus on database sharding and caching strategies.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleOpenChallengeModal('System Design: Scalable Architecture', '+1000 XP')}
+                    className="bg-[#aec6ff] text-[#002e6b] hover:bg-[#628fea] hover:text-white px-5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer shadow-md"
+                  >
+                    Take Challenge
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer">
+            <div
+              onClick={() => handleOpenChallengeModal('Dynamic Programming Master', '+450 XP')}
+              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
+            >
               <div className="flex justify-between items-start">
                 <span className="bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">HARD</span>
                 <span className="text-[#ffb86a] text-xs font-mono font-bold">+450 XP</span>
@@ -156,7 +283,10 @@ export default function ChallengesView() {
               </div>
             </div>
 
-            <div className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer">
+            <div
+              onClick={() => handleOpenChallengeModal('React Hook Optimization', '+180 XP')}
+              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
+            >
               <div className="flex justify-between items-start">
                 <span className="bg-[#ffb86a]/10 text-[#ffb86a] border border-[#ffb86a]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">MEDIUM</span>
                 <span className="text-[#ffb86a] text-xs font-mono font-bold">+180 XP</span>
@@ -173,7 +303,10 @@ export default function ChallengesView() {
               </div>
             </div>
 
-            <div className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer">
+            <div
+              onClick={() => handleOpenChallengeModal('SQL Performance Tuning', '+200 XP')}
+              className="bg-[#181c24] border border-[#434752] rounded-xl p-6 space-y-4 hover:border-[#aec6ff]/50 transition-colors group cursor-pointer"
+            >
               <div className="flex justify-between items-start">
                 <span className="bg-[#ffb86a]/10 text-[#ffb86a] border border-[#ffb86a]/20 px-2 py-0.5 rounded text-xs font-bold font-mono">MEDIUM</span>
                 <span className="text-[#ffb86a] text-xs font-mono font-bold">+200 XP</span>
@@ -232,18 +365,23 @@ export default function ChallengesView() {
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#181c24] border border-[#434752] rounded-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-[#434752] pb-2">
-              <h3 className="text-lg font-bold text-[#dfe2ed]">System Design: Scalable Architecture</h3>
-              <button onClick={() => setShowTakeModal(false)} className="text-[#8d909d]">✕</button>
+              <h3 className="text-lg font-bold text-[#dfe2ed]">{selectedChallengeTitle}</h3>
+              <button onClick={() => setShowTakeModal(false)} className="text-[#8d909d] hover:text-[#dfe2ed]">✕</button>
             </div>
             <p className="text-xs text-[#c3c6d4] leading-relaxed">
-              You are about to start an Expert level design challenge. Allocated time: 90 minutes. Reward: +1000 XP.
+              You are about to start a competitive challenge. Allocated time: 90 minutes. Reward: {selectedChallengeXp}.
             </p>
             <div className="p-3 bg-[#0f131b] border border-[#434752] rounded-xl text-xs font-mono text-[#85da76]">
-              ✓ Environment provisioned cleanly. Ready to proceed.
+              ✓ Live contest environment provisioned cleanly. Ready to proceed.
             </div>
             <button
-              onClick={() => setShowTakeModal(false)}
-              className="w-full py-2.5 rounded-xl bg-[#628fea] text-white font-bold text-xs cursor-pointer"
+              onClick={() => {
+                setShowTakeModal(false);
+                if (selectedChallengeLink) {
+                  window.open(selectedChallengeLink, '_blank', 'noopener,noreferrer');
+                }
+              }}
+              className="w-full py-2.5 rounded-xl bg-[#628fea] hover:bg-[#aec6ff] hover:text-[#002e6b] text-white font-bold text-xs cursor-pointer transition-colors"
             >
               Start Challenge Session
             </button>

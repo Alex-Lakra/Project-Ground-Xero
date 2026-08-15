@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { scrapeLeetCodeProfile, scrapeCodeforcesProfile, scrapeLeetCodeDailyQuestion } from "./Scrapper.tsx";
+import { scrapeLeetCodeProfile, scrapeCodeforcesProfile, scrapeLeetCodeDailyQuestion, scrapeUpcomingContests } from "./Scrapper.tsx";
 
 dotenv.config();
 
@@ -14,6 +14,16 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  app.get("/api/contests", async (req, res) => {
+    try {
+      const force = req.query.force === 'true';
+      const contests = await scrapeUpcomingContests(force);
+      return res.json({ success: true, contests });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || "Failed to fetch contests data" });
+    }
+  });
 
   app.get("/api/leetcode-daily", async (req, res) => {
     try {

@@ -201,3 +201,146 @@ export async function scrapeLeetCodeDailyQuestion(forceRefresh = false) {
 
     return cachedDailyQuestion;
 }
+
+export interface Contest {
+  id: string;
+  title: string;
+  platform: 'LeetCode' | 'Codeforces';
+  url: string;
+  startTimeMs: number;
+  startTimeFormatted: string;
+  duration: string;
+  status: 'UPCOMING' | 'LIVE';
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Div. 2' | 'Div. 1';
+  xpReward: string;
+}
+
+let cachedContests: Contest[] = [];
+let lastContestFetchMs = 0;
+
+export async function scrapeUpcomingContests(forceRefresh = false): Promise<Contest[]> {
+  const nowMs = Date.now();
+  // Return cached contest data if fetched within 5 minutes
+  if (!forceRefresh && cachedContests.length > 0 && nowMs - lastContestFetchMs < 300000) {
+    return cachedContests;
+  }
+
+  const contests: Contest[] = [];
+
+  // 1. Fetch Codeforces Contests
+  try {
+    const cfRes = await fetch('https://codeforces.com/api/contest.list?gym=false', {
+      signal: AbortSignal.timeout(4000)
+    });
+    if (cfRes.ok) {
+      const cfData = await cfRes.json();
+      if (cfData.status === 'OK' && Array.isArray(cfData.result)) {
+        const upcomingCf = cfData.result
+          .filter((c: any) => c.phase === 'BEFORE' || c.phase === 'CODING')
+          .slice(0, 4);
+          
+        for (const c of upcomingCf) {
+          const startTimeMs = c.startTimeSeconds * 1000;
+          const durationHours = (c.durationSeconds / 3600).toFixed(1);
+          contests.push({
+            id: `cf-${c.id}`,
+            title: c.name,
+            platform: 'Codeforces',
+            url: `https://codeforces.com/contest/${c.id}`,
+            startTimeMs,
+            startTimeFormatted: new Date(startTimeMs).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            duration: `${durationHours}h`,
+            status: c.phase === 'CODING' ? 'LIVE' : 'UPCOMING',
+            difficulty: c.name.includes('Div. 1') ? 'Hard' : 'Medium',
+            xpReward: c.phase === 'CODING' ? '+1500 XP' : '+800 XP',
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Codeforces contest fetch warning:', err);
+  }
+
+  // 2. Fetch LeetCode Contests
+  try {
+    const lcRes = await fetch('https://leetcode.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
+      body: JSON.stringify({
+        query: `{ topTwoContests { title titleSlug startTime duration cardImg } }`,
+      }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (lcRes.ok) {
+      const lcData = await lcRes.json();
+      const topContests = lcData.data?.topTwoContests || [];
+      for (const c of topContests) {
+        const startTimeMs = c.startTime * 1000;
+        const durationMins = Math.round(c.duration / 60);
+        const isLive = Date.now() >= startTimeMs && Date.now() <= startTimeMs + c.duration * 1000;
+        contests.push({
+          id: `lc-${c.titleSlug}`,
+          title: c.title,
+          platform: 'LeetCode',
+          url: `https://leetcode.com/contest/${c.titleSlug}`,
+          startTimeMs,
+          startTimeFormatted: new Date(startTimeMs).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          duration: `${durationMins}m`,
+          status: isLive ? 'LIVE' : 'UPCOMING',
+          difficulty: c.title.includes('Biweekly') ? 'Medium' : 'Hard',
+          xpReward: '+1000 XP',
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('LeetCode contest fetch warning:', err);
+  }
+
+  // Fallback defaults if APIs are offline or rate-limited
+  if (contests.length === 0) {
+    contests.push(
+      {
+        id: 'lc-weekly-515',
+        title: 'LeetCode Weekly Contest 515',
+        platform: 'LeetCode',
+        url: 'https://leetcode.com/contest/',
+        startTimeMs: Date.now() + 86400000,
+        startTimeFormatted: 'Sun 8:00 AM',
+        duration: '90m',
+        status: 'UPCOMING',
+        difficulty: 'Hard',
+        xpReward: '+1000 XP',
+      },
+      {
+        id: 'cf-round-980',
+        title: 'Codeforces Round 980 (Div. 2)',
+        platform: 'Codeforces',
+        url: 'https://codeforces.com/contests',
+        startTimeMs: Date.now() + 172800000,
+        startTimeFormatted: 'Mon 8:05 PM',
+        duration: '2.0h',
+        status: 'UPCOMING',
+        difficulty: 'Medium',
+        xpReward: '+800 XP',
+      }
+    );
+  }
+
+  cachedContests = contests;
+  lastContestFetchMs = Date.now();
+  return contests;
+}
+
